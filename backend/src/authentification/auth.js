@@ -6,45 +6,38 @@ const bcrypt = require('bcrypt');
 
 router.post('/', async (req, res) => {
     try {
-        
-        const { email, password } = req.body; 
-        console.log(email, password); 
-      
+        const { email, password } = req.body;
+
+        // Vérifier si l'utilisateur existe
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-       
-        if ( result.rows.length === 0 ) {
-           
+
+        if (result.rows.length === 0) {
             return res.status(404).send('Utilisateur non trouvé');
         }
-    
-        const user = result.rows[0];
-        const match = await bcrypt.compare(password, user.password_hash)
-        const hash = await bcrypt.hash(password, 12);
-        // ICI
-        console.log(hash)  
-        console.log(user.password_hash);
 
-        console.log(match);
-        bcrypt.compare(password, user.password_hash, function(err, isMatch) {
-            console.log(user.password_hash)
-            if (err) throw err;
-            if (isMatch) {
-                // Authentification réussi
-                res.json({ message: 'Authentification réussie' });
-                const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' }); 
-                res.json({ data: [user,token]}); 
-                res.status(200)
-            } else {
-                // Mot de passe incorrect
-                res.status(401).send('Mot de passe incorrect');
-            }
-        });
+        const user = result.rows[0];
+
+        // Vérifier le mot de passe
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+
+        if (isMatch) {
+            // Authentification réussie
+            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+            return res.status(200).json({ 
+                message: 'Authentification réussie',
+                data: {
+                    user,
+                    token
+                }
+            });
+        } else {
+            // Mot de passe incorrect
+            return res.status(401).send('Mot de passe incorrect');
+        }
     } catch (err) {
         console.error(err);
-        res.status(500).send('Erreur lors de l\'authentification');
+        return res.status(500).send('Erreur lors de l\'authentification');
     }
-
-
-
 });
+
 module.exports = router;
