@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../../config/database');
-
+const jwt = require('jsonwebtoken'); 
 const bcrypt = require('bcrypt');
 
 router.get('/', async (req, res) => {
@@ -15,7 +15,10 @@ router.get('/', async (req, res) => {
             if (err) throw err;
             if (isMatch) {
                 // Authentification réussie
+                
                 res.json({ message: 'Authentification réussie' });
+                //const token = jwt.sign({ userId: user.id }, 'your_secret_key', { expiresIn: '1h' }); 
+                res.json({ token }); // Send the token to the client for future requests authentication. 
                 res.status(200)
             } else {
                 // Mot de passe incorrect
