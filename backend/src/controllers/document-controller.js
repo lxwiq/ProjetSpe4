@@ -1,7 +1,9 @@
 
 const documentService = require('../services/document-service');
 class DocumentController {
+
   async getAllDocuments(req, res) {
+    
     try {
       const documents = await documentService.getAllDocuments();
       res.json(documents);
