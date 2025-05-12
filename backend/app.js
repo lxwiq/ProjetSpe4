@@ -6,6 +6,7 @@ const app = express();
 const userRoutes = require('./src/routes/user-routes');
 const documentRoutes = require('./src/routes/document-routes');
 const authRoutes = require('./src/authentification/auth');
+const adminRoutes = require('./src/routes/admin-routes');
 
 
 // Middleware
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/users',verifyToken, userRoutes);
 app.use('/documents',verifyToken, documentRoutes);
 app.use('/login', authRoutes);
+app.use('/admin', adminRoutes); // Pas besoin de verifyToken car il est déjà inclus dans les routes
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -9,7 +9,7 @@ const verifyToken = (req, res, next) => {
     return res.status(401).send('Authorization header missing');
   }
 
-  const token = authHeader.split(' ')[1]; 
+  const token = authHeader.split(' ')[1];
 
   jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
     if (err) {
@@ -17,6 +17,7 @@ const verifyToken = (req, res, next) => {
     }
 
     req.userId = decoded.userId; // Attach the user ID to the request object
+    req.isAdmin = decoded.isAdmin; // Attach the admin status to the request object
     next(); // Call the next middleware or route handler
   });
 };

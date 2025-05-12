@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../lib/prisma');
-const jwt = require('jsonwebtoken'); 
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 router.post('/', async (req, res) => {
@@ -22,8 +22,11 @@ router.post('/', async (req, res) => {
 
         if (isMatch) {
             // Authentification réussie
-            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
-            return res.status(200).json({ 
+            const token = jwt.sign({
+                userId: user.id,
+                isAdmin: user.is_admin || false // Inclure le statut d'administrateur dans le token
+            }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+            return res.status(200).json({
                 message: 'Authentification réussie',
                 data: {
                     user,
