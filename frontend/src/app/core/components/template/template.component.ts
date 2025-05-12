@@ -1,0 +1,14 @@
+import { Component } from '@angular/core';
+import {NavbarComponent} from './navbar/navbar.component';
+
+@Component({
+  selector: 'app-template',
+  imports: [
+    NavbarComponent
+  ],
+  templateUrl: './template.component.html',
+  styleUrl: './template.component.css'
+})
+export class TemplateComponent {
+
+}
