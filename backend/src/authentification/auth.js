@@ -4,21 +4,35 @@ const { pool } = require('../../config/database');
 const jwt = require('jsonwebtoken'); 
 const bcrypt = require('bcrypt');
 
-router.get('/', async (req, res) => {
+router.post('/', async (req, res) => {
     try {
+        
+        const { email, password } = req.body; 
+        console.log(email, password); 
+      
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (result.rows.length === 0) {
+       
+        if ( result.rows.length === 0 ) {
+           
             return res.status(404).send('Utilisateur non trouvé');
         }
+    
         const user = result.rows[0];
-        bcrypt.compare(password, user.password, function(err, isMatch) {
+        const match = await bcrypt.compare(password, user.password_hash)
+        const hash = await bcrypt.hash(password, 12);
+        // ICI
+        console.log(hash)  
+        console.log(user.password_hash);
+
+        console.log(match);
+        bcrypt.compare(password, user.password_hash, function(err, isMatch) {
+            console.log(user.password_hash)
             if (err) throw err;
             if (isMatch) {
-                // Authentification réussie
-                
+                // Authentification réussi
                 res.json({ message: 'Authentification réussie' });
-                //const token = jwt.sign({ userId: user.id }, 'your_secret_key', { expiresIn: '1h' }); 
-                res.json({ token }); // Send the token to the client for future requests authentication. 
+                const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' }); 
+                res.json({ data: [user,token]}); 
                 res.status(200)
             } else {
                 // Mot de passe incorrect
