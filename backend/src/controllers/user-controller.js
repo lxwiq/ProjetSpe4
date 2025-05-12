@@ -4,6 +4,7 @@ const userService = require('../services/user-service');
 class UserController {
   async getAllUsers(req, res) {
     try {
+      
       const users = await userService.getAllUsers();
       res.json(users);
     } catch (err) {
@@ -18,9 +19,10 @@ class UserController {
     } catch (err) {
       console.error(err);
       res.status(500).send('Erreur lors de la récupération des utilisateurs');
-    }
-  
+    }   
+    
 }
+
 
 }
 

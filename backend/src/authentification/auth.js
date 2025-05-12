@@ -14,11 +14,10 @@ router.get('/', async (req, res) => {
         bcrypt.compare(password, user.password, function(err, isMatch) {
             if (err) throw err;
             if (isMatch) {
-                // Authentification réussie
-                
+                // Authentification réussi
                 res.json({ message: 'Authentification réussie' });
-                //const token = jwt.sign({ userId: user.id }, 'your_secret_key', { expiresIn: '1h' }); 
-                res.json({ token }); // Send the token to the client for future requests authentication. 
+                const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' }); 
+                res.json({ data: [user,token]}); // Send the token to the client for future requests authentication. 
                 res.status(200)
             } else {
                 // Mot de passe incorrect

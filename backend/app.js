@@ -5,15 +5,17 @@ const app = express();
 // Import Routes
 const userRoutes = require('./src/routes/user-routes');
 const documentRoutes = require('./src/routes/document-routes');
-const authRoutes = require('./authentification/auth');
+const authRoutes = require('./src/authentification/auth');
+
 
 // Middleware
+const verifyToken = require('./src/middlewares/jwt.js');
 app.use(cors());
 app.use(express.json());
 
 // Mount Routes
-app.use('/users', userRoutes);
-app.use('/documents', documentRoutes);
+app.use('/users',verifyToken, userRoutes);
+app.use('/documents',verifyToken, documentRoutes);
 app.use('/login', authRoutes);
 
 const PORT = process.env.PORT || 3000;
