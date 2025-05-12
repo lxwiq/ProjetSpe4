@@ -4,7 +4,7 @@ const { pool } = require('../../config/database');
 
 const bcrypt = require('bcrypt');
 
-app.get('/', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (result.rows.length === 0) {
