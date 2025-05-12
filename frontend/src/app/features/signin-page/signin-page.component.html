@@ -2,9 +2,11 @@
   <h1 class="text-2xl">Page de connexion</h1>
   <div class="flex flex-col gap-4">
     <div class="flex flex-col gap-2">
-      <input placeholder="Email" type="text" class="border border-black">
-      <input placeholder="Mot de passe" type="password" class="border border-black">
+      <label for="mail">Email</label>
+      <input type="text" id="mail" [formControl]="mail"/>
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" [formControl]="password"/>
     </div>
-    <app-button text="Connexion"/>
+    <app-button (click)="onSubmit()">Se connecter</app-button>
   </div>
 </div>
