@@ -1,8 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const { pool } = require('./config/database');
 const cors = require('cors');
-const app = express();
 
+const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Import Route Files
@@ -10,6 +11,8 @@ const usersRoutes = require('./routes/users/get_users');
 const documentsRoutes = require('./routes/documents/get_documents');
 const modifyUsersRoutes = require('./routes/users/modify_users');
 const authRoutes = require('./routes/authentification/auth');
+
+
 
 // Middleware
 app.use([cors({
