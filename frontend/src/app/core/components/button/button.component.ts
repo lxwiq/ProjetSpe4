@@ -4,8 +4,10 @@ import {Component, Input} from '@angular/core';
   selector: 'app-button',
   imports: [],
   templateUrl: './button.component.html',
-  styleUrl: './button.component.css'
+  styleUrl: './button.component.css',
+  standalone: true
 })
 export class ButtonComponent {
-  @Input() text: string = 'Button';
+  @Input() disabled: boolean = false;
+  @Input() class: string = '';
 }

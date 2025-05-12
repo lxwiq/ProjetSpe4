@@ -2,6 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {ButtonComponent} from '../../core/components/button/button.component';
 import {AuthService} from '../../core/services/auth.service';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
+import {Router} from '@angular/router';
 
 @Component({
   selector: 'app-signin-page',
@@ -15,23 +16,44 @@ import {FormControl, ReactiveFormsModule} from '@angular/forms';
 export class SigninPageComponent implements OnInit {
   mail = new FormControl('');
   password = new FormControl('');
+  rememberMe = new FormControl(false);
+  loginError: string = '';
+  isLoading: boolean = false;
 
-  constructor(private authService: AuthService) {
+  constructor(private authService: AuthService, private router: Router) {
   }
 
   ngOnInit(): void {
-    this.authService.login(this.mail.value || '', this.password.value || '');
+    // Vérifier si l'utilisateur est déjà connecté
     if (this.authService.isLoggedIn()) {
-      window.location.href = '/dashboard';
+      this.router.navigate(['/dashboard']);
     }
   }
 
   onSubmit() {
-    this.authService.login(this.mail.value || '', this.password.value || '');
-    if (this.authService.isLoggedIn()) {
-      window.location.href = '/dashboard';
-    } else {
-      alert('Identifiants incorrects');
+    this.loginError = '';
+    this.isLoading = true;
+
+    // Vérifier que les champs ne sont pas vides
+    if (!this.mail.value || !this.password.value) {
+      this.loginError = 'Veuillez remplir tous les champs';
+      this.isLoading = false;
+      return;
     }
+
+    this.authService.login(this.mail.value, this.password.value).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        if (response.error) {
+          this.loginError = response.error;
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.loginError = error.message || 'Une erreur est survenue lors de la connexion';
+      }
+    });
   }
 }

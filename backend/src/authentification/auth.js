@@ -26,11 +26,24 @@ router.post('/', async (req, res) => {
                 userId: user.id,
                 isAdmin: user.is_admin || false // Inclure le statut d'administrateur dans le token
             }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+
+            // Configurer le cookie HTTP-only
+            res.cookie('jwt_token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production', // Utiliser HTTPS en production
+                sameSite: 'strict',
+                maxAge: 3600000 // 1 heure en millisecondes
+            });
+
             return res.status(200).json({
                 message: 'Authentification réussie',
                 data: {
-                    user,
-                    token
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        username: user.username,
+                        isAdmin: user.is_admin || false
+                    }
                 }
             });
         } else {
@@ -41,6 +54,13 @@ router.post('/', async (req, res) => {
         console.error(err);
         return res.status(500).send('Erreur lors de l\'authentification');
     }
+});
+
+// Route de déconnexion
+router.post('/logout', (req, res) => {
+    // Supprimer le cookie JWT
+    res.clearCookie('jwt_token');
+    return res.status(200).json({ message: 'Déconnexion réussie' });
 });
 
 module.exports = router;

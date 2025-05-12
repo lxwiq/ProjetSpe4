@@ -1,0 +1,50 @@
+/* Styles pour les animations */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Styles pour les boutons de navigation */
+button:focus {
+  outline: none;
+}
+
+/* Styles pour les icônes */
+.text-yellow-500 {
+  color: #f59e0b;
+}
+
+.text-blue-500 {
+  color: #3b82f6;
+}
+
+/* Styles pour les éléments cliquables */
+.cursor-pointer:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Styles pour les modales */
+.fixed {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Styles pour le fil d'Ariane */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Styles pour l'indicateur de chargement */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

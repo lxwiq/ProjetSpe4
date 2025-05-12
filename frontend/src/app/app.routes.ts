@@ -1,12 +1,28 @@
 import { Routes } from '@angular/router';
-import {SigninPageComponent} from './features/signin-page/signin-page.component';
-import {DashboardComponent} from './features/dashboard/dashboard.component';
+import { SigninPageComponent } from './features/signin-page/signin-page.component';
+import { DashboardComponent } from './features/dashboard/dashboard.component';
+import { AccessDeniedComponent } from './features/access-denied/access-denied.component';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
-    path: '', component: SigninPageComponent
+    path: '', redirectTo: 'login', pathMatch: 'full'
+  },
+  {
+    path: 'login', component: SigninPageComponent
   },
   {
     path: 'dashboard', component: DashboardComponent
+  },
+  {
+    path: 'access-denied', component: AccessDeniedComponent
+  },
+  {
+    path: 'admin',
+    loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES),
+    canActivate: [adminGuard]
+  },
+  {
+    path: '**', redirectTo: 'dashboard'
   }
 ];

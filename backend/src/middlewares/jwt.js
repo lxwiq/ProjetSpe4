@@ -3,13 +3,20 @@
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
+  // Vérifier d'abord si le token est dans le cookie
+  const tokenFromCookie = req.cookies.jwt_token;
 
-  if (!authHeader) {
-    return res.status(401).send('Authorization header missing');
+  // Si pas de cookie, vérifier dans l'en-tête Authorization (pour la compatibilité)
+  const authHeader = req.headers['authorization'];
+  let token = tokenFromCookie;
+
+  if (!token && authHeader) {
+    token = authHeader.split(' ')[1];
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).send('Authentication token missing');
+  }
 
   jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
     if (err) {

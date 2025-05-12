@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const app = express();
 // Import Routes
 const userRoutes = require('./src/routes/user-routes');
@@ -11,8 +12,12 @@ const adminRoutes = require('./src/routes/admin-routes');
 
 // Middleware
 const verifyToken = require('./src/middlewares/jwt.js');
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:4200', // URL de votre frontend Angular
+  credentials: true // Permet l'envoi de cookies
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Mount Routes
 app.use('/users',verifyToken, userRoutes);
