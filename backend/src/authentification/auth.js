@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../../config/database');
+const prisma = require('../lib/prisma');
 const jwt = require('jsonwebtoken'); 
 const bcrypt = require('bcrypt');
 
@@ -9,13 +9,13 @@ router.post('/', async (req, res) => {
         const { email, password } = req.body;
 
         // Vérifier si l'utilisateur existe
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = await prisma.users.findUnique({
+            where: { email }
+        });
 
-        if (result.rows.length === 0) {
+        if (!user) {
             return res.status(404).send('Utilisateur non trouvé');
         }
-
-        const user = result.rows[0];
 
         // Vérifier le mot de passe
         const isMatch = await bcrypt.compare(password, user.password_hash);
