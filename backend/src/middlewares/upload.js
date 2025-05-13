@@ -1,8 +1,11 @@
 // src/middleware/upload-middleware.js
 const multer = require('multer');
 const path = require('path');
-
+const fs = require('fs');
 // Configuration du stockage
+    // Créez le répertoire s'il n'existe pas
+    const dir = path.join(__dirname, '..', '..', 'src', 'uploads');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
