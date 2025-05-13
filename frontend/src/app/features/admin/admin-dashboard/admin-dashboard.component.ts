@@ -1,45 +1,134 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ButtonComponent } from '../../../core/components/button/button.component';
+import { HttpClient } from '@angular/common/http';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [RouterLink, ButtonComponent],
-  template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-6">Tableau de bord administrateur</h1>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold mb-4">Gestion des utilisateurs</h2>
-          <p class="mb-4">Gérer les comptes utilisateurs, activer/désactiver des comptes.</p>
-          <a routerLink="/admin/users" class="text-blue-600 hover:underline">Gérer les utilisateurs →</a>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold mb-4">Statistiques</h2>
-          <p class="mb-4">Consulter les statistiques d'utilisation de la plateforme.</p>
-          <a routerLink="/admin/stats" class="text-blue-600 hover:underline">Voir les statistiques →</a>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold mb-4">Configuration</h2>
-          <p class="mb-4">Paramètres généraux de l'application.</p>
-          <a routerLink="/admin/settings" class="text-blue-600 hover:underline">Configurer l'application →</a>
-        </div>
-      </div>
-
-      <div class="mt-8">
-        <app-button (click)="goBack()">Retour au tableau de bord</app-button>
-      </div>
-    </div>
-  `,
+  imports: [RouterLink, ButtonComponent, ReactiveFormsModule, CommonModule],
+  templateUrl: './admin-dashboard.component.html',
   styles: []
 })
-export class AdminDashboardComponent {
-  constructor(private authService: AuthService, private router: Router) {}
+export class AdminDashboardComponent implements OnInit {
+  // Dashboard statistics
+  totalUsers: number = 0;
+  totalDocuments: number = 0;
+  storageUsed: string = '0 MB';
+  todayActivity: number = 0;
+
+  // User creation modal
+  showUserModal: boolean = false;
+  userForm!: FormGroup;
+  isSubmitting: boolean = false;
+  error: string = '';
+  success: string = '';
+
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private http: HttpClient,
+    private fb: FormBuilder
+  ) {}
+
+  ngOnInit(): void {
+    this.initUserForm();
+    this.loadDashboardStats();
+  }
+
+  initUserForm(): void {
+    this.userForm = this.fb.group({
+      username: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      full_name: [''],
+      is_admin: [false]
+    });
+  }
+
+  loadDashboardStats(): void {
+    // Load users count
+    this.http.get<any>('http://localhost:3000/admin/users')
+      .subscribe({
+        next: (response) => {
+          this.totalUsers = response.data?.length || 0;
+        },
+        error: (err) => {
+          console.error('Erreur lors du chargement des utilisateurs', err);
+        }
+      });
+
+    // Load documents count and storage used
+    this.http.get<any>('http://localhost:3000/admin/stats')
+      .subscribe({
+        next: (response) => {
+          if (response.data) {
+            this.totalDocuments = response.data.documentCount || 0;
+            this.storageUsed = response.data.storageUsed || '0 MB';
+            this.todayActivity = response.data.todayActivity || 0;
+          }
+        },
+        error: (err) => {
+          console.error('Erreur lors du chargement des statistiques', err);
+        }
+      });
+  }
+
+  createUser(): void {
+    this.error = '';
+    this.success = '';
+    this.showUserModal = true;
+  }
+
+  closeUserModal(): void {
+    this.showUserModal = false;
+    this.userForm.reset({
+      is_admin: false
+    });
+  }
+
+  submitUserForm(): void {
+    if (this.userForm.invalid) {
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.error = '';
+    this.success = '';
+
+    this.http.post('http://localhost:3000/admin/users', this.userForm.value)
+      .subscribe({
+        next: (response: any) => {
+          this.success = 'Utilisateur créé avec succès';
+          this.isSubmitting = false;
+
+          // Reload dashboard stats to update user count
+          this.loadDashboardStats();
+
+          // Reset form and close modal after a short delay
+          setTimeout(() => {
+            this.closeUserModal();
+          }, 2000);
+        },
+        error: (err) => {
+          this.error = err.error?.message || 'Une erreur est survenue lors de la création de l\'utilisateur';
+          this.isSubmitting = false;
+        }
+      });
+  }
+
+  backupSystem(): void {
+    // Placeholder for backup system functionality
+    console.log('Backup system functionality not implemented yet');
+  }
+
+  generateReport(): void {
+    // Placeholder for report generation functionality
+    console.log('Report generation functionality not implemented yet');
+  }
 
   goBack() {
     this.router.navigate(['/dashboard']);

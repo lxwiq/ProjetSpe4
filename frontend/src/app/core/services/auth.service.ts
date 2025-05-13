@@ -78,7 +78,25 @@ export class AuthService {
         }),
         catchError(error => {
           console.error('Login error:', error);
-          return of({ error: error.error || 'Une erreur est survenue lors de la connexion' });
+
+          // Gérer les différents types d'erreurs d'authentification
+          let errorMessage = 'Une erreur est survenue lors de la connexion';
+
+          if (error.status === 401) {
+            // Erreur d'authentification (mot de passe incorrect)
+            errorMessage = error.error?.message || 'Identifiants incorrects';
+          } else if (error.status === 403) {
+            // Compte verrouillé
+            errorMessage = error.error?.message || 'Compte temporairement verrouillé';
+          } else if (error.status === 404) {
+            // Utilisateur non trouvé
+            errorMessage = 'Utilisateur non trouvé';
+          } else if (error.error) {
+            // Autres erreurs avec un message
+            errorMessage = error.error.message || error.error;
+          }
+
+          return of({ error: errorMessage });
         })
       );
   }

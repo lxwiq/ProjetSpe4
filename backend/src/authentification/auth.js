@@ -18,11 +18,28 @@ router.post('/', async (req, res) => {
             return res.status(404).send('Utilisateur non trouvé');
         }
 
+        // Vérifier si le compte est verrouillé
+        if (user.locked_until && new Date(user.locked_until) > new Date()) {
+            const minutesLeft = Math.ceil((new Date(user.locked_until).getTime() - new Date().getTime()) / 60000);
+            return res.status(403).json({
+                message: `Compte temporairement verrouillé. Veuillez réessayer dans ${minutesLeft} minute(s).`
+            });
+        }
+
         // Vérifier le mot de passe
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (isMatch) {
-            // Authentification réussie
+            // Authentification réussie - réinitialiser les tentatives de connexion et mettre à jour la date de dernière connexion
+            await prisma.users.update({
+                where: { id: user.id },
+                data: {
+                    login_attempts: 0,
+                    last_login: new Date(),
+                    locked_until: null
+                }
+            });
+
             const token = jwt.sign({
                 userId: user.id,
                 isAdmin: user.is_admin || false // Inclure le statut d'administrateur dans le token
@@ -49,8 +66,39 @@ router.post('/', async (req, res) => {
                 }
             });
         } else {
-            // Mot de passe incorrect
-            return res.status(401).send('Mot de passe incorrect');
+            // Mot de passe incorrect - incrémenter le compteur de tentatives
+            const maxAttempts = 5; // Nombre maximum de tentatives avant verrouillage
+            const lockDuration = 15; // Durée de verrouillage en minutes
+
+            const newAttempts = (user.login_attempts || 0) + 1;
+            const updateData = {
+                login_attempts: newAttempts
+            };
+
+            // Si le nombre maximum de tentatives est atteint, verrouiller le compte
+            if (newAttempts >= maxAttempts) {
+                const lockUntil = new Date();
+                lockUntil.setMinutes(lockUntil.getMinutes() + lockDuration);
+                updateData.locked_until = lockUntil;
+            }
+
+            // Mettre à jour les tentatives de connexion
+            await prisma.users.update({
+                where: { id: user.id },
+                data: updateData
+            });
+
+            // Message d'erreur adapté
+            if (newAttempts >= maxAttempts) {
+                return res.status(403).json({
+                    message: `Compte temporairement verrouillé suite à de multiples tentatives échouées. Veuillez réessayer dans ${lockDuration} minutes.`
+                });
+            } else {
+                const attemptsLeft = maxAttempts - newAttempts;
+                return res.status(401).json({
+                    message: `Mot de passe incorrect. ${attemptsLeft} tentative(s) restante(s) avant verrouillage du compte.`
+                });
+            }
         }
     } catch (err) {
         console.error(err);
