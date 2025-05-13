@@ -9,7 +9,10 @@ import { Router } from '@angular/router';
 export class AuthService {
   private apiUrl = 'http://localhost:3000';
   private currentUserSubject = new BehaviorSubject<any>(null);
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
+
   public currentUser$ = this.currentUserSubject.asObservable();
+  public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
   constructor(private http: HttpClient, private router: Router) {
     // Vérifier si l'utilisateur est déjà connecté au démarrage
@@ -28,6 +31,7 @@ export class AuthService {
           if (response && response.data && response.data.user) {
             this.currentUserSubject.next(response.data.user);
             localStorage.setItem('user_info', JSON.stringify(response.data.user));
+            this.isAuthenticatedSubject.next(true);
           }
         }),
         catchError(error => {
@@ -41,6 +45,7 @@ export class AuthService {
     // Nettoyer les données locales d'abord pour s'assurer que l'utilisateur est déconnecté
     // même si l'appel API échoue
     this.currentUserSubject.next(null);
+    this.isAuthenticatedSubject.next(false);
     localStorage.removeItem('user_info');
     sessionStorage.clear(); // Nettoyer également le sessionStorage
 
@@ -75,6 +80,18 @@ export class AuthService {
     return !!this.currentUserSubject.value;
   }
 
+  getToken(): string | null {
+    // Récupérer le token JWT depuis les cookies
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'jwt') {
+        return value;
+      }
+    }
+    return null;
+  }
+
   isAdmin(): boolean {
     const currentUser = this.currentUserSubject.value;
     return currentUser ? currentUser.isAdmin === true : false;
@@ -107,9 +124,11 @@ export class AuthService {
           if (response && response.data && response.data.authenticated) {
             // Session valide, mettre à jour l'utilisateur si nécessaire
             this.currentUserSubject.next(user);
+            this.isAuthenticatedSubject.next(true);
           } else {
             // Session invalide, supprimer les données locales
             this.currentUserSubject.next(null);
+            this.isAuthenticatedSubject.next(false);
             localStorage.removeItem('user_info');
           }
         },
@@ -117,6 +136,7 @@ export class AuthService {
           // En cas d'erreur, on suppose que l'utilisateur est authentifié localement
           // pour éviter de bloquer l'accès à l'application en cas de problème réseau
           this.currentUserSubject.next(user);
+          this.isAuthenticatedSubject.next(true);
         }
       });
   }

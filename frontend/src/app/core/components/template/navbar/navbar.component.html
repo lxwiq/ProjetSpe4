@@ -36,6 +36,9 @@
       <!-- Boutons de droite -->
       <div class="hidden sm:ml-6 sm:flex sm:items-center">
         @if (authService.isLoggedIn()) {
+          <!-- Notification Bell -->
+          <app-notification-bell></app-notification-bell>
+
           <!-- Bouton de profil -->
           <div class="ml-3 relative">
             <div>
@@ -113,6 +116,16 @@
             Administration
           </a>
         }
+      </div>
+
+      <!-- Notifications mobile -->
+      <div class="pt-3 pb-2 border-t border-gray-200">
+        <div class="px-4 py-2 flex justify-between items-center">
+          <h3 class="text-sm font-medium text-gray-700">Notifications</h3>
+          <a routerLink="/notifications" class="text-xs text-blue-600 hover:text-blue-800">
+            Voir tout
+          </a>
+        </div>
       </div>
 
       <!-- Profil mobile -->

@@ -1,8 +1,12 @@
+#!/usr/bin/env node
+
 /**
  * Script pour créer des utilisateurs (admin et non-admin)
  *
  * Utilisation:
  * node scripts/create-users.js
+ * ou
+ * ./scripts/create-users.js (après avoir rendu le fichier exécutable avec chmod +x)
  */
 
 require('dotenv').config();
