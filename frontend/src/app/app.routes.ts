@@ -3,6 +3,7 @@ import { SigninPageComponent } from './features/signin-page/signin-page.componen
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { AccessDeniedComponent } from './features/access-denied/access-denied.component';
 import { ProfileComponent } from './features/profile/profile.component';
+import { DocumentsComponent } from './features/documents/documents.component';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -14,7 +15,10 @@ export const routes: Routes = [
     path: 'login', component: SigninPageComponent
   },
   {
-    path: 'dashboard', component: DashboardComponent
+    path: 'dashboard', component: DashboardComponent, canActivate: [authGuard]
+  },
+  {
+    path: 'documents', component: DocumentsComponent, canActivate: [authGuard]
   },
   {
     path: 'access-denied', component: AccessDeniedComponent

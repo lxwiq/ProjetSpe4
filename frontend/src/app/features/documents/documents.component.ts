@@ -1,20 +1,19 @@
-import {Component, OnInit} from '@angular/core';
-import {UsersService} from '../../core/services/users.service';
-import {DocumentsService} from '../../core/services/documents.service';
-import {CommonModule, DatePipe} from '@angular/common';
-import {AuthService} from '../../core/services/auth.service';
-import {Document} from '../../core/models/document.model';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Router} from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { UsersService } from '../../core/services/users.service';
+import { DocumentsService } from '../../core/services/documents.service';
+import { CommonModule, DatePipe } from '@angular/common';
+import { AuthService } from '../../core/services/auth.service';
+import { Document } from '../../core/models/document.model';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-documents',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, DatePipe],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  templateUrl: './documents.component.html',
+  styleUrl: './documents.component.css'
 })
-export class DashboardComponent implements OnInit {
+export class DocumentsComponent implements OnInit {
   documents: Document[] = [];
   tree: Document[] = [];
   users: any[] = [];
@@ -34,16 +33,10 @@ export class DashboardComponent implements OnInit {
     fileContent: new FormControl('')
   });
 
-  // Nouvelles propriétés pour le tableau de bord
-  recentDocuments: Document[] = [];
-  recentlyModifiedDocuments: Document[] = [];
-  myFolders: Document[] = [];
-
   constructor(
     private usersService: UsersService,
     private documentsService: DocumentsService,
-    public authService: AuthService,
-    private router: Router
+    public authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -61,11 +54,6 @@ export class DashboardComponent implements OnInit {
       next: (documents) => {
         this.documents = documents;
         this.tree = this.buildTree(this.documents, null);
-
-        // Préparer les données pour le tableau de bord
-        this.prepareRecentDocuments(documents);
-        this.prepareMyFolders(documents);
-
         this.navigateToFolder(null); // Racine par défaut
         this.isLoading = false;
       },
@@ -74,44 +62,6 @@ export class DashboardComponent implements OnInit {
         this.isLoading = false;
       }
     });
-  }
-
-  // Prépare les documents récents pour le tableau de bord
-  prepareRecentDocuments(documents: Document[]) {
-    // Filtrer les documents (pas les dossiers) qui ne sont pas supprimés
-    const allDocs = documents.filter(doc => !doc.is_folder && !doc.is_deleted);
-
-    // Trier par date de modification décroissante
-    const sortedDocs = [...allDocs].sort((a, b) => {
-      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-    });
-
-    // Prendre les 3 plus récents
-    this.recentDocuments = sortedDocs.slice(0, 3).map(doc => ({
-      ...doc,
-      owner_username: this.getUsernameById(doc.owner_id),
-      last_modified_by_username: doc.last_modified_by ? this.getUsernameById(doc.last_modified_by) : ''
-    }));
-
-    // Documents récemment modifiés (peut inclure des documents modifiés par d'autres utilisateurs)
-    this.recentlyModifiedDocuments = sortedDocs.slice(0, 5).map(doc => ({
-      ...doc,
-      owner_username: this.getUsernameById(doc.owner_id),
-      last_modified_by_username: doc.last_modified_by ? this.getUsernameById(doc.last_modified_by) : ''
-    }));
-  }
-
-  // Prépare les dossiers pour le tableau de bord
-  prepareMyFolders(documents: Document[]) {
-    // Filtrer les dossiers qui ne sont pas supprimés
-    const folders = documents.filter(doc => doc.is_folder && !doc.is_deleted);
-
-    // Prendre les dossiers racine (parent_folder_id est null)
-    this.myFolders = folders.filter(folder => folder.parent_folder_id === null).map(folder => ({
-      ...folder,
-      owner_username: this.getUsernameById(folder.owner_id),
-      last_modified_by_username: folder.last_modified_by ? this.getUsernameById(folder.last_modified_by) : ''
-    }));
   }
 
   buildTree(items: Document[], parentId: number | null): Document[] {
@@ -285,10 +235,4 @@ export class DashboardComponent implements OnInit {
       });
     }
   }
-
-  // Méthode pour naviguer vers la page "Mes documents"
-  goToDocuments() {
-    this.router.navigate(['/documents']);
-  }
-
 }
