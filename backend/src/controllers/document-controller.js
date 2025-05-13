@@ -1,5 +1,9 @@
 
 const documentService = require('../services/document-service');
+const express = require('express');
+const router = express.Router();
+
+
 class DocumentController {
 
   async getAllDocuments(req, res) {
@@ -15,8 +19,11 @@ class DocumentController {
   async addDocument(req, res) {
     try {
       const { title, content } = req.body;
+      const file = req.file;
+      console.log(req);
       const userId = req.userId; // Get the user ID from the request object (set by JWT middleware)
-      const newDocument = await documentService.addDocument({ title, content, userId });
+      const newDocument = await documentService.addDocument
+      ({ title, content, userId , filePath: file ? file.path : null});
       res.status(201).json(newDocument);
     } catch (err) {
       console.error(err);
