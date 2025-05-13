@@ -33,15 +33,20 @@ class DocumentController {
   async addDocument(req, res) {
     try {
       const { title, content, parentFolderId, isFolder } = req.body;
+      const file = req.file;
+      console.log(file);
       const userId = req.userId;
       const newDocument = await documentService.addDocument({
-        title,
+        title : file ? file.originalname : title ,
         content,
         parentFolderId,
         isFolder,
-        userId
+        userId,
+        filePath: file ? file.path : null,
+        size : file.size,
+        fileType : file.mimetype,
       });
-      res.status(201).json(newDocument);
+      res.status(201).send('Document ajouté avec succès !');
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: 'Erreur lors de l\'ajout du document' });
