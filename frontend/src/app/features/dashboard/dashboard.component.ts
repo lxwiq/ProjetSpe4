@@ -1,17 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { UsersService } from '../../core/services/users.service';
-import { DocumentsService } from '../../core/services/documents.service';
-import { CommonModule, DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { AuthService } from '../../core/services/auth.service';
-import { ButtonComponent } from '../../core/components/button/button.component';
-import { Document } from '../../core/models/document.model';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {Component, OnInit} from '@angular/core';
+import {UsersService} from '../../core/services/users.service';
+import {DocumentsService} from '../../core/services/documents.service';
+import {CommonModule, DatePipe} from '@angular/common';
+import {AuthService} from '../../core/services/auth.service';
+import {Document} from '../../core/models/document.model';
+import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent, ReactiveFormsModule, DatePipe],
+  imports: [CommonModule, ReactiveFormsModule, DatePipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
