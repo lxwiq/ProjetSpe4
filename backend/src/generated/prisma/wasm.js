@@ -195,6 +195,45 @@ exports.Prisma.UsersScalarFieldEnum = {
   locked_until: 'locked_until'
 };
 
+exports.Prisma.ConversationsScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  is_group: 'is_group',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  created_by: 'created_by'
+};
+
+exports.Prisma.Conversation_participantsScalarFieldEnum = {
+  id: 'id',
+  conversation_id: 'conversation_id',
+  user_id: 'user_id',
+  joined_at: 'joined_at',
+  left_at: 'left_at',
+  is_active: 'is_active'
+};
+
+exports.Prisma.MessagesScalarFieldEnum = {
+  id: 'id',
+  conversation_id: 'conversation_id',
+  sender_id: 'sender_id',
+  content: 'content',
+  sent_at: 'sent_at',
+  read_at: 'read_at',
+  is_deleted: 'is_deleted'
+};
+
+exports.Prisma.NotificationsScalarFieldEnum = {
+  id: 'id',
+  user_id: 'user_id',
+  type: 'type',
+  content: 'content',
+  sender_id: 'sender_id',
+  created_at: 'created_at',
+  read_at: 'read_at',
+  is_read: 'is_read'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -217,7 +256,11 @@ exports.Prisma.ModelName = {
   document_invitations: 'document_invitations',
   document_versions: 'document_versions',
   documents: 'documents',
-  users: 'users'
+  users: 'users',
+  conversations: 'conversations',
+  conversation_participants: 'conversation_participants',
+  messages: 'messages',
+  notifications: 'notifications'
 };
 
 /**
