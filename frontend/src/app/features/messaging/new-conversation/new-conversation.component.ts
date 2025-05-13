@@ -4,13 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MessagingService } from '../../../core/services/messaging.service';
 import { UsersService } from '../../../core/services/users.service';
 import { AuthService } from '../../../core/services/auth.service';
-
-interface User {
-  id: number;
-  username: string;
-  full_name: string;
-  profile_picture?: string;
-}
+import { User } from '../../../core/models/user.model';
 
 @Component({
   selector: 'app-new-conversation',
@@ -70,7 +64,7 @@ export class NewConversationComponent implements OnInit {
     const search = this.searchTerm.toLowerCase();
     this.filteredUsers = this.users.filter(user =>
       (user.username.toLowerCase().includes(search) ||
-       user.full_name.toLowerCase().includes(search)) &&
+       (user.full_name ? user.full_name.toLowerCase().includes(search) : false)) &&
       !this.selectedUsers.some(selected => selected.id === user.id)
     );
   }

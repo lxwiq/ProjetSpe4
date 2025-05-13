@@ -5,11 +5,12 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { Document } from '../../core/models/document.model';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CreateDocumentDialogComponent } from './create-document-dialog/create-document-dialog.component';
 
 @Component({
   selector: 'app-documents',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe],
+  imports: [CommonModule, ReactiveFormsModule, DatePipe, CreateDocumentDialogComponent],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css'
 })
@@ -21,17 +22,7 @@ export class DocumentsComponent implements OnInit {
   currentFolder: Document | null = null;
   currentView: 'grid' | 'list' = 'list';
   isLoading = false;
-  showNewFolderModal = false;
-  showNewFileModal = false;
-
-  newFolderForm = new FormGroup({
-    folderName: new FormControl('', [Validators.required])
-  });
-
-  newFileForm = new FormGroup({
-    fileName: new FormControl('', [Validators.required]),
-    fileContent: new FormControl('')
-  });
+  showCreateDocumentDialog = false;
 
   constructor(
     private usersService: UsersService,
@@ -165,8 +156,8 @@ export class DocumentsComponent implements OnInit {
     if (document.is_folder) {
       this.navigateToFolder(document);
     } else {
-      // Ouvrir le document pour édition (à implémenter)
-      console.log('Ouverture du document', document);
+      // Rediriger vers l'éditeur de document
+      window.location.href = `/documents/${document.id}`;
     }
   }
 
@@ -174,65 +165,23 @@ export class DocumentsComponent implements OnInit {
     this.currentView = this.currentView === 'list' ? 'grid' : 'list';
   }
 
-  openNewFolderModal() {
-    this.showNewFolderModal = true;
-    this.newFolderForm.reset();
+  openCreateDocumentDialog() {
+    this.showCreateDocumentDialog = true;
   }
 
-  closeNewFolderModal() {
-    this.showNewFolderModal = false;
+  closeCreateDocumentDialog() {
+    this.showCreateDocumentDialog = false;
   }
 
-  createNewFolder() {
-    if (this.newFolderForm.valid) {
-      const folderName = this.newFolderForm.get('folderName')?.value;
-      const parentId = this.currentFolder?.id;
+  onDocumentCreated(newDocument: Document) {
+    this.documents.push(newDocument);
 
-      this.isLoading = true;
-      this.documentsService.createFolder(folderName!, parentId).subscribe({
-        next: (newFolder) => {
-          this.documents.push(newFolder);
-          this.tree = this.buildTree(this.documents, null);
-          this.filterCurrentFolderContent();
-          this.closeNewFolderModal();
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Erreur lors de la création du dossier', error);
-          this.isLoading = false;
-        }
-      });
+    if (newDocument.is_folder) {
+      // Mettre à jour l'arborescence si c'est un dossier
+      this.tree = this.buildTree(this.documents, null);
     }
-  }
 
-  openNewFileModal() {
-    this.showNewFileModal = true;
-    this.newFileForm.reset();
-  }
-
-  closeNewFileModal() {
-    this.showNewFileModal = false;
-  }
-
-  createNewFile() {
-    if (this.newFileForm.valid) {
-      const fileName = this.newFileForm.get('fileName')?.value;
-      const fileContent = this.newFileForm.get('fileContent')?.value || '';
-      const parentId = this.currentFolder?.id;
-
-      this.isLoading = true;
-      this.documentsService.createDocument(fileName!, fileContent, parentId).subscribe({
-        next: (newFile) => {
-          this.documents.push(newFile);
-          this.filterCurrentFolderContent();
-          this.closeNewFileModal();
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Erreur lors de la création du fichier', error);
-          this.isLoading = false;
-        }
-      });
-    }
+    this.filterCurrentFolderContent();
+    this.closeCreateDocumentDialog();
   }
 }

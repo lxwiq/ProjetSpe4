@@ -90,17 +90,37 @@ class SocketManager {
       try {
         const { documentId } = data;
 
+        console.log(`User ${socket.userId} is joining document ${documentId}`);
+
         // Ajouter l'utilisateur à la salle du document
         socket.join(`document:${documentId}`);
+
+        console.log(`User ${socket.userId} joined room document:${documentId}`);
+
+        // Vérifier les salles auxquelles l'utilisateur est connecté
+        const rooms = Array.from(socket.rooms);
+        console.log(`User ${socket.userId} is in rooms:`, rooms);
 
         // Ajouter l'utilisateur au document actif
         const documentData = await realtimeDocumentService.joinDocument(documentId, socket.userId);
 
+        console.log(`User ${socket.userId} added to active document ${documentId}`);
+        console.log(`Active users in document ${documentId}:`, documentData.activeUsers);
+
+        // Récupérer les informations de l'utilisateur
+        const userInfo = await realtimeDocumentService.getUserInfo(socket.userId);
+
         // Informer les autres utilisateurs qu'un nouvel utilisateur a rejoint
-        socket.to(`document:${documentId}`).emit('document:user-joined', {
+        const joinData = {
           userId: socket.userId,
+          username: userInfo.username,
+          color: userInfo.color,
           activeUsers: documentData.activeUsers
-        });
+        };
+
+        console.log(`Emitting user-joined event to room document:${documentId}:`, joinData);
+
+        this.io.to(`document:${documentId}`).emit('document:user-joined', joinData);
 
         // Répondre avec les données du document
         if (callback) callback({ success: true, data: documentData });
@@ -120,34 +140,120 @@ class SocketManager {
       // Retirer l'utilisateur du document actif
       realtimeDocumentService.leaveDocument(documentId, socket.userId);
 
-      // Informer les autres utilisateurs que l'utilisateur a quitté
-      socket.to(`document:${documentId}`).emit('document:user-left', {
-        userId: socket.userId,
-        activeUsers: realtimeDocumentService.getActiveUsers(documentId)
+      // Récupérer les utilisateurs actifs
+      realtimeDocumentService.getActiveUsers(documentId, true).then(activeUsers => {
+        // Informer tous les utilisateurs dans la salle que l'utilisateur a quitté
+        this.io.to(`document:${documentId}`).emit('document:user-left', {
+          userId: socket.userId,
+          activeUsers
+        });
+      }).catch(error => {
+        console.error('Error getting active users:', error);
+        // Fallback en cas d'erreur
+        this.io.to(`document:${documentId}`).emit('document:user-left', {
+          userId: socket.userId
+        });
       });
     });
 
     // Mettre à jour le contenu d'un document
     socket.on('document:update', async (data, callback) => {
       try {
-        const { documentId, content } = data;
+        const { documentId, content, delta } = data;
 
-        // Mettre à jour le contenu du document
-        const updateData = await realtimeDocumentService.updateDocumentContent(documentId, socket.userId, content);
+        console.log(`Document update received from user ${socket.userId} for document ${documentId}`);
 
-        // Diffuser la mise à jour aux autres utilisateurs
-        socket.to(`document:${documentId}`).emit('document:content-changed', {
-          content,
-          userId: socket.userId,
-          timestamp: updateData.lastModified
-        });
+        if (delta) {
+          console.log('Delta received:', delta);
 
-        // Répondre avec les données de mise à jour
-        if (callback) callback({ success: true, data: updateData });
+          // Diffuser le delta à tous les utilisateurs dans la salle
+          this.io.to(`document:${documentId}`).emit('document:content-changed', {
+            delta,
+            userId: socket.userId,
+            timestamp: new Date()
+          });
+
+          // Si un callback est fourni, répondre avec succès
+          if (callback) callback({ success: true });
+        } else if (content) {
+          // Mettre à jour le contenu du document
+          const updateData = await realtimeDocumentService.updateDocumentContent(documentId, socket.userId, content);
+
+          // Diffuser la mise à jour à tous les utilisateurs dans la salle
+          this.io.to(`document:${documentId}`).emit('document:content-changed', {
+            content,
+            userId: socket.userId,
+            timestamp: updateData.lastModified
+          });
+
+          // Répondre avec les données de mise à jour
+          if (callback) callback({ success: true, data: updateData });
+        } else {
+          throw new Error('Ni delta ni contenu fourni pour la mise à jour');
+        }
       } catch (error) {
         console.error('Error updating document:', error);
         if (callback) callback({ success: false, error: error.message });
       }
+    });
+
+    // Mettre à jour la position du curseur
+    socket.on('document:cursor-update', (data) => {
+      const { documentId, index, length } = data;
+
+      console.log(`Cursor update received from user ${socket.userId} for document ${documentId}:`, { index, length });
+
+      // Récupérer les informations de l'utilisateur
+      realtimeDocumentService.getUserInfo(socket.userId).then(userInfo => {
+        const cursorData = {
+          userId: socket.userId,
+          username: userInfo.username,
+          index,
+          length,
+          color: userInfo.color
+        };
+
+        console.log(`Emitting cursor update to room document:${documentId}:`, cursorData);
+
+        // Diffuser la mise à jour du curseur à tous les utilisateurs dans la salle
+        this.io.to(`document:${documentId}`).emit('document:cursor-update', cursorData);
+      }).catch(error => {
+        console.error('Error getting user info for cursor update:', error);
+      });
+    });
+
+    // Mettre à jour la sélection
+    socket.on('document:selection-update', (data) => {
+      const { documentId, range } = data;
+
+      console.log(`Selection update received from user ${socket.userId} for document ${documentId}:`, range);
+
+      const selectionData = {
+        userId: socket.userId,
+        range
+      };
+
+      console.log(`Emitting selection update to room document:${documentId}:`, selectionData);
+
+      // Diffuser la mise à jour de la sélection à tous les utilisateurs dans la salle
+      this.io.to(`document:${documentId}`).emit('document:selection-update', selectionData);
+    });
+
+    // Indiquer que l'utilisateur est en train de taper
+    socket.on('document:typing', (data) => {
+      const { documentId, isTyping } = data;
+
+      console.log(`Typing status received from user ${socket.userId} for document ${documentId}:`, { isTyping });
+
+      const typingData = {
+        userId: socket.userId,
+        isTyping
+      };
+
+      console.log(`Emitting typing status to room document:${documentId}:`, typingData);
+
+      // Diffuser le statut de frappe à tous les utilisateurs dans la salle
+      this.io.to(`document:${documentId}`).emit('document:typing', typingData);
     });
 
     // Sauvegarder un document
@@ -450,10 +556,19 @@ class SocketManager {
       if (documentData.users.includes(userId)) {
         realtimeDocumentService.leaveDocument(documentId, userId);
 
-        // Informer les autres utilisateurs que l'utilisateur a quitté
-        this.io.to(`document:${documentId}`).emit('document:user-left', {
-          userId,
-          activeUsers: realtimeDocumentService.getActiveUsers(documentId)
+        // Récupérer les utilisateurs actifs
+        realtimeDocumentService.getActiveUsers(documentId, true).then(activeUsers => {
+          // Informer les autres utilisateurs que l'utilisateur a quitté
+          this.io.to(`document:${documentId}`).emit('document:user-left', {
+            userId,
+            activeUsers
+          });
+        }).catch(error => {
+          console.error('Error getting active users:', error);
+          // Fallback en cas d'erreur
+          this.io.to(`document:${documentId}`).emit('document:user-left', {
+            userId
+          });
         });
       }
     }
@@ -572,8 +687,8 @@ class SocketManager {
       try {
         const { notificationId } = data;
 
-        // Marquer la notification comme lue
-        await notificationService.markAsRead(notificationId, socket.userId);
+        // Marquer la notification comme lue (en convertissant l'ID en entier)
+        await notificationService.markAsRead(parseInt(notificationId), socket.userId);
 
         // Répondre avec succès
         if (callback) callback({ success: true });
@@ -602,8 +717,8 @@ class SocketManager {
       try {
         const { notificationId } = data;
 
-        // Supprimer la notification
-        await notificationService.deleteNotification(notificationId, socket.userId);
+        // Supprimer la notification (en convertissant l'ID en entier)
+        await notificationService.deleteNotification(parseInt(notificationId), socket.userId);
 
         // Répondre avec succès
         if (callback) callback({ success: true });

@@ -74,8 +74,20 @@ class RealtimeDocumentService {
     }
 
     // Préparer les informations sur les utilisateurs actifs
-    const activeUsers = this.activeDocuments.get(documentId).users;
-    
+    const activeUserIds = this.activeDocuments.get(documentId).users;
+
+    // Récupérer les informations détaillées des utilisateurs actifs
+    const activeUsers = await Promise.all(
+      activeUserIds.map(async (userId) => {
+        try {
+          return await this.getUserInfo(userId);
+        } catch (error) {
+          console.error(`Error getting user info for user ${userId}:`, error);
+          return { id: userId, username: `User ${userId}` };
+        }
+      })
+    );
+
     // Retourner les informations sur le document et les utilisateurs actifs
     return {
       document,
@@ -96,7 +108,7 @@ class RealtimeDocumentService {
     if (this.activeDocuments.has(documentId)) {
       const activeDoc = this.activeDocuments.get(documentId);
       activeDoc.users = activeDoc.users.filter(id => id !== userId);
-      
+
       // Si plus personne n'édite le document, le supprimer de la liste des documents actifs
       if (activeDoc.users.length === 0) {
         this.activeDocuments.delete(documentId);
@@ -165,7 +177,7 @@ class RealtimeDocumentService {
     }
 
     const activeDoc = this.activeDocuments.get(documentId);
-    
+
     // Mettre à jour le document dans la base de données
     const updatedDocument = await prisma.documents.update({
       where: { id: documentId },
@@ -308,15 +320,71 @@ class RealtimeDocumentService {
   /**
    * Récupère les utilisateurs actifs sur un document
    * @param {number} documentId - ID du document
-   * @returns {Array<number>} - Liste des IDs des utilisateurs actifs
+   * @param {boolean} detailed - Si true, retourne les informations détaillées des utilisateurs
+   * @returns {Promise<Array>} - Liste des utilisateurs actifs
    */
-  getActiveUsers(documentId) {
+  async getActiveUsers(documentId, detailed = false) {
     documentId = parseInt(documentId);
-    
-    if (this.activeDocuments.has(documentId)) {
-      return this.activeDocuments.get(documentId).users;
+
+    if (!this.activeDocuments.has(documentId)) {
+      return [];
     }
-    return [];
+
+    const userIds = this.activeDocuments.get(documentId).users;
+
+    if (!detailed) {
+      return userIds;
+    }
+
+    // Récupérer les informations détaillées des utilisateurs
+    const activeUsers = await Promise.all(
+      userIds.map(async (userId) => {
+        try {
+          return await this.getUserInfo(userId);
+        } catch (error) {
+          console.error(`Error getting user info for user ${userId}:`, error);
+          return { id: userId, username: `User ${userId}` };
+        }
+      })
+    );
+
+    return activeUsers;
+  }
+
+  /**
+   * Récupère les informations d'un utilisateur
+   * @param {number} userId - ID de l'utilisateur
+   * @returns {Promise<Object>} - Informations sur l'utilisateur
+   */
+  async getUserInfo(userId) {
+    userId = parseInt(userId);
+
+    // Récupérer les informations de l'utilisateur depuis la base de données
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        full_name: true,
+        profile_picture: true
+      }
+    });
+
+    if (!user) {
+      throw new Error('Utilisateur non trouvé');
+    }
+
+    // Générer une couleur unique pour l'utilisateur basée sur son ID
+    const colors = [
+      '#FF6900', '#FCB900', '#7BDCB5', '#00D084', '#8ED1FC', '#0693E3',
+      '#ABB8C3', '#EB144C', '#F78DA7', '#9900EF'
+    ];
+    const color = colors[userId % colors.length];
+
+    return {
+      ...user,
+      color
+    };
   }
 }
 

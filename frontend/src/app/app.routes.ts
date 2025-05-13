@@ -4,6 +4,7 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { AccessDeniedComponent } from './features/access-denied/access-denied.component';
 import { ProfileComponent } from './features/profile/profile.component';
 import { DocumentsComponent } from './features/documents/documents.component';
+import { RichDocumentEditorComponent } from './features/documents/rich-document-editor/rich-document-editor.component';
 import { NotificationsPageComponent } from './features/notifications/notifications-page.component';
 import { MessagingPageComponent } from './features/messaging/messaging-page/messaging-page.component';
 import { adminGuard } from './core/guards/admin.guard';
@@ -21,6 +22,9 @@ export const routes: Routes = [
   },
   {
     path: 'documents', component: DocumentsComponent, canActivate: [authGuard]
+  },
+  {
+    path: 'documents/:id', component: RichDocumentEditorComponent, canActivate: [authGuard]
   },
   {
     path: 'access-denied', component: AccessDeniedComponent
