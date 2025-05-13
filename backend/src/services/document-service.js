@@ -87,17 +87,22 @@ class DocumentService {
     return document;
   }
 
-  async addDocument({title, content, parentFolderId, isFolder, userId}) {
+  async addDocument({title, content, parentFolderId, isFolder,
+                      userId,filePath,size,fileType}) {
     return await prisma.documents.create({
       data: {
         title,
         content: content || null,
         parent_folder_id: parentFolderId ? parseInt(parentFolderId) : null,
         is_folder: isFolder || false,
-        owner_id: parseInt(userId)
+        owner_id: parseInt(userId),
+        file_path: filePath,
+        file_size: size,
+        file_type: fileType
       }
     });
   }
+
 
   async updateDocument(id, data, userId) {
     // Check if the user has permission to update the document

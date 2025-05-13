@@ -3,9 +3,10 @@ const multer = require('multer');
 const path = require('path');
 
 // Configuration du stockage
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, '../uploads/'); // Répertoire de stockage
+        cb(null, '../backend/src/uploads/'); // Répertoire de stockage
     },                                                    
     filename: (req, file, cb) => {
         cb(null, Date.now() + path.extname(file.originalname)); // Nom de fichier unique
@@ -14,7 +15,7 @@ const storage = multer.diskStorage({
 
 // Filtrage des types de fichiers (optionnel)
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = /pdf|doc|docx|txt/;
+    const allowedTypes = /pdf|doc|docx|txt|png|jpg|jpeg|svg|/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     if (extname && mimetype) return cb(null, true);
