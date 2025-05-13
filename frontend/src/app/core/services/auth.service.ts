@@ -24,6 +24,28 @@ export class AuthService {
     });
   }
 
+  // Méthode pour essayer de reconnecter automatiquement l'utilisateur
+  autoLogin(): void {
+    const rememberMe = localStorage.getItem('remember_me') === 'true';
+    const token = localStorage.getItem('auth_token');
+    const userInfo = localStorage.getItem('user_info');
+
+    if (rememberMe && token && userInfo) {
+      try {
+        const user = JSON.parse(userInfo);
+
+        // Mettre à jour l'état d'authentification
+        this.currentUserSubject.next(user);
+        this.isAuthenticatedSubject.next(true);
+
+        // Vérifier si la session est toujours valide côté serveur
+        this.verifySession(user, rememberMe);
+      } catch (e) {
+        console.error('Erreur lors de la reconnexion automatique:', e);
+      }
+    }
+  }
+
   login(email: string, password: string, rememberMe: boolean = false): Observable<any> {
     // Nettoyer les données précédentes avant de se connecter
     this.currentUserSubject.next(null);
@@ -99,7 +121,16 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.currentUserSubject.value;
+    // Vérifier d'abord l'état d'authentification du BehaviorSubject
+    if (this.isAuthenticatedSubject.value) {
+      return true;
+    }
+
+    // Ensuite, vérifier si un token est présent dans le localStorage et si "Se souvenir de moi" est activé
+    const token = localStorage.getItem('auth_token');
+    const rememberMe = localStorage.getItem('remember_me') === 'true';
+
+    return !!(token && rememberMe);
   }
 
   getToken(): string | null {
@@ -132,6 +163,7 @@ export class AuthService {
   private checkAuthStatus(): void {
     const userInfo = localStorage.getItem('user_info');
     const rememberMe = localStorage.getItem('remember_me') === 'true';
+    const token = localStorage.getItem('auth_token');
 
     if (userInfo) {
       try {
@@ -143,6 +175,9 @@ export class AuthService {
         console.error('Erreur lors de la vérification du statut d\'authentification:', e);
         this.clearAuthData();
       }
+    } else if (rememberMe && token) {
+      // Si "Se souvenir de moi" est activé et qu'un token est présent, essayer de reconnecter automatiquement
+      this.autoLogin();
     } else {
       // Aucune information utilisateur, s'assurer que l'état d'authentification est à false
       this.isAuthenticatedSubject.next(false);
@@ -152,7 +187,17 @@ export class AuthService {
   private clearAuthData(): void {
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
+
+    // Vérifier si "Se souvenir de moi" est activé
+    const rememberMe = localStorage.getItem('remember_me') === 'true';
+
+    // Supprimer les informations utilisateur
     localStorage.removeItem('user_info');
+
+    // Si "Se souvenir de moi" n'est pas activé, supprimer également le token
+    if (!rememberMe) {
+      localStorage.removeItem('auth_token');
+    }
     // Ne pas supprimer remember_me pour conserver la préférence de l'utilisateur
   }
 
@@ -171,11 +216,17 @@ export class AuthService {
             // Mettre à jour les informations utilisateur dans le stockage local
             localStorage.setItem('user_info', JSON.stringify(updatedUser));
           } else {
-            // Session invalide, supprimer les données locales
-            this.clearAuthData();
+            // Session invalide
+            if (rememberMe) {
+              // Si "Se souvenir de moi" est activé, conserver l'état d'authentification côté client
+              // mais mettre à jour l'état pour refléter que la session côté serveur n'est plus valide
+              this.isAuthenticatedSubject.next(false);
 
-            // Si "Se souvenir de moi" est activé, ne pas rediriger vers la page de connexion
-            if (!rememberMe) {
+              // Conserver les informations utilisateur pour permettre la reconnexion automatique
+              this.currentUserSubject.next(user);
+            } else {
+              // Si "Se souvenir de moi" n'est pas activé, supprimer les données locales
+              this.clearAuthData();
               this.router.navigate(['/login']);
             }
           }
@@ -185,10 +236,15 @@ export class AuthService {
 
           // En cas d'erreur, conserver l'état d'authentification si "Se souvenir de moi" est activé
           if (rememberMe) {
+            // Mettre à jour l'état pour refléter que la session côté serveur n'est plus valide
+            this.isAuthenticatedSubject.next(false);
+
+            // Conserver les informations utilisateur pour permettre la reconnexion automatique
             this.currentUserSubject.next(user);
-            this.isAuthenticatedSubject.next(true);
           } else {
+            // Si "Se souvenir de moi" n'est pas activé, supprimer les données locales
             this.clearAuthData();
+            this.router.navigate(['/login']);
           }
         }
       });
