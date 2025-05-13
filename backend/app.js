@@ -22,7 +22,7 @@ const SocketManager = require('./src/websockets/socket-manager');
 // Middleware
 const verifyToken = require('./src/middlewares/jwt.js');
 app.use(cors({
-  origin: 'http://localhost:4200', // URL de votre frontend Angular
+  origin: ['http://localhost:4200', 'http://localhost:4201', 'http://localhost:4202', 'http://localhost:4203'], // URLs de votre frontend Angular
   credentials: true // Permet l'envoi de cookies
 }));
 app.use(express.json());
@@ -35,6 +35,7 @@ app.use('/collaborative-documents', verifyToken, collaborativeDocumentRoutes);
 app.use('/messaging', messagingRoutes); // verifyToken est déjà inclus dans les routes
 app.use('/notifications', notificationRoutes); // verifyToken est déjà inclus dans les routes
 app.use('/login', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes); // Pas besoin de verifyToken car il est déjà inclus dans les routes
 
 // Initialiser le gestionnaire de WebSockets

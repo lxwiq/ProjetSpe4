@@ -4,6 +4,8 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { AccessDeniedComponent } from './features/access-denied/access-denied.component';
 import { ProfileComponent } from './features/profile/profile.component';
 import { DocumentsComponent } from './features/documents/documents.component';
+import { NotificationsPageComponent } from './features/notifications/notifications-page.component';
+import { MessagingPageComponent } from './features/messaging/messaging-page/messaging-page.component';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -28,6 +30,15 @@ export const routes: Routes = [
   },
   {
     path: 'settings', redirectTo: 'profile', pathMatch: 'full'
+  },
+  {
+    path: 'notifications', component: NotificationsPageComponent, canActivate: [authGuard]
+  },
+  {
+    path: 'messaging', component: MessagingPageComponent, canActivate: [authGuard]
+  },
+  {
+    path: 'messaging/:id', component: MessagingPageComponent, canActivate: [authGuard]
   },
   {
     path: 'admin',

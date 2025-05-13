@@ -41,7 +41,7 @@ export class SigninPageComponent implements OnInit {
       return;
     }
 
-    this.authService.login(this.mail.value, this.password.value).subscribe({
+    this.authService.login(this.mail.value, this.password.value, !!this.rememberMe.value).subscribe({
       next: (response) => {
         this.isLoading = false;
         if (response.error) {
