@@ -1,0 +1,272 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+      <h1 class="text-2xl font-bold text-gray-900">Paramètres du profil</h1>
+      <p class="mt-1 text-sm text-gray-500">Gérez vos informations personnelles et vos paramètres de sécurité</p>
+    </div>
+
+    <!-- Onglets -->
+    <div class="border-b border-gray-200">
+      <nav class="flex -mb-px">
+        <button
+          (click)="setActiveTab('profile')"
+          class="px-6 py-4 text-sm font-medium"
+          [class.text-blue-600]="activeTab === 'profile'"
+          [class.border-blue-500]="activeTab === 'profile'"
+          [class.border-b-2]="activeTab === 'profile'"
+          [class.text-gray-500]="activeTab !== 'profile'"
+          [class.hover:text-gray-700]="activeTab !== 'profile'"
+          [class.hover:border-gray-300]="activeTab !== 'profile'"
+        >
+          Profil
+        </button>
+        <button
+          (click)="setActiveTab('security')"
+          class="px-6 py-4 text-sm font-medium"
+          [class.text-blue-600]="activeTab === 'security'"
+          [class.border-blue-500]="activeTab === 'security'"
+          [class.border-b-2]="activeTab === 'security'"
+          [class.text-gray-500]="activeTab !== 'security'"
+          [class.hover:text-gray-700]="activeTab !== 'security'"
+          [class.hover:border-gray-300]="activeTab !== 'security'"
+        >
+          Sécurité
+        </button>
+      </nav>
+    </div>
+
+    <!-- Messages de succès/erreur -->
+    @if (successMessage) {
+      <div class="bg-green-50 border-l-4 border-green-400 p-4 m-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-green-700">{{ successMessage }}</p>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="bg-red-50 border-l-4 border-red-400 p-4 m-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-700">{{ errorMessage }}</p>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Contenu de l'onglet Profil -->
+    @if (activeTab === 'profile') {
+      <div class="p-6">
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+          <!-- Image de profil -->
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Photo de profil</h3>
+            <p class="mt-1 text-sm text-gray-500">Cette photo sera affichée sur votre profil et dans vos commentaires.</p>
+          </div>
+          <div class="mt-5 md:mt-0 md:col-span-2">
+            <div class="flex items-center space-x-6">
+              <div class="flex-shrink-0">
+                @if (previewUrl) {
+                  <img class="h-24 w-24 rounded-full object-cover" [src]="previewUrl" alt="Photo de profil">
+                } @else {
+                  <div class="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-semibold">
+                    {{ getUserInitial() }}
+                  </div>
+                }
+              </div>
+              <div>
+                <label for="profile-image" class="block text-sm font-medium text-gray-700 mb-2">
+                  Changer de photo
+                </label>
+                <input
+                  type="file"
+                  id="profile-image"
+                  accept="image/*"
+                  (change)="onFileSelected($event)"
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                >
+                <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF jusqu'à 10MB</p>
+                @if (selectedFile) {
+                  <app-button
+                    (click)="uploadImage()"
+                    [disabled]="isLoading"
+                    class="mt-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    @if (isLoading) {
+                      <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Chargement...
+                    } @else {
+                      Télécharger
+                    }
+                  </app-button>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden sm:block" aria-hidden="true">
+          <div class="py-5">
+            <div class="border-t border-gray-200"></div>
+          </div>
+        </div>
+
+        <!-- Informations personnelles -->
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Informations personnelles</h3>
+            <p class="mt-1 text-sm text-gray-500">Utilisez une adresse email permanente où vous pouvez recevoir des emails.</p>
+          </div>
+          <div class="mt-5 md:mt-0 md:col-span-2">
+            <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+              <div class="grid grid-cols-6 gap-6">
+                <div class="col-span-6 sm:col-span-4">
+                  <label for="username" class="block text-sm font-medium text-gray-700">Nom d'utilisateur</label>
+                  <input
+                    type="text"
+                    id="username"
+                    formControlName="username"
+                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  >
+                  @if (profileForm.get('username')?.invalid && profileForm.get('username')?.touched) {
+                    <p class="mt-1 text-sm text-red-600">Le nom d'utilisateur est requis</p>
+                  }
+                </div>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <label for="full_name" class="block text-sm font-medium text-gray-700">Nom complet</label>
+                  <input
+                    type="text"
+                    id="full_name"
+                    formControlName="full_name"
+                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  >
+                </div>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <label for="email" class="block text-sm font-medium text-gray-700">Adresse email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    formControlName="email"
+                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  >
+                  @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
+                    <p class="mt-1 text-sm text-red-600">Une adresse email valide est requise</p>
+                  }
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <app-button
+                  type="submit"
+                  [disabled]="profileForm.invalid || isLoading"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  @if (isLoading) {
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Enregistrement...
+                  } @else {
+                    Enregistrer
+                  }
+                </app-button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Contenu de l'onglet Sécurité -->
+    @if (activeTab === 'security') {
+      <div class="p-6">
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Changer de mot de passe</h3>
+            <p class="mt-1 text-sm text-gray-500">Assurez-vous que votre compte utilise un mot de passe long et aléatoire pour rester sécurisé.</p>
+          </div>
+          <div class="mt-5 md:mt-0 md:col-span-2">
+            <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+              <div class="grid grid-cols-6 gap-6">
+                <div class="col-span-6 sm:col-span-4">
+                  <label for="currentPassword" class="block text-sm font-medium text-gray-700">Mot de passe actuel</label>
+                  <input
+                    type="password"
+                    id="currentPassword"
+                    formControlName="currentPassword"
+                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  >
+                  @if (passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched) {
+                    <p class="mt-1 text-sm text-red-600">Le mot de passe actuel est requis</p>
+                  }
+                </div>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <label for="newPassword" class="block text-sm font-medium text-gray-700">Nouveau mot de passe</label>
+                  <input
+                    type="password"
+                    id="newPassword"
+                    formControlName="newPassword"
+                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  >
+                  @if (passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched) {
+                    <p class="mt-1 text-sm text-red-600">Le mot de passe doit contenir au moins 8 caractères</p>
+                  }
+                </div>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirmer le nouveau mot de passe</label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    formControlName="confirmPassword"
+                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  >
+                  @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
+                    <p class="mt-1 text-sm text-red-600">Les mots de passe ne correspondent pas</p>
+                  }
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <app-button
+                  type="submit"
+                  [disabled]="passwordForm.invalid || isLoading"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  @if (isLoading) {
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Mise à jour...
+                  } @else {
+                    Mettre à jour le mot de passe
+                  }
+                </app-button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

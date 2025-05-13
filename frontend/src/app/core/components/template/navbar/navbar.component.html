@@ -43,7 +43,7 @@
                       class="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <span class="sr-only">Ouvrir le menu utilisateur</span>
                 <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                  {{ authService.getCurrentUser()?.username?.charAt(0).toUpperCase() || 'U' }}
+                  {{ authService.getCurrentUser()?.username ? authService.getCurrentUser().username.charAt(0).toUpperCase() : 'U' }}
                 </div>
               </button>
             </div>
@@ -120,7 +120,7 @@
         <div class="flex items-center px-4">
           <div class="flex-shrink-0">
             <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-              {{ authService.getCurrentUser()?.username?.charAt(0).toUpperCase() || 'U' }}
+              {{ authService.getCurrentUser()?.username ? authService.getCurrentUser().username.charAt(0).toUpperCase() : 'U' }}
             </div>
           </div>
           <div class="ml-3">

@@ -17,6 +17,11 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<any> {
+    // Nettoyer les données précédentes avant de se connecter
+    this.currentUserSubject.next(null);
+    localStorage.removeItem('user_info');
+    sessionStorage.clear();
+
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true })
       .pipe(
         tap(response => {
@@ -33,18 +38,37 @@ export class AuthService {
   }
 
   logout(): Observable<any> {
+    // Nettoyer les données locales d'abord pour s'assurer que l'utilisateur est déconnecté
+    // même si l'appel API échoue
+    this.currentUserSubject.next(null);
+    localStorage.removeItem('user_info');
+    sessionStorage.clear(); // Nettoyer également le sessionStorage
+
+    // Supprimer tous les cookies liés à l'authentification
+    this.clearAuthCookies();
+
+    // Ensuite, essayer de se déconnecter côté serveur
     return this.http.post<any>(`${this.apiUrl}/login/logout`, {}, { withCredentials: true })
       .pipe(
         tap(() => {
-          this.currentUserSubject.next(null);
-          localStorage.removeItem('user_info');
+          // La navigation est déjà effectuée ici pour éviter les problèmes de timing
           this.router.navigate(['/login']);
         }),
         catchError(error => {
           console.error('Logout error:', error);
-          return of({ error: error.error || 'Une erreur est survenue lors de la déconnexion' });
+          // Même en cas d'erreur, on redirige vers la page de connexion
+          this.router.navigate(['/login']);
+          return of({ success: true }); // Simuler un succès pour le frontend
         })
       );
+  }
+
+  // Méthode pour supprimer tous les cookies liés à l'authentification
+  private clearAuthCookies(): void {
+    // Supprimer tous les cookies en les expirant
+    document.cookie.split(';').forEach(cookie => {
+      document.cookie = cookie.replace(/^ +/, '').replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+    });
   }
 
   isLoggedIn(): boolean {
@@ -65,10 +89,35 @@ export class AuthService {
     if (userInfo) {
       try {
         const user = JSON.parse(userInfo);
-        this.currentUserSubject.next(user);
+
+        // Vérifier si l'utilisateur est toujours authentifié côté serveur
+        this.verifySession(user);
       } catch (e) {
         localStorage.removeItem('user_info');
       }
     }
+  }
+
+  // Vérifier si la session est toujours valide côté serveur
+  private verifySession(user: any): void {
+    // Appel API pour vérifier si la session est toujours valide
+    this.http.get<any>(`${this.apiUrl}/auth/check-session`, { withCredentials: true })
+      .subscribe({
+        next: (response) => {
+          if (response && response.data && response.data.authenticated) {
+            // Session valide, mettre à jour l'utilisateur si nécessaire
+            this.currentUserSubject.next(user);
+          } else {
+            // Session invalide, supprimer les données locales
+            this.currentUserSubject.next(null);
+            localStorage.removeItem('user_info');
+          }
+        },
+        error: () => {
+          // En cas d'erreur, on suppose que l'utilisateur est authentifié localement
+          // pour éviter de bloquer l'accès à l'application en cas de problème réseau
+          this.currentUserSubject.next(user);
+        }
+      });
   }
 }

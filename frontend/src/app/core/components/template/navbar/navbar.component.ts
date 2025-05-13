@@ -36,6 +36,16 @@ export class NavbarComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout().subscribe();
+    this.isProfileMenuOpen = false;
+    this.isMenuOpen = false;
+
+    this.authService.logout().subscribe({
+      next: () => {
+        console.log('Déconnexion réussie');
+      },
+      error: (error) => {
+        console.error('Erreur lors de la déconnexion:', error);
+      }
+    });
   }
 }
