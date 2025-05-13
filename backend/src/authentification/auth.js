@@ -3,6 +3,7 @@ const router = express.Router();
 const prisma = require('../lib/prisma');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const verifyToken = require('../middlewares/jwt');
 
 router.post('/', async (req, res) => {
     try {
@@ -43,7 +44,8 @@ router.post('/', async (req, res) => {
                         email: user.email,
                         username: user.username,
                         isAdmin: user.is_admin || false
-                    }
+                    },
+                    token: token // Inclure le token dans la réponse
                 }
             });
         } else {
@@ -61,6 +63,44 @@ router.post('/logout', (req, res) => {
     // Supprimer le cookie JWT
     res.clearCookie('jwt_token');
     return res.status(200).json({ message: 'Déconnexion réussie' });
+});
+
+// Route pour vérifier si l'utilisateur est toujours authentifié
+router.get('/check-session', verifyToken, async (req, res) => {
+    try {
+        // Si le middleware verifyToken a passé, l'utilisateur est authentifié
+        // Récupérer les informations de l'utilisateur
+        const user = await prisma.users.findUnique({
+            where: { id: req.userId }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                message: 'Utilisateur non trouvé',
+                data: { authenticated: false }
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Session valide',
+            data: {
+                authenticated: true,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    full_name: user.full_name,
+                    isAdmin: user.is_admin || false
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de la vérification de la session:', error);
+        return res.status(500).json({
+            message: 'Erreur lors de la vérification de la session',
+            data: { authenticated: false }
+        });
+    }
 });
 
 module.exports = router;

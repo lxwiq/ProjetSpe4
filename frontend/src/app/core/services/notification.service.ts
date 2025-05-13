@@ -1,22 +1,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
 import { Notification } from '../models/notification.model';
-import { io, Socket } from 'socket.io-client';
 import { AuthService } from './auth.service';
+import { SocketService } from './socket.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
   private apiUrl = 'http://localhost:3000/notifications';
-  private socket: Socket | null = null;
-  
+  private socketSubscriptions = new Subscription();
+
   // Observable sources
   private notificationsSubject = new BehaviorSubject<Notification[]>([]);
   private unreadCountSubject = new BehaviorSubject<number>(0);
   private newNotificationSubject = new Subject<Notification>();
-  
+
   // Observable streams
   notifications$ = this.notificationsSubject.asObservable();
   unreadCount$ = this.unreadCountSubject.asObservable();
@@ -24,67 +24,61 @@ export class NotificationService {
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private socketService: SocketService
   ) {
-    // Initialize socket connection when service is created
-    this.initSocketConnection();
-    
-    // Subscribe to auth state changes to connect/disconnect socket
-    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
-      if (isAuthenticated) {
-        this.connectSocket();
+    // Subscribe to socket connection status
+    this.socketService.connected$.subscribe(connected => {
+      if (connected) {
+        this.setupSocketListeners();
         this.loadNotifications();
       } else {
-        this.disconnectSocket();
+        this.clearSocketSubscriptions();
+      }
+    });
+
+    // Subscribe to auth state changes
+    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
+      if (isAuthenticated) {
+        this.loadNotifications();
+      } else {
         this.clearNotifications();
       }
     });
   }
 
-  private initSocketConnection(): void {
-    if (this.authService.isLoggedIn()) {
-      this.connectSocket();
-      this.loadNotifications();
-    }
-  }
-
-  private connectSocket(): void {
-    if (this.socket) {
-      this.disconnectSocket();
-    }
-
-    this.socket = io('http://localhost:3000', {
-      auth: {
-        token: this.authService.getToken()
-      }
-    });
+  private setupSocketListeners(): void {
+    // Clear previous subscriptions
+    this.clearSocketSubscriptions();
 
     // Listen for new notifications
-    this.socket.on('notification:received', (data: { notification: Notification }) => {
-      this.handleNewNotification(data.notification);
-    });
+    this.socketSubscriptions.add(
+      this.socketService.on<{ notification: Notification }>('notification:received').subscribe(data => {
+        this.handleNewNotification(data.notification);
+      })
+    );
 
     // Listen for pending notifications
-    this.socket.on('notification:pending', (data: { notifications: Notification[] }) => {
-      this.handlePendingNotifications(data.notifications);
-    });
+    this.socketSubscriptions.add(
+      this.socketService.on<{ notifications: Notification[] }>('notification:pending').subscribe(data => {
+        this.handlePendingNotifications(data.notifications);
+      })
+    );
   }
 
-  private disconnectSocket(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
+  private clearSocketSubscriptions(): void {
+    this.socketSubscriptions.unsubscribe();
+    this.socketSubscriptions = new Subscription();
   }
 
   private handleNewNotification(notification: Notification): void {
     // Add to notifications list
     const currentNotifications = this.notificationsSubject.value;
     this.notificationsSubject.next([notification, ...currentNotifications]);
-    
+
     // Update unread count
     this.updateUnreadCount();
-    
+
     // Emit new notification event
     this.newNotificationSubject.next(notification);
   }
@@ -94,7 +88,7 @@ export class NotificationService {
       // Add to notifications list
       const currentNotifications = this.notificationsSubject.value;
       this.notificationsSubject.next([...notifications, ...currentNotifications]);
-      
+
       // Update unread count
       this.updateUnreadCount();
     }
@@ -125,7 +119,7 @@ export class NotificationService {
 
   // API methods
   getNotifications(unreadOnly: boolean = false, limit: number = 20, offset: number = 0): Observable<Notification[]> {
-    const params = { 
+    const params = {
       unreadOnly: unreadOnly.toString(),
       limit: limit.toString(),
       offset: offset.toString()
@@ -150,7 +144,7 @@ export class NotificationService {
     this.markAsRead(notificationId).subscribe({
       next: (updatedNotification) => {
         // Update the notification in the list
-        const notifications = this.notificationsSubject.value.map(n => 
+        const notifications = this.notificationsSubject.value.map(n =>
           n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
         );
         this.notificationsSubject.next(notifications);
@@ -166,7 +160,7 @@ export class NotificationService {
     this.markAllAsRead().subscribe({
       next: () => {
         // Update all notifications in the list
-        const notifications = this.notificationsSubject.value.map(n => 
+        const notifications = this.notificationsSubject.value.map(n =>
           ({ ...n, is_read: true, read_at: new Date().toISOString() })
         );
         this.notificationsSubject.next(notifications);
@@ -194,20 +188,14 @@ export class NotificationService {
 
   // Socket event emitters
   emitMarkAsRead(notificationId: number): void {
-    if (this.socket) {
-      this.socket.emit('notification:mark-read', { notificationId });
-    }
+    this.socketService.emit('notification:mark-read', { notificationId });
   }
 
   emitMarkAllAsRead(): void {
-    if (this.socket) {
-      this.socket.emit('notification:mark-all-read', {});
-    }
+    this.socketService.emit('notification:mark-all-read', {});
   }
 
   emitDeleteNotification(notificationId: number): void {
-    if (this.socket) {
-      this.socket.emit('notification:delete', { notificationId });
-    }
+    this.socketService.emit('notification:delete', { notificationId });
   }
 }
