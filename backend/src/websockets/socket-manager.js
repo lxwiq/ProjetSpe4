@@ -8,7 +8,7 @@ class SocketManager {
   constructor(server) {
     this.io = socketIo(server, {
       cors: {
-        origin: 'http://localhost:4200', // URL de votre frontend Angular
+        origin: 'http://localhost:4200',
         methods: ['GET', 'POST'],
         credentials: true
       }
