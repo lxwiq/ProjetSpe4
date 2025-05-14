@@ -136,6 +136,6 @@ L'architecture est conçue pour être facilement extensible :
 
 ## Performances et mise à l'échelle
 
-- **Mise en cache** : Possibilité d'ajouter Redis pour la mise en cache
-- **Horizontal scaling** : Socket.IO peut être configuré avec Redis pour le scaling horizontal
 - **Optimisation des requêtes** : Prisma permet de sélectionner précisément les champs nécessaires
+- **Lazy loading** : Chargement à la demande des données pour optimiser les performances
+- **Pagination** : Limitation du nombre de résultats par requête pour réduire la charge
