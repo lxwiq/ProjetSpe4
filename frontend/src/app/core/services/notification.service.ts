@@ -1,28 +1,104 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, DestroyRef, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { environment } from '../../../environments/environment';
-import { 
-  Notification, 
-  NotificationsResponse, 
-  MarkAsReadResponse 
+import {
+  Notification,
+  NotificationsResponse,
+  MarkAsReadResponse
 } from '../models/notification.model';
+import { WebsocketService } from './websocket.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
   private readonly API_URL = environment.apiUrl;
-  
+
   // Signaux pour les notifications et le compteur
   notifications = signal<Notification[]>([]);
   unreadCount = signal<number>(0);
 
-  constructor(private http: HttpClient) {
+  private destroyRef = inject(DestroyRef);
+  private websocketInitialized = false;
+
+  constructor(
+    private http: HttpClient,
+    private websocketService: WebsocketService
+  ) {
     // Initialiser les notifications au démarrage du service
     this.loadNotifications();
+
+    // Initialiser les écouteurs WebSocket
+    this.initWebsocketListeners();
+  }
+
+  /**
+   * Initialise les écouteurs d'événements WebSocket
+   */
+  private initWebsocketListeners(): void {
+    if (this.websocketInitialized) {
+      return;
+    }
+
+    // Écouter les nouvelles notifications
+    this.websocketService.onNotificationReceived()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(notification => {
+        console.log('NotificationService: Nouvelle notification reçue via WebSocket', notification);
+        this.addNotification(notification);
+      });
+
+    // Écouter les notifications en attente
+    this.websocketService.onPendingNotifications()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(notifications => {
+        console.log('NotificationService: Notifications en attente reçues via WebSocket', notifications);
+        this.addNotifications(notifications);
+      });
+
+    this.websocketInitialized = true;
+  }
+
+  /**
+   * Ajoute une notification à la liste
+   * @param notification Notification à ajouter
+   */
+  private addNotification(notification: Notification): void {
+    const currentNotifications = this.notifications();
+
+    // Vérifier si la notification existe déjà
+    const exists = currentNotifications.some(n => n.id === notification.id);
+    if (!exists) {
+      // Ajouter la notification au début de la liste
+      this.notifications.set([notification, ...currentNotifications]);
+      this.updateUnreadCount();
+    }
+  }
+
+  /**
+   * Ajoute plusieurs notifications à la liste
+   * @param notifications Notifications à ajouter
+   */
+  private addNotifications(notifications: Notification[]): void {
+    if (!notifications || notifications.length === 0) {
+      return;
+    }
+
+    const currentNotifications = this.notifications();
+    const currentIds = new Set(currentNotifications.map(n => n.id));
+
+    // Filtrer les notifications qui n'existent pas déjà
+    const newNotifications = notifications.filter(n => !currentIds.has(n.id));
+
+    if (newNotifications.length > 0) {
+      // Ajouter les nouvelles notifications au début de la liste
+      this.notifications.set([...newNotifications, ...currentNotifications]);
+      this.updateUnreadCount();
+    }
   }
 
   /**
@@ -79,11 +155,14 @@ export class NotificationService {
       tap(notification => {
         // Mettre à jour la liste des notifications
         const currentNotifications = this.notifications();
-        const updatedNotifications = currentNotifications.map(n => 
+        const updatedNotifications = currentNotifications.map(n =>
           n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
         );
         this.notifications.set(updatedNotifications);
         this.updateUnreadCount();
+
+        // Informer le serveur WebSocket que la notification a été lue
+        this.websocketService.emit('notification:mark-read', { notificationId });
       }),
       catchError(error => {
         console.error(`Erreur lors du marquage de la notification ${notificationId} comme lue:`, error);
@@ -106,7 +185,7 @@ export class NotificationService {
       tap(count => {
         // Mettre à jour la liste des notifications
         const currentNotifications = this.notifications();
-        const updatedNotifications = currentNotifications.map(n => 
+        const updatedNotifications = currentNotifications.map(n =>
           !n.is_read ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
         );
         this.notifications.set(updatedNotifications);

@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { WebsocketService } from '../../core/services/websocket.service';
 import { User } from '../../core/models/user.model';
 import { Notification } from '../../core/models/notification.model';
 import { AppLogoComponent } from '../../shared/components/app-logo/app-logo.component';
@@ -164,7 +165,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   constructor(
     public authService: AuthService,
-    public notificationService: NotificationService
+    public notificationService: NotificationService,
+    private websocketService: WebsocketService
   ) {}
 
   /**
@@ -209,10 +211,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
     // Charger les notifications au démarrage
     this.notificationService.loadNotifications();
 
-    // Rafraîchir les notifications toutes les 30 secondes
+    // Rafraîchir les notifications toutes les 60 secondes (moins fréquent car nous avons maintenant les WebSockets)
     this.refreshInterval = setInterval(() => {
       this.notificationService.loadNotifications();
-    }, 30000);
+    }, 60000);
+
+    // S'assurer que la connexion WebSocket est établie si l'utilisateur est authentifié
+    if (this.authService.isAuthenticated()) {
+      this.websocketService.connect();
+    }
   }
 
   /**
