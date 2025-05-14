@@ -5,6 +5,7 @@ export interface User {
   isAdmin?: boolean;
   full_name?: string;
   two_factor_enabled?: boolean;
+  profile_picture?: string;
 }
 
 export interface LoginRequest {

@@ -1,19 +1,38 @@
-<div class="dashboard-container">
-  <header class="dashboard-header">
-    <h1>Tableau de bord</h1>
-    <div class="user-info">
-      @if (user) {
-        <span>Bienvenue, {{ user.username }}</span>
-      }
-      <button class="btn btn-logout" (click)="logout()">Déconnexion</button>
-    </div>
-  </header>
-  
-  <div class="dashboard-content">
-    <div class="dashboard-card">
-      <h2>Bienvenue sur votre tableau de bord</h2>
-      <p>Cette page est accessible uniquement aux utilisateurs authentifiés.</p>
-      <p>Le contenu du tableau de bord sera implémenté ultérieurement.</p>
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-800">Tableau de bord</h1>
+        @if (user) {
+          <div class="text-gray-600">
+            Bienvenue, <span class="font-medium">{{ user.full_name || user.username }}</span>
+          </div>
+        }
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="bg-white rounded-lg shadow-md p-6 col-span-full">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Bienvenue sur votre tableau de bord</h2>
+        <p class="text-gray-600 mb-2">Cette page est accessible uniquement aux utilisateurs authentifiés.</p>
+        <p class="text-gray-600">Le contenu du tableau de bord sera implémenté ultérieurement.</p>
+      </div>
+
+      <!-- Placeholder pour les futures fonctionnalités -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-semibold text-gray-800 mb-3">Documents récents</h3>
+        <p class="text-gray-500 italic">Aucun document récent</p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-semibold text-gray-800 mb-3">Activité récente</h3>
+        <p class="text-gray-500 italic">Aucune activité récente</p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-semibold text-gray-800 mb-3">Messages non lus</h3>
+        <p class="text-gray-500 italic">Aucun message non lu</p>
+      </div>
     </div>
   </div>
 </div>
