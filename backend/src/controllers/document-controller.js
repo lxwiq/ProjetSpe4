@@ -37,14 +37,14 @@ class DocumentController {
       console.log(file);
       const userId = req.userId;
       const newDocument = await documentService.addDocument({
-        title : file ? file.originalname : title ,
+        title : file ? file.originalname : title,
         content,
         parentFolderId,
         isFolder,
         userId,
         filePath: file ? file.path : null,
-        size : file.size,
-        fileType : file.mimetype,
+        size: file ? file.size : null,
+        fileType: file ? file.mimetype : null,
       });
       res.status(201).send('Document ajouté avec succès !');
     } catch (err) {

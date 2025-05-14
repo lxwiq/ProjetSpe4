@@ -44,6 +44,16 @@ export const routes: Routes = [
         canActivate: [AuthGuard]
       },
       {
+        path: 'documents',
+        loadComponent: () => import('./features/documents/document-list/document-list.component').then(m => m.DocumentListComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'documents/:id',
+        loadComponent: () => import('./features/documents/document-editor/document-editor.component').then(m => m.DocumentEditorComponent),
+        canActivate: [AuthGuard]
+      },
+      {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full'
