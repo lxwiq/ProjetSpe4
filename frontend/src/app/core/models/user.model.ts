@@ -25,7 +25,7 @@ export interface LoginResponse {
 export interface SessionCheckResponse {
   message: string;
   data: {
-    valid: boolean;
+    authenticated?: boolean;
     user?: User;
   };
 }

@@ -6,6 +6,7 @@ import { Injectable } from '@angular/core';
 export class TokenService {
   private readonly ACCESS_TOKEN_KEY = 'access_token';
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
+  private readonly REMEMBER_ME_KEY = 'remember_me';
 
   constructor() {}
 
@@ -16,21 +17,71 @@ export class TokenService {
    * @param rememberMe Si true, les tokens sont stockés de façon persistante
    */
   setTokens(accessToken: string, refreshToken?: string, rememberMe: boolean = false): void {
-    console.log('Stockage des tokens, rememberMe:', rememberMe);
+    console.log('TokenService: Stockage des tokens, rememberMe:', rememberMe);
 
+    // Récupérer la préférence "Remember Me" actuelle
+    const currentRememberMe = this.getRememberMe();
+
+    // Si rememberMe n'est pas spécifié mais qu'il était activé précédemment, le conserver
+    if (rememberMe === false && currentRememberMe === true) {
+      console.log('TokenService: Conservation de la préférence "Remember Me" précédente');
+      rememberMe = true;
+    }
+
+    // Stocker l'option rememberMe pour une utilisation ultérieure
+    this.setRememberMe(rememberMe);
+
+    // Déterminer où stocker les tokens
     const storage = rememberMe ? localStorage : sessionStorage;
 
+    // Nettoyer les tokens existants pour éviter les doublons
+    this.clearTokensWithoutRememberMe();
+
+    // Stocker le token d'accès
     if (accessToken) {
       storage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
-      console.log('Token d\'accès stocké');
+      console.log('TokenService: Token d\'accès stocké dans', rememberMe ? 'localStorage' : 'sessionStorage');
     } else {
-      console.error('Tentative de stockage d\'un token d\'accès vide');
+      console.error('TokenService: Tentative de stockage d\'un token d\'accès vide');
     }
 
+    // Stocker le token de rafraîchissement
     if (refreshToken) {
       storage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
-      console.log('Token de rafraîchissement stocké');
+      console.log('TokenService: Token de rafraîchissement stocké dans', rememberMe ? 'localStorage' : 'sessionStorage');
     }
+  }
+
+  /**
+   * Stocke la préférence "Se souvenir de moi"
+   * @param rememberMe Valeur de la préférence
+   */
+  setRememberMe(rememberMe: boolean): void {
+    localStorage.setItem(this.REMEMBER_ME_KEY, rememberMe.toString());
+    console.log('TokenService: Préférence "Se souvenir de moi" stockée:', rememberMe);
+  }
+
+  /**
+   * Récupère la préférence "Se souvenir de moi"
+   * @returns La valeur de la préférence ou false par défaut
+   */
+  getRememberMe(): boolean {
+    const value = localStorage.getItem(this.REMEMBER_ME_KEY);
+
+    // Si la valeur n'est pas définie mais que nous avons un token dans localStorage,
+    // cela signifie probablement que "Remember Me" était activé
+    if (value === null) {
+      const hasLocalStorageToken = !!localStorage.getItem(this.ACCESS_TOKEN_KEY);
+      if (hasLocalStorageToken) {
+        console.log('TokenService: Préférence "Se souvenir de moi" déduite des tokens existants');
+        this.setRememberMe(true);
+        return true;
+      }
+    }
+
+    const rememberMe = value === 'true';
+    console.log('TokenService: Récupération de la préférence "Se souvenir de moi":', rememberMe);
+    return rememberMe;
   }
 
   /**
@@ -60,10 +111,10 @@ export class TokenService {
   }
 
   /**
-   * Supprime tous les tokens stockés
+   * Supprime tous les tokens stockés sans affecter la préférence "Remember Me"
    */
-  clearTokens(): void {
-    console.log('Suppression de tous les tokens');
+  clearTokensWithoutRememberMe(): void {
+    console.log('TokenService: Suppression des tokens existants sans affecter Remember Me');
 
     // Nettoyer à la fois localStorage et sessionStorage
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
@@ -71,7 +122,25 @@ export class TokenService {
     sessionStorage.removeItem(this.ACCESS_TOKEN_KEY);
     sessionStorage.removeItem(this.REFRESH_TOKEN_KEY);
 
-    console.log('Tokens supprimés');
+    console.log('TokenService: Tokens existants supprimés');
+  }
+
+  /**
+   * Supprime tous les tokens stockés
+   */
+  clearTokens(): void {
+    console.log('TokenService: Suppression de tous les tokens');
+
+    // Nettoyer à la fois localStorage et sessionStorage
+    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    sessionStorage.removeItem(this.ACCESS_TOKEN_KEY);
+    sessionStorage.removeItem(this.REFRESH_TOKEN_KEY);
+
+    // Ne pas supprimer la préférence "Se souvenir de moi" pour la conserver
+    // entre les sessions
+
+    console.log('TokenService: Tokens supprimés');
   }
 
   /**

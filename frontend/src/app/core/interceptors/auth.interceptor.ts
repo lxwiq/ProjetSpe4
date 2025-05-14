@@ -9,7 +9,8 @@ import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, filter, take, switchMap } from 'rxjs/operators';
 
 import { TokenService } from '../services/token.service';
-import { AuthService } from '../services/auth.service';
+import { TokenRefreshService } from '../services/token-refresh.service';
+import { Router } from '@angular/router';
 
 // Variable pour suivre l'état du rafraîchissement du token
 let isRefreshing = false;
@@ -20,24 +21,34 @@ export const AuthInterceptor: HttpInterceptorFn = (
   next: HttpHandlerFn
 ): Observable<any> => {
   const tokenService = inject(TokenService);
-  const authService = inject(AuthService);
+  const tokenRefreshService = inject(TokenRefreshService);
+  const router = inject(Router);
 
-  // Ajouter le token d'authentification si disponible
-  const token = tokenService.getAccessToken();
-  if (token) {
-    request = addToken(request, token);
+  // Ignorer les requêtes de rafraîchissement de token pour éviter les boucles infinies
+  if (request.url.includes('/token/refresh')) {
+    return next(request);
   }
 
-  // Ajouter withCredentials pour envoyer les cookies avec les requêtes
+  // Toujours ajouter withCredentials pour envoyer les cookies avec les requêtes
   request = request.clone({
     withCredentials: true
   });
+
+  // Si nous avons un token stocké localement, l'ajouter à l'en-tête Authorization
+  // Cela permet de gérer à la fois les cookies HTTP-only et les tokens stockés localement
+  const token = tokenService.getAccessToken();
+  if (token) {
+    console.log('AuthInterceptor: Ajout du token à l\'en-tête Authorization');
+    request = addToken(request, token);
+  } else {
+    console.log('AuthInterceptor: Pas de token local, utilisation des cookies uniquement');
+  }
 
   return next(request).pipe(
     catchError(error => {
       if (error instanceof HttpErrorResponse && error.status === 401) {
         // Gérer les erreurs 401 (Non autorisé)
-        return handle401Error(request, next, tokenService, authService);
+        return handle401Error(request, next, tokenRefreshService, router);
       }
       return throwError(() => error);
     })
@@ -55,14 +66,14 @@ function addToken(request: HttpRequest<any>, token: string): HttpRequest<any> {
 function handle401Error(
   request: HttpRequest<any>,
   next: HttpHandlerFn,
-  tokenService: TokenService,
-  authService: AuthService
+  tokenRefreshService: TokenRefreshService,
+  router: Router
 ): Observable<any> {
   if (!isRefreshing) {
     isRefreshing = true;
     refreshTokenSubject.next(null);
 
-    return authService.refreshToken().pipe(
+    return tokenRefreshService.refreshToken().pipe(
       switchMap((response: any) => {
         isRefreshing = false;
         // Extraire le token d'accès de la structure de réponse
@@ -72,7 +83,9 @@ function handle401Error(
       }),
       catchError((err) => {
         isRefreshing = false;
-        authService.logout().subscribe();
+        // Au lieu d'appeler authService.logout(), on nettoie les tokens et on redirige
+        tokenRefreshService.clearTokens();
+        router.navigate(['/login']);
         return throwError(() => err);
       })
     );
