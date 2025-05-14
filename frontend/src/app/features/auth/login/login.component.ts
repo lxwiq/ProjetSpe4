@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
@@ -64,8 +64,19 @@ export class LoginComponent {
         console.log('Connexion réussie:', response);
         this.loading = false; // Réinitialiser l'état de chargement
 
-        // Vérifier que l'utilisateur est bien authentifié avant de rediriger
-        if (this.authService.isAuthenticated()) {
+        // Vérifier si l'authentification à deux facteurs est requise
+        if (response.data.requireTwoFactor) {
+          console.log('Authentification à deux facteurs requise');
+          // Rediriger vers la page de vérification 2FA avec le token temporaire
+          this.router.navigate(['/verify-2fa'], {
+            queryParams: {
+              token: response.data.tempToken,
+              returnUrl: this.returnUrl
+            }
+          });
+        }
+        // Sinon, vérifier que l'utilisateur est bien authentifié avant de rediriger
+        else if (this.authService.isAuthenticated()) {
           console.log('Redirection vers:', this.returnUrl);
           this.router.navigate([this.returnUrl]);
         } else {

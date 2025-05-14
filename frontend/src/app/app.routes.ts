@@ -3,10 +3,14 @@ import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
-  // Route de connexion sans layout
+  // Routes d'authentification sans layout
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: 'verify-2fa',
+    loadComponent: () => import('./features/auth/two-factor-verify/two-factor-verify.component').then(m => m.TwoFactorVerifyComponent)
   },
 
   // Routes avec layout principal
@@ -23,6 +27,21 @@ export const routes: Routes = [
         path: 'admin',
         loadComponent: () => import('./features/admin/admin.component').then(m => m.AdminComponent),
         canActivate: [AuthGuard, AdminGuard]
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/user/profile/profile.component').then(m => m.ProfileComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'profile/2fa/setup',
+        loadComponent: () => import('./features/user/two-factor-setup/two-factor-setup.component').then(m => m.TwoFactorSetupComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'profile/2fa/disable',
+        loadComponent: () => import('./features/user/two-factor-disable/two-factor-disable.component').then(m => m.TwoFactorDisableComponent),
+        canActivate: [AuthGuard]
       },
       {
         path: '',

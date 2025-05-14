@@ -318,7 +318,7 @@ export class AuthService {
    * Met à jour l'état d'authentification avec les informations utilisateur
    * @param user Utilisateur connecté
    */
-  private setCurrentUser(user: User): void {
+  setCurrentUser(user: User): void {
     console.log('Mise à jour de l\'utilisateur courant:', user);
 
     // Vérifier que l'utilisateur est valide

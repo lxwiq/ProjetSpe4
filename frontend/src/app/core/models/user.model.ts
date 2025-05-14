@@ -4,6 +4,7 @@ export interface User {
   email: string;
   isAdmin?: boolean;
   full_name?: string;
+  two_factor_enabled?: boolean;
 }
 
 export interface LoginRequest {
@@ -19,6 +20,7 @@ export interface LoginResponse {
     requireTwoFactor: boolean;
     accessToken?: string;
     refreshToken?: string;
+    tempToken?: string; // Temporary token for 2FA verification
   };
 }
 

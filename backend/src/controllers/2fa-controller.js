@@ -29,15 +29,9 @@ class TwoFactorAuthController {
 
       // Générer un nouveau secret
       const secret = twoFactorAuthService.generateSecret(user.email);
-      
+
       // Générer un QR code
       const qrCodeUrl = await twoFactorAuthService.generateQRCode(secret.otpauth_url);
-
-      // Stocker temporairement le secret dans la session
-      // Note: Dans une application réelle, vous pourriez utiliser Redis ou une autre solution
-      // pour stocker temporairement le secret jusqu'à ce qu'il soit vérifié
-      req.session = req.session || {};
-      req.session.tempSecret = secret.base32;
 
       return res.status(200).json({
         message: 'Configuration 2FA initiée',
@@ -57,32 +51,26 @@ class TwoFactorAuthController {
    */
   async verifySetup(req, res) {
     try {
-      const { token } = req.body;
+      const { token, secret } = req.body;
       const userId = req.userId;
-
-      // Récupérer le secret temporaire
-      const tempSecret = req.session?.tempSecret;
-
-      if (!tempSecret) {
-        return res.status(400).json({ message: 'Aucune configuration 2FA en cours' });
-      }
 
       if (!token) {
         return res.status(400).json({ message: 'Token requis' });
       }
 
+      if (!secret) {
+        return res.status(400).json({ message: 'Secret requis' });
+      }
+
       // Vérifier le token
-      const isValid = twoFactorAuthService.verifyToken(tempSecret, token);
+      const isValid = twoFactorAuthService.verifyToken(secret, token);
 
       if (!isValid) {
         return res.status(400).json({ message: 'Token invalide' });
       }
 
       // Activer la 2FA pour l'utilisateur
-      await twoFactorAuthService.enableTwoFactor(userId, tempSecret);
-
-      // Nettoyer la session
-      delete req.session.tempSecret;
+      await twoFactorAuthService.enableTwoFactor(userId, secret);
 
       return res.status(200).json({ message: 'Configuration 2FA réussie' });
     } catch (error) {
