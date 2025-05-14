@@ -140,4 +140,40 @@ export class UserService {
       })
     );
   }
+  /**
+   * Met à jour le profil de l'utilisateur
+   * @param userData Données du formulaire contenant les informations du profil et éventuellement une photo
+   * @returns Observable avec les données de l'utilisateur mis à jour
+   */
+  updateUserProfile(userData: FormData): Observable<User> {
+    return this.http.put<any>(`${this.API_URL}/users/profile`, userData, {
+      withCredentials: true
+    }).pipe(
+      map(response => response.data || response),
+      catchError(error => {
+        console.error('Erreur lors de la mise à jour du profil:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Met à jour uniquement la photo de profil de l'utilisateur
+   * @param file Fichier image à télécharger
+   * @returns Observable avec les données de l'utilisateur mis à jour
+   */
+  updateProfilePicture(file: File): Observable<User> {
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+
+    return this.http.post<any>(`${this.API_URL}/users/profile/picture`, formData, {
+      withCredentials: true
+    }).pipe(
+      map(response => response.data || response),
+      catchError(error => {
+        console.error('Erreur lors de la mise à jour de la photo de profil:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

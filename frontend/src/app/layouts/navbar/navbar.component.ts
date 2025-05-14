@@ -7,6 +7,7 @@ import { WebsocketService } from '../../core/services/websocket.service';
 import { User } from '../../core/models/user.model';
 import { Notification } from '../../core/models/notification.model';
 import { AppLogoComponent } from '../../shared/components/app-logo/app-logo.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-navbar',
@@ -71,7 +72,7 @@ import { AppLogoComponent } from '../../shared/components/app-logo/app-logo.comp
                           <div class="flex items-start">
                             @if (notification.sender && notification.sender.profile_picture) {
                               <img
-                                [src]="notification.sender.profile_picture"
+                                [src]="getSenderProfileImageUrl(notification.sender.profile_picture)"
                                 alt="Avatar"
                                 class="h-8 w-8 rounded-full mr-3"
                               />
@@ -111,9 +112,10 @@ import { AppLogoComponent } from '../../shared/components/app-logo/app-logo.comp
                     <!-- Photo de profil ou avatar par défaut -->
                     @if (getCurrentUser()?.profile_picture) {
                       <img
-                        [src]="getCurrentUser()?.profile_picture"
+                        [src]="getProfileImageUrl()"
                         alt="Photo de profil"
                         class="w-10 h-10 rounded-full object-cover border-2 border-blue-400"
+                        (error)="handleImageError($event)"
                       />
                     } @else {
                       <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium border-2 border-blue-400">
@@ -162,6 +164,9 @@ import { AppLogoComponent } from '../../shared/components/app-logo/app-logo.comp
 export class NavbarComponent implements OnInit, OnDestroy {
   @Input() title: string = '';
   private refreshInterval: any;
+
+  // Timestamp pour éviter la mise en cache des images
+  private imageTimestamp: number = new Date().getTime();
 
   constructor(
     public authService: AuthService,
@@ -214,6 +219,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
     // Rafraîchir les notifications toutes les 60 secondes (moins fréquent car nous avons maintenant les WebSockets)
     this.refreshInterval = setInterval(() => {
       this.notificationService.loadNotifications();
+
+      // Mettre à jour le timestamp pour forcer le rechargement des images
+      this.imageTimestamp = new Date().getTime();
     }, 60000);
 
     // S'assurer que la connexion WebSocket est établie si l'utilisateur est authentifié
@@ -353,5 +361,69 @@ export class NavbarComponent implements OnInit, OnDestroy {
         // Error handling done in the service
       }
     });
+  }
+
+  /**
+   * Récupère l'URL complète de l'image de profil de l'utilisateur actuel
+   * @returns URL complète de l'image de profil
+   */
+  getProfileImageUrl(): string {
+    const user = this.getCurrentUser();
+    console.log('Navbar - Profile picture path:', user?.profile_picture);
+
+    if (!user?.profile_picture) {
+      console.log('Navbar - No profile picture found');
+      return '';
+    }
+
+    // Si l'URL est déjà complète (commence par http:// ou https://)
+    if (user.profile_picture.startsWith('http://') || user.profile_picture.startsWith('https://')) {
+      console.log('Navbar - Using absolute URL:', user.profile_picture);
+      return `${user.profile_picture}?t=${this.imageTimestamp}`;
+    }
+
+    // Sinon, préfixer avec l'URL de base de l'API et ajouter un timestamp pour éviter la mise en cache
+    const fullUrl = `${environment.apiUrl}${user.profile_picture}?t=${this.imageTimestamp}`;
+    console.log('Navbar - Using constructed URL:', fullUrl);
+    return fullUrl;
+  }
+
+  /**
+   * Récupère l'URL complète de l'image de profil d'un expéditeur de notification
+   * @param profilePicturePath Chemin de l'image de profil
+   * @returns URL complète de l'image de profil
+   */
+  getSenderProfileImageUrl(profilePicturePath: string): string {
+    if (!profilePicturePath) {
+      return '';
+    }
+
+    // Si l'URL est déjà complète (commence par http:// ou https://)
+    if (profilePicturePath.startsWith('http://') || profilePicturePath.startsWith('https://')) {
+      return `${profilePicturePath}?t=${this.imageTimestamp}`;
+    }
+
+    // Sinon, préfixer avec l'URL de base de l'API et ajouter un timestamp pour éviter la mise en cache
+    return `${environment.apiUrl}${profilePicturePath}?t=${this.imageTimestamp}`;
+  }
+
+  /**
+   * Gère les erreurs de chargement d'image
+   * @param event Événement d'erreur
+   */
+  handleImageError(event: Event): void {
+    console.error('Erreur de chargement de l\'image de profil dans la navbar:', event);
+    const imgElement = event.target as HTMLImageElement;
+    console.log('URL de l\'image qui n\'a pas pu être chargée:', imgElement.src);
+
+    // Forcer l'affichage de l'avatar par défaut en supprimant l'image de profil de l'utilisateur actuel
+    const user = this.getCurrentUser();
+    if (user) {
+      // Temporairement pour l'affichage uniquement, ne modifie pas les données réelles
+      console.log('Affichage de l\'avatar par défaut à la place');
+      imgElement.style.display = 'none';
+      // On pourrait créer dynamiquement un élément div avec les initiales, mais pour simplifier,
+      // on va juste masquer l'image pour que l'avatar par défaut s'affiche au prochain rendu
+    }
   }
 }

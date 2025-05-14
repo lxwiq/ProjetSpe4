@@ -3,7 +3,83 @@
     <h1 class="text-3xl font-bold text-gray-800">Profil utilisateur</h1>
   </header>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Photo de profil -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">Photo de profil</h2>
+
+      @if (updateSuccess) {
+        <div class="bg-green-100 border border-green-200 text-green-800 px-4 py-3 rounded mb-6">Profil mis à jour avec succès</div>
+      }
+
+      @if (updateError) {
+        <div class="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded mb-6">{{ updateError }}</div>
+      }
+
+      <div class="flex flex-col items-center">
+        <!-- Photo actuelle ou prévisualisation -->
+        <div class="mb-6 relative">
+          @if (imagePreview) {
+            <!-- Prévisualisation de la nouvelle image -->
+            <img [src]="imagePreview" alt="Prévisualisation" class="w-48 h-48 rounded-full object-cover border-4 border-blue-500">
+            <button
+              (click)="removeSelectedFile()"
+              class="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 shadow-md"
+              title="Supprimer l'image sélectionnée">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          } @else if (user?.profile_picture) {
+            <!-- Photo de profil actuelle -->
+            <img
+              [src]="getProfileImageUrl()"
+              alt="Photo de profil"
+              class="w-48 h-48 rounded-full object-cover border-4 border-gray-300"
+              (error)="handleImageError($event)"
+            >
+          } @else {
+            <!-- Avatar par défaut avec initiales -->
+            <div class="w-48 h-48 rounded-full bg-blue-500 flex items-center justify-center text-white text-4xl font-bold border-4 border-gray-300">
+              {{ user?.username?.charAt(0)?.toUpperCase() || '?' }}
+            </div>
+          }
+        </div>
+
+        <!-- Input file caché -->
+        <input
+          #fileInput
+          type="file"
+          accept="image/jpeg,image/png,image/gif"
+          class="hidden"
+          (change)="onFileSelected($event)">
+
+        <!-- Bouton pour déclencher l'input file -->
+        <button
+          type="button"
+          (click)="triggerFileInput()"
+          class="px-4 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 transition-colors mb-3">
+          Choisir une image
+        </button>
+
+        <!-- Bouton pour mettre à jour uniquement la photo de profil -->
+        @if (selectedFile) {
+          <button
+            type="button"
+            (click)="updateProfilePicture()"
+            class="px-4 py-2 bg-green-500 text-white font-medium rounded-md hover:bg-green-600 transition-colors"
+            [disabled]="isUploading">
+            @if (isUploading) {
+              Mise à jour...
+            } @else {
+              Mettre à jour la photo
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Informations personnelles -->
     <div class="bg-white rounded-lg shadow-md p-6">
       <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">Informations personnelles</h2>
 
@@ -83,7 +159,16 @@
         </div>
 
         <div class="mt-8">
-          <button type="submit" class="px-6 py-3 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 transition-colors" [disabled]="profileForm.invalid">Mettre à jour</button>
+          <button
+            type="submit"
+            class="px-6 py-3 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 transition-colors"
+            [disabled]="profileForm.invalid || isUploading">
+            @if (isUploading) {
+              Mise à jour...
+            } @else {
+              Mettre à jour
+            }
+          </button>
         </div>
       </form>
     </div>

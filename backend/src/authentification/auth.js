@@ -150,6 +150,8 @@ router.post('/', validate(schemas.login), asyncHandler(async (req, res) => {
                             id: user.id,
                             email: user.email,
                             username: user.username,
+                            full_name: user.full_name,
+                            profile_picture: user.profile_picture,
                             isAdmin: user.is_admin || false
                         },
                         accessToken: accessToken, // Inclure le token d'accès dans la réponse
@@ -276,6 +278,7 @@ router.get('/check-session', verifyToken, asyncHandler(async (req, res) => {
                 email: user.email,
                 username: user.username,
                 full_name: user.full_name,
+                profile_picture: user.profile_picture,
                 isAdmin: user.is_admin || false
             }
         }

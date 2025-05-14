@@ -80,7 +80,9 @@ class UserController {
 
       // Check if a file was uploaded
       if (req.file) {
-        userData.profile_picture = req.file.path;
+        // Convertir le chemin absolu en chemin relatif pour l'URL
+        const relativePath = '/uploads/profile_pictures/' + req.file.filename;
+        userData.profile_picture = relativePath;
       }
 
       // Update user data
@@ -104,8 +106,11 @@ class UserController {
         return res.status(400).json({ message: 'Aucune image n\'a été téléchargée' });
       }
 
+      // Convertir le chemin absolu en chemin relatif pour l'URL
+      const relativePath = '/uploads/profile_pictures/' + req.file.filename;
+
       // Update profile picture
-      const updatedUser = await userService.updateProfilePicture(userId, req.file.path);
+      const updatedUser = await userService.updateProfilePicture(userId, relativePath);
       res.json(updatedUser);
     } catch (err) {
       console.error(err);
