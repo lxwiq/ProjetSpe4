@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const tokenService = require('../services/token-service');
 const { ApiError, asyncHandler } = require('../middlewares/error-handler');
+const { validate, schemas } = require('../middlewares/validator');
 
 /**
  * @swagger
@@ -48,16 +49,12 @@ const { ApiError, asyncHandler } = require('../middlewares/error-handler');
  *       500:
  *         description: Erreur serveur
  */
-router.post('/refresh', asyncHandler(async (req, res) => {
+router.post('/refresh', validate(schemas.refreshToken), asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
-  
-  if (!refreshToken) {
-    throw new ApiError(400, 'Token de rafraîchissement requis');
-  }
-  
+
   // Rafraîchir le token d'accès
   const { accessToken, payload } = tokenService.refreshAccessToken(refreshToken);
-  
+
   // Configurer le cookie HTTP-only avec le nouveau token
   res.cookie('jwt_token', accessToken, {
     httpOnly: true,
@@ -65,7 +62,7 @@ router.post('/refresh', asyncHandler(async (req, res) => {
     sameSite: 'strict',
     maxAge: 15 * 60 * 1000 // 15 minutes en millisecondes
   });
-  
+
   return res.status(200).json({
     message: 'Token rafraîchi avec succès',
     data: {

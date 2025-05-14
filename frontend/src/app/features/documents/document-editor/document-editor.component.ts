@@ -342,15 +342,37 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
 
     // Pas besoin de définir isSaving ici, car collaborativeService.saveDocument() le fait déjà
 
-    // Récupérer le contenu et le titre actuels
-    const content = this.editor.root.innerHTML;
+    // Récupérer le titre actuel
     const title = this.documentTitle();
+
+    // Récupérer le contenu et vérifier s'il est vide
+    let content = this.editor.root.innerHTML;
+
+    // Vérifier si le contenu est vide
+    if (!content || content.trim() === '') {
+      console.warn('📄 [DocumentEditor] Alerte: Contenu vide détecté');
+      // Si le contenu est vide, utiliser un contenu par défaut pour éviter les problèmes
+      const defaultContent = '<p>Document vide</p>';
+      // Mettre à jour l'éditeur avec le contenu par défaut
+      this.editor.root.innerHTML = defaultContent;
+      // Mettre à jour la variable content
+      content = defaultContent;
+    }
+
+    // Log du contenu à sauvegarder
+    console.log(`📄 [DocumentEditor] Sauvegarde: ${content.length} caractères`);
+    console.log(`📝 [DocumentEditor] Contenu: ${content.substring(0, 50)}...`);
 
     // Mettre à jour le document local avec le contenu actuel
     const currentDoc = this.document();
     if (currentDoc) {
       currentDoc.content = content;
       this.document.set(currentDoc);
+      console.log(`DocumentEditorComponent: Document local mis à jour avec le contenu (${content.length} caractères)`);
+
+      // Mettre également à jour le document actif dans le service collaboratif
+      this.collaborativeService.updateContent(this.documentId, content);
+      console.log(`DocumentEditorComponent: Document actif mis à jour dans le service collaboratif`);
     }
 
     // Afficher un message de sauvegarde en cours
@@ -424,7 +446,18 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
    * Sauvegarde de secours via HTTP direct
    */
   private fallbackSaveDocument(content: string, title: string, saveMessage: HTMLElement): void {
-    console.log('DocumentEditorComponent: Tentative de sauvegarde via HTTP direct');
+    console.log('📄 [DocumentEditor] Fallback: Sauvegarde via HTTP direct');
+
+    // Vérifier si le contenu est vide
+    if (!content || content.trim() === '') {
+      console.warn('📄 [DocumentEditor] Alerte: Contenu vide détecté dans fallback');
+      // Si le contenu est vide, utiliser un contenu par défaut pour éviter les problèmes
+      content = '<p>Document vide</p>';
+    }
+
+    // Log du contenu à sauvegarder
+    console.log(`📄 [DocumentEditor] Fallback: ${content.length} caractères`);
+    console.log(`📝 [DocumentEditor] Contenu fallback: ${content.substring(0, 50)}...`);
 
     this.documentService.updateDocument(this.documentId, {
       title,

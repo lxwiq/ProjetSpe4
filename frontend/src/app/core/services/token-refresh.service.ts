@@ -63,12 +63,19 @@ export class TokenRefreshService {
     // Récupérer le token de rafraîchissement depuis le stockage local
     const refreshToken = this.tokenService.getRefreshToken();
 
+    // Si pas de token de rafraîchissement, impossible de rafraîchir
+    if (!refreshToken) {
+      console.error('TokenRefreshService: Pas de token de rafraîchissement disponible');
+      this.refreshingToken.next(false);
+      return throwError(() => new Error('Pas de token de rafraîchissement disponible'));
+    }
+
     // Récupérer la préférence "Se souvenir de moi"
     const rememberMe = this.tokenService.getRememberMe();
     console.log('TokenRefreshService: Rafraîchissement du token avec rememberMe:', rememberMe);
 
-    // Préparer la requête avec ou sans le token de rafraîchissement
-    const payload = refreshToken ? { refreshToken } : {};
+    // Préparer la requête avec le token de rafraîchissement
+    const payload = { refreshToken };
     console.log('TokenRefreshService: Payload de la requête:', payload);
 
     // Utiliser withCredentials pour envoyer les cookies avec la requête

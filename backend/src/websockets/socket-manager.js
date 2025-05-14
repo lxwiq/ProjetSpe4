@@ -167,6 +167,7 @@ class SocketManager {
         const { documentId, content, delta } = data;
 
         console.log(`Document update received from user ${socket.userId} for document ${documentId}`);
+        console.log(`Content length: ${content ? content.length : 'undefined'}, Delta: ${delta ? 'present' : 'undefined'}`);
 
         if (delta) {
           console.log('Delta received:', delta);
@@ -181,6 +182,8 @@ class SocketManager {
           // Si un callback est fourni, répondre avec succès
           if (callback) callback({ success: true });
         } else if (content) {
+          console.log(`Updating document content: ${content.substring(0, 100)}...`);
+
           // Mettre à jour le contenu du document
           const updateData = await realtimeDocumentService.updateDocumentContent(documentId, socket.userId, content);
 
@@ -195,6 +198,8 @@ class SocketManager {
           const safeUpdateData = JSON.parse(JSON.stringify(updateData, (key, value) =>
             typeof value === 'bigint' ? Number(value) : value
           ));
+
+          console.log(`Document content updated successfully, file written: ${documentId}`);
 
           // Répondre avec les données de mise à jour
           if (callback) callback({ success: true, data: safeUpdateData });
@@ -269,10 +274,27 @@ class SocketManager {
     // Sauvegarder un document
     socket.on('document:save', async (data, callback) => {
       try {
-        const { documentId } = data;
+        const { documentId, content } = data;
+
+        console.log(`Document save request received from user ${socket.userId} for document ${documentId}`);
+        console.log(`Content received for saving: ${content ? content.length : 0} characters`);
+
+        // Vérifier si le document est en édition active
+        const activeUsers = await realtimeDocumentService.getActiveUsers(documentId);
+        if (!activeUsers.includes(socket.userId)) {
+          console.warn(`User ${socket.userId} is not in the active users list for document ${documentId}`);
+        }
+
+        // Si le contenu est fourni, mettre d'abord à jour le contenu du document actif
+        if (content !== undefined) {
+          console.log(`Updating document content before saving: ${content.substring(0, 100)}...`);
+          await realtimeDocumentService.updateDocumentContent(documentId, socket.userId, content);
+        }
 
         // Sauvegarder le document
         const saveData = await realtimeDocumentService.saveDocument(documentId, socket.userId);
+
+        console.log(`Document ${documentId} saved successfully by user ${socket.userId}, version ${saveData.versionNumber}`);
 
         // Informer tous les utilisateurs que le document a été sauvegardé
         this.io.to(`document:${documentId}`).emit('document:saved', {

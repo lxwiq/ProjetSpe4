@@ -145,10 +145,21 @@ export class DocumentService {
    * @returns Observable avec le document mis à jour
    */
   updateDocument(documentId: number, documentData: UpdateDocumentRequest): Observable<Document> {
-    console.log(`DocumentService: Mise à jour du document ${documentId}`, documentData);
+    console.log(`🌐 [DocumentService] Mise à jour: Document ${documentId}`);
 
     // Créer une copie des données pour éviter les modifications accidentelles
     const payload = { ...documentData };
+
+    // Vérifier si le contenu est défini et non vide
+    if (payload.content !== undefined) {
+      if (payload.content === null || payload.content.trim() === '') {
+        console.warn(`🌐 [DocumentService] Alerte: Contenu vide détecté pour document ${documentId}`);
+        payload.content = '<p>Document vide</p>'; // Utiliser un contenu HTML minimal comme fallback
+      }
+
+      console.log(`🌐 [DocumentService] Envoi: ${payload.content.length} caractères`);
+      console.log(`📝 [DocumentService] Contenu: ${payload.content.substring(0, 50)}...`);
+    }
 
     // Vérifier si le document existe avant de le mettre à jour
     return this.getDocumentById(documentId).pipe(
@@ -169,19 +180,48 @@ export class DocumentService {
           }
         ).pipe(
           map(response => {
-            console.log(`DocumentService: Document ${documentId} mis à jour avec succès`, response);
+            // Afficher la structure complète de la réponse pour le débogage
+            console.log(`🌐 [DocumentService] Réponse brute:`, JSON.stringify(response, null, 2));
 
-            // Extraire le document de la réponse
-            const updatedDoc = Array.isArray(response.data) ? response.data[0] : response.data as Document;
-
-            // Vérifier que le document a bien été mis à jour
-            if (!updatedDoc) {
-              console.warn(`DocumentService: Réponse valide mais document non trouvé dans la réponse`);
-              // Retourner le document existant comme fallback
-              return existingDocument;
+            // Vérifier si la réponse est directement un document (sans propriété data)
+            if (response && typeof response === 'object' && 'id' in response) {
+              console.log(`🌐 [DocumentService] Succès: Document ${documentId} mis à jour (format direct)`);
+              // Vérifier si la réponse a les propriétés minimales d'un Document
+              if ('title' in response && 'owner_id' in response) {
+                return response as Document;
+              } else {
+                console.log(`🌐 [DocumentService] Conversion: Réponse avec ID mais sans toutes les propriétés requises`);
+                // Créer un Document valide à partir des données disponibles
+                return {
+                  id: response.id as number,
+                  title: (response as any).title || 'Document sans titre',
+                  owner_id: (response as any).owner_id || 0,
+                  content: (response as any).content || '',
+                  is_folder: (response as any).is_folder || false,
+                  created_at: (response as any).created_at || new Date().toISOString(),
+                  updated_at: (response as any).updated_at || new Date().toISOString()
+                } as Document;
+              }
             }
 
-            return updatedDoc;
+            // Vérifier si la réponse a une propriété data
+            if (response && response.data) {
+              // Extraire le document de la réponse
+              const updatedDoc = Array.isArray(response.data)
+                ? (response.data.length > 0 ? response.data[0] : null)
+                : response.data as Document;
+
+              if (updatedDoc) {
+                console.log(`🌐 [DocumentService] Succès: Document ${documentId} mis à jour`);
+                console.log(`🌐 [DocumentService] Réponse: Document ${updatedDoc.id} (${updatedDoc.title})`);
+                return updatedDoc;
+              }
+            }
+
+            // Si on arrive ici, c'est que le document n'a pas été trouvé dans la réponse
+            console.warn(`🌐 [DocumentService] Alerte: Document non trouvé dans la réponse`);
+            console.log(`🌐 [DocumentService] Utilisation du document existant comme fallback`);
+            return existingDocument;
           }),
           // Ajouter des tentatives en cas d'erreur réseau
           retry({

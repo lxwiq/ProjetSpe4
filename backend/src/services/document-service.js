@@ -197,23 +197,19 @@ class DocumentService {
   async updateDocument(id, data, userId) {
     console.log(`DocumentService: Tentative de mise à jour du document ${id} par l'utilisateur ${userId}`);
 
-    try {
-      // Check if the user has permission to update the document
-      const document = await this.checkDocumentAccess(id, userId, ['write', 'admin']);
+    // Check if the user has permission to update the document
+    const document = await this.checkDocumentAccess(id, userId, ['write', 'admin']);
 
-      if (!document) {
-        console.error(`DocumentService: Document ${id} non trouvé ou accès refusé pour l'utilisateur ${userId}`);
-        throw new Error('Document not found or you do not have permission to update it');
-      }
-
-      console.log(`DocumentService: Accès vérifié pour le document ${id}, utilisateur ${userId}`);
-    } catch (error) {
-      console.error(`DocumentService: Erreur lors de la vérification des droits d'accès:`, error);
-      throw error;
+    if (!document) {
+      console.error(`DocumentService: Document ${id} non trouvé ou accès refusé pour l'utilisateur ${userId}`);
+      throw new Error('Document not found or you do not have permission to update it');
     }
 
-    // Si le document a un chemin de fichier, mettre à jour le fichier
-    if (document.file_path && data.content !== undefined) {
+    console.log(`DocumentService: Accès vérifié pour le document ${id}, utilisateur ${userId}`);
+    console.log(`DocumentService: Contenu reçu: ${data.content ? data.content.length : 0} caractères`);
+
+    // Si le document a un chemin de fichier ou si le contenu est défini, mettre à jour le fichier
+    if (data.content !== undefined) {
       try {
         const fs = require('fs');
         const path = require('path');
@@ -221,19 +217,67 @@ class DocumentService {
         // Convertir le chemin relatif en chemin absolu
         const relativePath = document.file_path.replace(/^\/uploads\//, '');
         const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
-        const fullPath = path.join(uploadsDir, relativePath);
 
-        console.log(`DocumentService: Mise à jour du fichier: ${fullPath}`);
-
-        // Vérifier si le répertoire existe
+        // S'assurer que le répertoire existe
         if (!fs.existsSync(uploadsDir)) {
           console.log(`DocumentService: Création du répertoire ${uploadsDir}`);
           fs.mkdirSync(uploadsDir, { recursive: true });
         }
 
+        const fullPath = path.join(uploadsDir, relativePath);
+
+        console.log(`DocumentService: Chemin complet du fichier: ${fullPath}`);
+
+        console.log(`DocumentService: Mise à jour du fichier: ${fullPath}`);
+
         // Écrire le contenu dans le fichier
-        fs.writeFileSync(fullPath, data.content || '');
-        console.log(`DocumentService: Fichier ${fullPath} mis à jour avec succès`);
+        try {
+          // Vérifier que le contenu est bien défini
+          const contentToWrite = data.content || '';
+          console.log(`DocumentService: Tentative d'écriture de ${contentToWrite.length} caractères dans le fichier ${fullPath}`);
+          console.log(`DocumentService: Aperçu du contenu: ${contentToWrite.substring(0, 100)}...`);
+
+          // Écrire le contenu dans le fichier
+          fs.writeFileSync(fullPath, contentToWrite);
+
+          // Vérifier que le fichier a bien été écrit
+          if (fs.existsSync(fullPath)) {
+            const writtenContent = fs.readFileSync(fullPath, 'utf8');
+            console.log(`DocumentService: Vérification du fichier: ${writtenContent.length} caractères écrits`);
+
+            if (writtenContent.length === 0 && contentToWrite.length > 0) {
+              console.error(`DocumentService: ERREUR - Le fichier a été créé mais le contenu n'a pas été écrit correctement`);
+              // Nouvelle tentative avec une méthode alternative
+              fs.writeFileSync(fullPath, contentToWrite, { encoding: 'utf8', flag: 'w' });
+
+              // Vérifier à nouveau
+              const retryContent = fs.readFileSync(fullPath, 'utf8');
+              console.log(`DocumentService: Après nouvelle tentative: ${retryContent.length} caractères écrits`);
+            }
+          } else {
+            console.error(`DocumentService: ERREUR - Le fichier n'a pas été créé`);
+          }
+
+          console.log(`DocumentService: Fichier ${fullPath} mis à jour avec succès`);
+        } catch (writeError) {
+          console.error(`DocumentService: Erreur lors de l'écriture dans le fichier:`, writeError);
+
+          // Tentative alternative d'écriture
+          try {
+            const contentToWrite = data.content || '';
+            console.log(`DocumentService: Tentative alternative d'écriture dans ${fullPath}`);
+
+            // Utiliser une méthode alternative d'écriture
+            const fd = fs.openSync(fullPath, 'w');
+            fs.writeSync(fd, contentToWrite);
+            fs.closeSync(fd);
+
+            console.log(`DocumentService: Écriture alternative réussie`);
+          } catch (alternativeError) {
+            console.error(`DocumentService: Échec de la tentative alternative:`, alternativeError);
+            throw writeError; // Relancer l'erreur originale
+          }
+        }
 
         // Créer une copie de sauvegarde
         try {
@@ -319,7 +363,13 @@ class DocumentService {
         }
 
         // Écrire le contenu dans le fichier
-        fs.writeFileSync(fullPath, data.content || '');
+        try {
+          fs.writeFileSync(fullPath, data.content || '');
+          console.log(`DocumentService: Contenu écrit dans le fichier: ${data.content ? data.content.substring(0, 50) + '...' : ''}`);
+        } catch (writeError) {
+          console.error(`DocumentService: Erreur lors de l'écriture dans le fichier:`, writeError);
+          throw writeError;
+        }
 
         // Calculer la taille du fichier
         const stats = fs.statSync(fullPath);
@@ -327,6 +377,7 @@ class DocumentService {
 
         // Chemin relatif pour la base de données
         const relativePath = `/uploads/${fileName}`;
+        console.log(`DocumentService: Chemin relatif pour la base de données: ${relativePath}`);
 
         // Mettre à jour le document dans la base de données
         return await prisma.documents.update({

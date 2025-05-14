@@ -75,6 +75,11 @@ function validateData(data, schema) {
       continue;
     }
 
+    // Convertir automatiquement en entier si le type attendu est 'integer' et que la valeur est une chaîne numérique
+    if (rules.type === 'integer' && typeof data[field] === 'string' && /^\d+$/.test(data[field])) {
+      data[field] = parseInt(data[field], 10);
+    }
+
     // Vérifier le type
     if (rules.type && !checkType(data[field], rules.type)) {
       errors.push({ field, message: `Le champ '${field}' doit être de type ${rules.type}` });

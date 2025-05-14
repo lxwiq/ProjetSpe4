@@ -58,8 +58,35 @@ class RealtimeDocumentService {
 
     // Si le document n'est pas déjà en édition active, l'ajouter
     if (!this.activeDocuments.has(documentId)) {
+      // Lire le contenu du fichier si le document a un chemin de fichier
+      let content = '';
+      if (document.file_path) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+
+          // Convertir le chemin relatif en chemin absolu
+          const relativePath = document.file_path.replace(/^\/uploads\//, '');
+          const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+          const fullPath = path.join(uploadsDir, relativePath);
+
+          console.log(`RealtimeDocumentService: Tentative de lecture du fichier: ${fullPath}`);
+
+          // Vérifier si le fichier existe
+          if (fs.existsSync(fullPath)) {
+            // Lire le contenu du fichier
+            content = fs.readFileSync(fullPath, 'utf8');
+            console.log(`RealtimeDocumentService: Contenu du fichier lu avec succès (${content.length} caractères)`);
+          } else {
+            console.warn(`RealtimeDocumentService: Fichier non trouvé: ${fullPath}`);
+          }
+        } catch (error) {
+          console.error('RealtimeDocumentService: Erreur lors de la lecture du fichier:', error);
+        }
+      }
+
       this.activeDocuments.set(documentId, {
-        content: document.content || '',
+        content: content,
         users: [userId],
         lastSaved: new Date(),
         title: document.title
@@ -129,14 +156,31 @@ class RealtimeDocumentService {
     documentId = parseInt(documentId);
     userId = parseInt(userId);
 
+    console.log(`RealtimeDocumentService: Mise à jour du contenu du document ${documentId} par l'utilisateur ${userId}`);
+    console.log(`RealtimeDocumentService: Taille du contenu reçu: ${content ? content.length : 0} caractères`);
+
+    // Vérifier si le contenu est vide ou null
+    if (!content && content !== '') {
+      console.warn(`RealtimeDocumentService: Contenu vide ou null reçu pour le document ${documentId}`);
+      content = ''; // Assurer que le contenu est au moins une chaîne vide
+    }
+
+    // Si le contenu est vide, utiliser un contenu par défaut
+    if (content === '') {
+      console.warn(`RealtimeDocumentService: Contenu vide reçu pour le document ${documentId}, utilisation d'un contenu par défaut`);
+      content = '<p>Document vide</p>';
+    }
+
     // Vérifier si l'utilisateur a accès au document
     const hasAccess = await this.checkUserDocumentAccess(documentId, userId);
     if (!hasAccess) {
+      console.error(`RealtimeDocumentService: Accès refusé au document ${documentId} pour l'utilisateur ${userId}`);
       throw new Error('Accès refusé au document');
     }
 
     // Vérifier si le document est en édition active
     if (!this.activeDocuments.has(documentId)) {
+      console.error(`RealtimeDocumentService: Document ${documentId} non actif`);
       throw new Error('Document non actif');
     }
 
@@ -146,6 +190,90 @@ class RealtimeDocumentService {
     activeDoc.lastModifiedBy = userId;
     activeDoc.lastModified = new Date();
     this.activeDocuments.set(documentId, activeDoc);
+
+    console.log(`RealtimeDocumentService: Contenu du document ${documentId} mis à jour avec succès`);
+    console.log(`RealtimeDocumentService: Nouveau contenu (début): ${content.substring(0, 100)}...`);
+
+    // Récupérer les informations du document depuis la base de données
+    const existingDocument = await prisma.documents.findUnique({
+      where: { id: documentId }
+    });
+
+    if (!existingDocument) {
+      console.error(`RealtimeDocumentService: Document ${documentId} non trouvé dans la base de données lors de la mise à jour`);
+      throw new Error('Document non trouvé dans la base de données');
+    }
+
+    // Vérifier si le document a un chemin de fichier, sinon en créer un
+    let filePath = existingDocument.file_path;
+    if (!filePath) {
+      // Créer un nouveau fichier pour ce document
+      const fs = require('fs');
+      const path = require('path');
+
+      // Générer un nom de fichier unique
+      const timestamp = Date.now();
+      const fileName = `${timestamp}.txt`;
+
+      // Chemin complet du fichier
+      const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+      const fullPath = path.join(uploadsDir, fileName);
+
+      // S'assurer que le répertoire existe
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      // Chemin relatif pour la base de données
+      filePath = `/uploads/${fileName}`;
+
+      // Mettre à jour le document dans la base de données avec le nouveau chemin de fichier
+      await prisma.documents.update({
+        where: { id: documentId },
+        data: {
+          file_path: filePath,
+          file_type: 'text/plain'
+        }
+      });
+
+      console.log(`RealtimeDocumentService: Nouveau chemin de fichier créé pour le document ${documentId}: ${filePath}`);
+    }
+
+    // Écrire le contenu dans le fichier à chaque mise à jour
+    try {
+      const fs = require('fs');
+      const path = require('path');
+
+      // Construire le chemin complet du fichier
+      const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+      const relativePath = filePath.replace(/^\/uploads\//, '');
+      const fullPath = path.join(uploadsDir, relativePath);
+
+      // Créer le répertoire parent si nécessaire
+      const dirPath = path.dirname(fullPath);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+
+      // Écrire le contenu dans le fichier
+      fs.writeFileSync(fullPath, content);
+
+      console.log(`RealtimeDocumentService: Contenu écrit dans le fichier ${fullPath} lors de la mise à jour`);
+
+      // Mettre à jour la taille du fichier dans la base de données
+      const stats = fs.statSync(fullPath);
+      await prisma.documents.update({
+        where: { id: documentId },
+        data: {
+          file_size: stats.size,
+          last_modified_by: userId,
+          updated_at: new Date()
+        }
+      });
+    } catch (error) {
+      console.error(`RealtimeDocumentService: Erreur lors de l'écriture du fichier pendant la mise à jour:`, error);
+      // Ne pas échouer complètement si l'écriture échoue
+    }
 
     return {
       documentId,
@@ -190,10 +318,37 @@ class RealtimeDocumentService {
           throw new Error('Document non trouvé');
         }
 
+        // Lire le contenu du fichier si le document a un chemin de fichier
+        let content = '';
+        if (document.file_path) {
+          try {
+            const fs = require('fs');
+            const path = require('path');
+
+            // Convertir le chemin relatif en chemin absolu
+            const relativePath = document.file_path.replace(/^\/uploads\//, '');
+            const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+            const fullPath = path.join(uploadsDir, relativePath);
+
+            console.log(`RealtimeDocumentService: Tentative de lecture du fichier: ${fullPath}`);
+
+            // Vérifier si le fichier existe
+            if (fs.existsSync(fullPath)) {
+              // Lire le contenu du fichier
+              content = fs.readFileSync(fullPath, 'utf8');
+              console.log(`RealtimeDocumentService: Contenu du fichier lu avec succès (${content.length} caractères)`);
+            } else {
+              console.warn(`RealtimeDocumentService: Fichier non trouvé: ${fullPath}`);
+            }
+          } catch (error) {
+            console.error('RealtimeDocumentService: Erreur lors de la lecture du fichier:', error);
+          }
+        }
+
         // Ajouter le document à la liste des documents actifs
         console.log(`RealtimeDocumentService: Ajout du document ${documentId} à la liste des documents actifs`);
         this.activeDocuments.set(documentId, {
-          content: document.content || '',
+          content: content,
           users: [userId],
           lastSaved: new Date(),
           title: document.title
@@ -201,12 +356,20 @@ class RealtimeDocumentService {
       }
 
       const activeDoc = this.activeDocuments.get(documentId);
-      console.log(`RealtimeDocumentService: Document ${documentId} récupéré, contenu de ${activeDoc.content.length} caractères`);
+      console.log(`RealtimeDocumentService: Document ${documentId} récupéré, contenu de ${activeDoc.content ? activeDoc.content.length : 0} caractères`);
 
       // Vérifier si le document a un contenu
       if (!activeDoc.content && activeDoc.content !== '') {
         console.warn(`RealtimeDocumentService: Document ${documentId} sans contenu, utilisation d'une chaîne vide`);
         activeDoc.content = '';
+      }
+
+      // Vérifier si le contenu est vide et utiliser un contenu par défaut si nécessaire
+      if (activeDoc.content === '' || activeDoc.content === null || activeDoc.content === undefined) {
+        console.warn(`RealtimeDocumentService: Contenu vide détecté pour le document ${documentId}, utilisation d'un contenu par défaut`);
+        activeDoc.content = '<p>Document vide</p>';
+        // Mettre à jour le document actif avec le contenu par défaut
+        this.activeDocuments.set(documentId, activeDoc);
       }
 
       // Vérifier si le document existe dans la base de données
@@ -219,32 +382,115 @@ class RealtimeDocumentService {
         throw new Error('Document non trouvé dans la base de données');
       }
 
-      // Sauvegarder le contenu dans un fichier si nécessaire
-      if (existingDocument.file_path) {
-        try {
-          const fs = require('fs');
-          const path = require('path');
+      // Vérifier si le document a un chemin de fichier, sinon en créer un
+      let filePath = existingDocument.file_path;
+      if (!filePath) {
+        // Créer un nouveau fichier pour ce document
+        const fs = require('fs');
+        const path = require('path');
 
-          // Construire le chemin complet du fichier
-          const basePath = path.join(__dirname, '../../');
-          const filePath = path.join(basePath, existingDocument.file_path.replace(/^\//, ''));
+        // Générer un nom de fichier unique
+        const timestamp = Date.now();
+        const fileName = `${timestamp}.txt`;
 
-          console.log(`RealtimeDocumentService: Sauvegarde du contenu dans le fichier ${filePath}`);
+        // Chemin complet du fichier
+        const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+        const fullPath = path.join(uploadsDir, fileName);
 
-          // Créer le répertoire parent si nécessaire
-          const dirPath = path.dirname(filePath);
-          if (!fs.existsSync(dirPath)) {
-            fs.mkdirSync(dirPath, { recursive: true });
+        // S'assurer que le répertoire existe
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+
+        // Chemin relatif pour la base de données
+        filePath = `/uploads/${fileName}`;
+
+        // Mettre à jour le document dans la base de données avec le nouveau chemin de fichier
+        await prisma.documents.update({
+          where: { id: documentId },
+          data: {
+            file_path: filePath,
+            file_type: 'text/plain'
           }
+        });
+
+        console.log(`RealtimeDocumentService: Nouveau chemin de fichier créé pour le document ${documentId}: ${filePath}`);
+      }
+
+      // Sauvegarder le contenu dans le fichier
+      try {
+        const fs = require('fs');
+        const path = require('path');
+
+        // Construire le chemin complet du fichier
+        const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+        const relativePath = filePath.replace(/^\/uploads\//, '');
+        const fullPath = path.join(uploadsDir, relativePath);
+
+        console.log(`RealtimeDocumentService: Chemin du fichier: ${fullPath}`);
+        console.log(`RealtimeDocumentService: Sauvegarde du contenu dans le fichier ${fullPath}`);
+
+        // Créer le répertoire parent si nécessaire
+        const dirPath = path.dirname(fullPath);
+        if (!fs.existsSync(dirPath)) {
+          fs.mkdirSync(dirPath, { recursive: true });
+        }
+
+        // Écrire le contenu dans le fichier
+        try {
+          // Vérifier que le contenu est bien défini
+          const contentToWrite = activeDoc.content || '';
+          console.log(`RealtimeDocumentService: Tentative d'écriture de ${contentToWrite.length} caractères dans le fichier ${fullPath}`);
+          console.log(`RealtimeDocumentService: Aperçu du contenu: ${contentToWrite.substring(0, 100)}...`);
 
           // Écrire le contenu dans le fichier
-          fs.writeFileSync(filePath, activeDoc.content || '');
+          fs.writeFileSync(fullPath, contentToWrite);
 
-          console.log(`RealtimeDocumentService: Contenu sauvegardé dans le fichier ${filePath}`);
-        } catch (fileError) {
-          console.error(`RealtimeDocumentService: Erreur lors de la sauvegarde du fichier:`, fileError);
-          // Ne pas échouer complètement si la sauvegarde du fichier échoue
+          // Vérifier que le fichier a bien été écrit
+          if (fs.existsSync(fullPath)) {
+            const writtenContent = fs.readFileSync(fullPath, 'utf8');
+            console.log(`RealtimeDocumentService: Vérification du fichier: ${writtenContent.length} caractères écrits`);
+
+            if (writtenContent.length === 0 && contentToWrite.length > 0) {
+              console.error(`RealtimeDocumentService: ERREUR - Le fichier a été créé mais le contenu n'a pas été écrit correctement`);
+              // Nouvelle tentative avec une méthode alternative
+              fs.writeFileSync(fullPath, contentToWrite, { encoding: 'utf8', flag: 'w' });
+
+              // Vérifier à nouveau
+              const retryContent = fs.readFileSync(fullPath, 'utf8');
+              console.log(`RealtimeDocumentService: Après nouvelle tentative: ${retryContent.length} caractères écrits`);
+            }
+          } else {
+            console.error(`RealtimeDocumentService: ERREUR - Le fichier n'a pas été créé`);
+          }
+        } catch (writeError) {
+          console.error(`RealtimeDocumentService: Erreur lors de l'écriture dans le fichier:`, writeError);
+
+          // Tentative alternative d'écriture
+          try {
+            const contentToWrite = activeDoc.content || '';
+            console.log(`RealtimeDocumentService: Tentative alternative d'écriture dans ${fullPath}`);
+
+            // Utiliser une méthode alternative d'écriture
+            const fd = fs.openSync(fullPath, 'w');
+            fs.writeSync(fd, contentToWrite);
+            fs.closeSync(fd);
+
+            console.log(`RealtimeDocumentService: Écriture alternative réussie`);
+          } catch (alternativeError) {
+            console.error(`RealtimeDocumentService: Échec de la tentative alternative:`, alternativeError);
+            throw writeError; // Relancer l'erreur originale
+          }
         }
+
+        // Mettre à jour la taille du fichier dans la base de données
+        const stats = fs.statSync(fullPath);
+        console.log(`RealtimeDocumentService: Taille du fichier après sauvegarde: ${stats.size} octets`);
+
+        console.log(`RealtimeDocumentService: Contenu sauvegardé dans le fichier ${fullPath}`);
+      } catch (fileError) {
+        console.error(`RealtimeDocumentService: Erreur lors de la sauvegarde du fichier:`, fileError);
+        // Ne pas échouer complètement si la sauvegarde du fichier échoue
       }
 
       // Mettre à jour le document dans la base de données

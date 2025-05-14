@@ -220,12 +220,32 @@ export class CollaborativeDocumentService {
       return;
     }
 
+    // Vérifier que le contenu est valide
+    if (content === undefined || content === null || content.trim() === '') {
+      console.warn('🔄 [CollaborativeDoc] Alerte: Contenu vide ou invalide détecté');
+      content = '<p>Document vide</p>'; // Utiliser un contenu HTML minimal comme fallback
+    }
+
+    // Log du contenu à mettre à jour
+    console.log(`🔄 [CollaborativeDoc] Mise à jour: Document ${documentId} (${content.length} caractères)`);
+    console.log(`📝 [CollaborativeDoc] Contenu: ${content.substring(0, 50)}...`);
+
+    // Mettre à jour le document local
+    const activeDoc = this.activeDocument();
+    if (activeDoc) {
+      // Créer une copie pour éviter les problèmes de référence
+      const updatedDoc = { ...activeDoc, content };
+      this.activeDocument.set(updatedDoc);
+    }
+
     const data: any = { documentId };
 
     if (delta) {
       data.delta = delta;
+      console.log('🔄 [CollaborativeDoc] Envoi: Delta au serveur');
     } else {
       data.content = content;
+      console.log(`🔄 [CollaborativeDoc] Envoi: Contenu complet au serveur (${content.length} caractères)`);
     }
 
     this.websocketService.emit('document:update', data);
@@ -257,18 +277,37 @@ export class CollaborativeDocumentService {
     this.isSaving.set(true);
 
     return new Observable(observer => {
+      // Récupérer le contenu actuel du document
+      const activeDoc = this.activeDocument();
+      if (!activeDoc) {
+        console.error('CollaborativeDocumentService: Document actif non disponible');
+        this.isSaving.set(false);
+        observer.error(new Error('Document actif non disponible'));
+        return;
+      }
+
+      // Vérifier que le contenu est valide
+      if (activeDoc.content === undefined || activeDoc.content === null || activeDoc.content.trim() === '') {
+        console.warn('🔄 [CollaborativeDoc] Alerte: Contenu vide ou invalide détecté lors de la sauvegarde');
+        activeDoc.content = '<p>Document vide</p>'; // Utiliser un contenu HTML minimal comme fallback
+      }
+
+      // Log du contenu à sauvegarder
+      console.log(`🔄 [CollaborativeDoc] Sauvegarde: Document ${documentId} (${activeDoc.content.length} caractères)`);
+      console.log(`📝 [CollaborativeDoc] Contenu: ${activeDoc.content.substring(0, 50)}...`);
+
       // Vérifier d'abord si le WebSocket est connecté
       if (!this.websocketService.isConnected()) {
-        console.warn('CollaborativeDocumentService: WebSocket non connecté, tentative de sauvegarde via HTTP');
+        console.warn('🔄 [CollaborativeDoc] Alerte: WebSocket non connecté, fallback HTTP');
 
-        // Récupérer le contenu actuel du document
-        const activeDoc = this.activeDocument();
-        if (!activeDoc) {
-          console.error('CollaborativeDocumentService: Document actif non disponible');
-          this.isSaving.set(false);
-          observer.error(new Error('Document actif non disponible'));
-          return;
+        // Vérifier une dernière fois que le contenu est valide avant l'envoi HTTP
+        if (activeDoc.content === undefined || activeDoc.content === null || activeDoc.content.trim() === '') {
+          console.warn('🔄 [CollaborativeDoc] Alerte: Contenu invalide avant envoi HTTP');
+          activeDoc.content = '<p>Document vide</p>'; // Utiliser un contenu HTML minimal comme fallback
         }
+
+        console.log(`🔄 [CollaborativeDoc] Fallback HTTP: ${activeDoc.content.length} caractères`);
+        console.log(`📝 [CollaborativeDoc] Contenu HTTP: ${activeDoc.content.substring(0, 50)}...`);
 
         // Tenter de sauvegarder via HTTP comme fallback
         this.documentService.updateDocument(documentId, {
@@ -304,46 +343,101 @@ export class CollaborativeDocumentService {
       }
 
       // Sauvegarde via WebSocket
-      console.log('CollaborativeDocumentService: Tentative de sauvegarde via WebSocket');
+      console.log('🔄 [CollaborativeDoc] Info: Tentative de sauvegarde via WebSocket');
 
-      // Définir un timeout pour la sauvegarde
-      const timeoutId = setTimeout(() => {
-        console.error('CollaborativeDocumentService: Timeout lors de la sauvegarde du document');
-        this.isSaving.set(false);
-        observer.error(new Error('Timeout lors de la sauvegarde du document'));
-      }, 10000); // 10 secondes de timeout
+      // Vérifier une dernière fois que le contenu est valide avant l'envoi HTTP
+      if (activeDoc.content === undefined || activeDoc.content === null || activeDoc.content.trim() === '') {
+        console.warn('🔄 [CollaborativeDoc] Alerte: Contenu invalide avant HTTP+WebSocket');
+        activeDoc.content = '<p>Document vide</p>'; // Utiliser un contenu HTML minimal comme fallback
+      }
 
-      this.websocketService.emit('document:save', { documentId }, (response: any) => {
-        // Annuler le timeout
-        clearTimeout(timeoutId);
+      console.log(`🔄 [CollaborativeDoc] HTTP+WebSocket: ${activeDoc.content.length} caractères`);
+      console.log(`📝 [CollaborativeDoc] Contenu HTTP+WS: ${activeDoc.content.substring(0, 50)}...`);
 
-        if (response && response.success) {
-          console.log('Document sauvegardé avec succès:', response.data);
-          this.lastSaved.set(new Date(response.data.savedAt));
-          this.isSaving.set(false);
+      // Sauvegarder d'abord via HTTP pour s'assurer que le contenu est bien sauvegardé
+      this.documentService.updateDocument(documentId, {
+        title: activeDoc.title,
+        content: activeDoc.content
+      }).subscribe({
+        next: (updatedDoc) => {
+          console.log('Document sauvegardé avec succès via HTTP avant WebSocket:', updatedDoc);
 
-          // Vérifier que la sauvegarde a bien été effectuée
-          this.verifyDocumentSaved(documentId).subscribe({
-            next: (verified) => {
-              if (verified) {
-                observer.next(response.data);
-                observer.complete();
-              } else {
-                console.warn('CollaborativeDocumentService: La vérification de sauvegarde a échoué');
-                observer.error(new Error('La vérification de sauvegarde a échoué'));
-              }
-            },
-            error: (error) => {
-              console.error('Erreur lors de la vérification de sauvegarde:', error);
-              // Même si la vérification échoue, on considère que la sauvegarde a réussi
-              observer.next(response.data);
+          // Maintenant, sauvegarder via WebSocket pour mettre à jour les autres utilisateurs
+          // Définir un timeout pour la sauvegarde WebSocket
+          const timeoutId = setTimeout(() => {
+            console.error('CollaborativeDocumentService: Timeout lors de la sauvegarde WebSocket du document');
+            // Ne pas échouer complètement car la sauvegarde HTTP a réussi
+            this.isSaving.set(false);
+            observer.next({
+              documentId,
+              savedAt: new Date(),
+              savedViaHttp: true,
+              webSocketTimeout: true
+            });
+            observer.complete();
+          }, 10000); // 10 secondes de timeout
+
+          // Envoyer le contenu avec la demande de sauvegarde
+          this.websocketService.emit('document:save', {
+            documentId,
+            content: activeDoc.content  // Ajouter le contenu à la demande de sauvegarde
+          }, (response: any) => {
+            // Annuler le timeout
+            clearTimeout(timeoutId);
+
+            if (response && response.success) {
+              console.log('Document sauvegardé avec succès via WebSocket:', response.data);
+              this.lastSaved.set(new Date(response.data.savedAt));
+              this.isSaving.set(false);
+
+              // Vérifier que la sauvegarde a bien été effectuée
+              this.verifyDocumentSaved(documentId).subscribe({
+                next: (verified) => {
+                  if (verified) {
+                    observer.next(response.data);
+                    observer.complete();
+                  } else {
+                    console.warn('CollaborativeDocumentService: La vérification de sauvegarde a échoué, mais la sauvegarde HTTP a réussi');
+                    // Ne pas échouer car la sauvegarde HTTP a réussi
+                    observer.next({
+                      documentId,
+                      savedAt: new Date(),
+                      savedViaHttp: true,
+                      verificationFailed: true
+                    });
+                    observer.complete();
+                  }
+                },
+                error: (error) => {
+                  console.error('Erreur lors de la vérification de sauvegarde:', error);
+                  // Ne pas échouer car la sauvegarde HTTP a réussi
+                  observer.next({
+                    documentId,
+                    savedAt: new Date(),
+                    savedViaHttp: true,
+                    verificationError: true
+                  });
+                  observer.complete();
+                }
+              });
+            } else {
+              console.error('Erreur lors de la sauvegarde WebSocket du document:', response?.error || 'Réponse invalide');
+              // Ne pas échouer car la sauvegarde HTTP a réussi
+              this.isSaving.set(false);
+              observer.next({
+                documentId,
+                savedAt: new Date(),
+                savedViaHttp: true,
+                webSocketError: true
+              });
               observer.complete();
             }
           });
-        } else {
-          console.error('Erreur lors de la sauvegarde du document:', response?.error || 'Réponse invalide');
+        },
+        error: (error) => {
+          console.error('Erreur lors de la sauvegarde HTTP du document:', error);
           this.isSaving.set(false);
-          observer.error(new Error(response?.error || 'Erreur inconnue lors de la sauvegarde'));
+          observer.error(error);
         }
       });
     });
