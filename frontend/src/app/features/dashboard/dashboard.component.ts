@@ -1,294 +1,55 @@
-import {Component, OnInit} from '@angular/core';
-import {UsersService} from '../../core/services/users.service';
-import {DocumentsService} from '../../core/services/documents.service';
-import {CommonModule, DatePipe} from '@angular/common';
-import {AuthService} from '../../core/services/auth.service';
-import {Document} from '../../core/models/document.model';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Router} from '@angular/router';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+
+import { AuthService } from '../../core/services/auth.service';
+import { User } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe],
+  imports: [CommonModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnInit {
-  documents: Document[] = [];
-  tree: Document[] = [];
-  users: any[] = [];
-  currentPath: Document[] = [];
-  currentFolder: Document | null = null;
-  currentView: 'grid' | 'list' = 'list';
-  isLoading = false;
-  showNewFolderModal = false;
-  showNewFileModal = false;
-
-  newFolderForm = new FormGroup({
-    folderName: new FormControl('', [Validators.required])
-  });
-
-  newFileForm = new FormGroup({
-    fileName: new FormControl('', [Validators.required]),
-    fileContent: new FormControl('')
-  });
-
-  // Nouvelles propriétés pour le tableau de bord
-  recentDocuments: Document[] = [];
-  recentlyModifiedDocuments: Document[] = [];
-  myFolders: Document[] = [];
+export class DashboardComponent {
+  user: User | null = null;
 
   constructor(
-    private usersService: UsersService,
-    private documentsService: DocumentsService,
-    public authService: AuthService,
+    private authService: AuthService,
     private router: Router
-  ) {}
+  ) {
+    console.log('Initialisation du composant Dashboard');
 
-  ngOnInit() {
-    this.loadData();
+    // Récupérer l'utilisateur actuel
+    this.user = this.authService.currentUser();
+    console.log('Utilisateur actuel dans Dashboard:', this.user);
+
+    // Si l'utilisateur n'est pas disponible, vérifier l'état d'authentification
+    if (!this.user) {
+      console.log('Utilisateur non disponible, vérification de l\'état d\'authentification');
+      this.authService.checkAuthStatus().subscribe(isAuthenticated => {
+        console.log('Résultat de la vérification d\'authentification:', isAuthenticated);
+        if (isAuthenticated) {
+          this.user = this.authService.currentUser();
+          console.log('Utilisateur mis à jour:', this.user);
+        } else {
+          console.error('Non authentifié, redirection vers login');
+          this.router.navigate(['/login']);
+        }
+      });
+    }
   }
 
-  loadData() {
-    this.isLoading = true;
-
-    this.usersService.getUsers().subscribe((users) => {
-      this.users = users;
-    });
-
-    this.documentsService.getDocuments().subscribe({
-      next: (documents) => {
-        this.documents = documents;
-        this.tree = this.buildTree(this.documents, null);
-
-        // Préparer les données pour le tableau de bord
-        this.prepareRecentDocuments(documents);
-        this.prepareMyFolders(documents);
-
-        this.navigateToFolder(null); // Racine par défaut
-        this.isLoading = false;
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des documents', error);
-        this.isLoading = false;
+      error: () => {
+        // Même en cas d'erreur, on redirige vers la page de login
+        this.router.navigate(['/login']);
       }
     });
   }
-
-  // Prépare les documents récents pour le tableau de bord
-  prepareRecentDocuments(documents: Document[]) {
-    // Filtrer les documents (pas les dossiers) qui ne sont pas supprimés
-    const allDocs = documents.filter(doc => !doc.is_folder && !doc.is_deleted);
-
-    // Trier par date de modification décroissante
-    const sortedDocs = [...allDocs].sort((a, b) => {
-      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-    });
-
-    // Prendre les 3 plus récents
-    this.recentDocuments = sortedDocs.slice(0, 3).map(doc => ({
-      ...doc,
-      owner_username: this.getUsernameById(doc.owner_id),
-      last_modified_by_username: doc.last_modified_by ? this.getUsernameById(doc.last_modified_by) : ''
-    }));
-
-    // Documents récemment modifiés (peut inclure des documents modifiés par d'autres utilisateurs)
-    this.recentlyModifiedDocuments = sortedDocs.slice(0, 5).map(doc => ({
-      ...doc,
-      owner_username: this.getUsernameById(doc.owner_id),
-      last_modified_by_username: doc.last_modified_by ? this.getUsernameById(doc.last_modified_by) : ''
-    }));
-  }
-
-  // Prépare les dossiers pour le tableau de bord
-  prepareMyFolders(documents: Document[]) {
-    // Filtrer les dossiers qui ne sont pas supprimés
-    const folders = documents.filter(doc => doc.is_folder && !doc.is_deleted);
-
-    // Prendre les dossiers racine (parent_folder_id est null)
-    this.myFolders = folders.filter(folder => folder.parent_folder_id === null).map(folder => ({
-      ...folder,
-      owner_username: this.getUsernameById(folder.owner_id),
-      last_modified_by_username: folder.last_modified_by ? this.getUsernameById(folder.last_modified_by) : ''
-    }));
-  }
-
-  buildTree(items: Document[], parentId: number | null): Document[] {
-    return items
-      .filter(item => item.parent_folder_id === parentId && !item.is_deleted)
-      .map(item => ({
-        ...item,
-        children: this.buildTree(items, item.id), // Appel récursif pour les enfants
-        // Ajouter les informations sur le propriétaire et le dernier modificateur
-        owner_username: this.getUsernameById(item.owner_id),
-        last_modified_by_username: item.last_modified_by ? this.getUsernameById(item.last_modified_by) : ''
-      }));
-  }
-
-  getUsernameById(userId: number): string {
-    const user = this.users.find(u => u.id === userId);
-    return user ? user.username : 'Utilisateur inconnu';
-  }
-
-  navigateToFolder(folder: Document | null) {
-    this.currentFolder = folder;
-
-    // Construire le chemin de navigation
-    if (folder === null) {
-      // Racine
-      this.currentPath = [];
-    } else {
-      // Construire le chemin en remontant les parents
-      this.buildPath(folder);
-    }
-
-    // Filtrer les documents à afficher dans le dossier actuel
-    this.filterCurrentFolderContent();
-  }
-
-  buildPath(folder: Document) {
-    this.currentPath = [];
-    let currentFolder = folder;
-
-    // Ajouter le dossier actuel
-    this.currentPath.unshift(currentFolder);
-
-    // Remonter les parents
-    while (currentFolder.parent_folder_id !== null) {
-      const parentFolder = this.documents.find(d => d.id === currentFolder.parent_folder_id);
-      if (parentFolder) {
-        this.currentPath.unshift(parentFolder);
-        currentFolder = parentFolder;
-      } else {
-        break;
-      }
-    }
-  }
-
-  filterCurrentFolderContent() {
-    const parentId = this.currentFolder ? this.currentFolder.id : null;
-    return this.documents.filter(doc =>
-      doc.parent_folder_id === parentId &&
-      !doc.is_deleted
-    );
-  }
-
-  getFileIcon(document: Document): string {
-    if (document.is_folder) {
-      return 'folder';
-    }
-
-    // Déterminer l'icône en fonction du type de fichier
-    if (document.file_type) {
-      if (document.file_type.includes('image')) {
-        return 'image';
-      } else if (document.file_type.includes('pdf')) {
-        return 'pdf';
-      } else if (document.file_type.includes('text/markdown') || document.title.endsWith('.md')) {
-        return 'markdown';
-      } else if (document.file_type.includes('text')) {
-        return 'text';
-      }
-    }
-
-    // Par défaut
-    return 'document';
-  }
-
-  formatFileSize(bytes?: number): string {
-    if (!bytes) return '0 B';
-
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-  }
-
-  openDocument(document: Document) {
-    if (document.is_folder) {
-      this.navigateToFolder(document);
-    } else {
-      // Ouvrir le document pour édition (à implémenter)
-      console.log('Ouverture du document', document);
-    }
-  }
-
-  toggleView() {
-    this.currentView = this.currentView === 'list' ? 'grid' : 'list';
-  }
-
-  openNewFolderModal() {
-    this.showNewFolderModal = true;
-    this.newFolderForm.reset();
-  }
-
-  closeNewFolderModal() {
-    this.showNewFolderModal = false;
-  }
-
-  createNewFolder() {
-    if (this.newFolderForm.valid) {
-      const folderName = this.newFolderForm.get('folderName')?.value;
-      const parentId = this.currentFolder?.id;
-
-      this.isLoading = true;
-      this.documentsService.createFolder(folderName!, parentId).subscribe({
-        next: (newFolder) => {
-          this.documents.push(newFolder);
-          this.tree = this.buildTree(this.documents, null);
-          this.filterCurrentFolderContent();
-          this.closeNewFolderModal();
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Erreur lors de la création du dossier', error);
-          this.isLoading = false;
-        }
-      });
-    }
-  }
-
-  openNewFileModal() {
-    this.showNewFileModal = true;
-    this.newFileForm.reset();
-  }
-
-  closeNewFileModal() {
-    this.showNewFileModal = false;
-  }
-
-  createNewFile() {
-    if (this.newFileForm.valid) {
-      const fileName = this.newFileForm.get('fileName')?.value;
-      const fileContent = this.newFileForm.get('fileContent')?.value || '';
-      const parentId = this.currentFolder?.id;
-
-      this.isLoading = true;
-      this.documentsService.createDocument(fileName!, fileContent, parentId).subscribe({
-        next: (newFile) => {
-          this.documents.push(newFile);
-          this.filterCurrentFolderContent();
-          this.closeNewFileModal();
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Erreur lors de la création du fichier', error);
-          this.isLoading = false;
-        }
-      });
-    }
-  }
-
-  // Méthode pour naviguer vers la page "Mes documents"
-  goToDocuments() {
-    this.router.navigate(['/documents']);
-  }
-
 }

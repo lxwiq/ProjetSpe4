@@ -1,55 +1,23 @@
 import { Routes } from '@angular/router';
-import { SigninPageComponent } from './features/signin-page/signin-page.component';
-import { DashboardComponent } from './features/dashboard/dashboard.component';
-import { AccessDeniedComponent } from './features/access-denied/access-denied.component';
-import { ProfileComponent } from './features/profile/profile.component';
-import { DocumentsComponent } from './features/documents/documents.component';
-import { RichDocumentEditorComponent } from './features/documents/rich-document-editor/rich-document-editor.component';
-import { NotificationsPageComponent } from './features/notifications/notifications-page.component';
-import { MessagingPageComponent } from './features/messaging/messaging-page/messaging-page.component';
-import { adminGuard } from './core/guards/admin.guard';
-import { authGuard } from './core/guards/auth.guard';
+import { AuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
-    path: '', redirectTo: 'login', pathMatch: 'full'
+    path: 'login',
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
   {
-    path: 'login', component: SigninPageComponent
+    path: 'dashboard',
+    loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
+    canActivate: [AuthGuard]
   },
   {
-    path: 'dashboard', component: DashboardComponent, canActivate: [authGuard]
+    path: '',
+    redirectTo: 'dashboard',
+    pathMatch: 'full'
   },
   {
-    path: 'documents', component: DocumentsComponent, canActivate: [authGuard]
-  },
-  {
-    path: 'documents/:id', component: RichDocumentEditorComponent, canActivate: [authGuard]
-  },
-  {
-    path: 'access-denied', component: AccessDeniedComponent
-  },
-  {
-    path: 'profile', component: ProfileComponent, canActivate: [authGuard]
-  },
-  {
-    path: 'settings', redirectTo: 'profile', pathMatch: 'full'
-  },
-  {
-    path: 'notifications', component: NotificationsPageComponent, canActivate: [authGuard]
-  },
-  {
-    path: 'messaging', component: MessagingPageComponent, canActivate: [authGuard]
-  },
-  {
-    path: 'messaging/:id', component: MessagingPageComponent, canActivate: [authGuard]
-  },
-  {
-    path: 'admin',
-    loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES),
-    canActivate: [adminGuard]
-  },
-  {
-    path: '**', redirectTo: 'dashboard'
+    path: '**',
+    redirectTo: 'dashboard'
   }
 ];

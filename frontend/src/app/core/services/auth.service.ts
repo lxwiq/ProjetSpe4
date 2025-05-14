@@ -1,270 +1,195 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of } from 'rxjs';
-import { Router } from '@angular/router';
+import { Observable, throwError, of } from 'rxjs';
+import { catchError, tap, map } from 'rxjs/operators';
+
+import { User, LoginRequest, LoginResponse, SessionCheckResponse } from '../models/user.model';
+import { TokenService } from './token.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000';
-  private currentUserSubject = new BehaviorSubject<any>(null);
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
+  private readonly API_URL = environment.apiUrl;
 
-  public currentUser$ = this.currentUserSubject.asObservable();
-  public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+  // Utilisation des signaux pour l'état d'authentification (Angular 18)
+  isAuthenticated = signal<boolean>(false);
+  currentUser = signal<User | null>(null);
 
-  constructor(private http: HttpClient, private router: Router) {
-    // Vérifier si l'utilisateur est déjà connecté au démarrage
-    this.checkAuthStatus();
-
-    // Vérifier l'état d'authentification à chaque changement de focus de la fenêtre
-    window.addEventListener('focus', () => {
-      this.checkAuthStatus();
-    });
+  constructor(
+    private http: HttpClient,
+    private tokenService: TokenService
+  ) {
+    // Initialiser l'état d'authentification
+    this.isAuthenticated.set(this.tokenService.isLoggedIn());
+    this.checkAuthStatus().subscribe();
   }
 
-  // Méthode pour essayer de reconnecter automatiquement l'utilisateur
-  autoLogin(): void {
-    const rememberMe = localStorage.getItem('remember_me') === 'true';
-    const token = localStorage.getItem('auth_token');
-    const userInfo = localStorage.getItem('user_info');
+  /**
+   * Authentifie un utilisateur
+   * @param credentials Identifiants de connexion
+   * @returns Observable avec la réponse de connexion
+   */
+  login(credentials: LoginRequest): Observable<LoginResponse> {
+    console.log('Tentative de connexion avec:', credentials.email);
 
-    if (rememberMe && token && userInfo) {
-      try {
-        const user = JSON.parse(userInfo);
-
-        // Mettre à jour l'état d'authentification
-        this.currentUserSubject.next(user);
-        this.isAuthenticatedSubject.next(true);
-
-        // Vérifier si la session est toujours valide côté serveur
-        this.verifySession(user, rememberMe);
-      } catch (e) {
-        console.error('Erreur lors de la reconnexion automatique:', e);
-      }
-    }
-  }
-
-  login(email: string, password: string, rememberMe: boolean = false): Observable<any> {
-    // Nettoyer les données précédentes avant de se connecter
-    this.currentUserSubject.next(null);
-    localStorage.removeItem('user_info');
-    localStorage.removeItem('remember_me');
-    sessionStorage.clear();
-
-    return this.http.post<any>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true })
+    // Utiliser withCredentials pour envoyer et recevoir les cookies
+    return this.http.post<LoginResponse>(`${this.API_URL}/login`, credentials, { withCredentials: true })
       .pipe(
         tap(response => {
-          if (response && response.data) {
-            // Stocker l'utilisateur
-            if (response.data.user) {
-              this.currentUserSubject.next(response.data.user);
-              localStorage.setItem('user_info', JSON.stringify(response.data.user));
-            }
+          console.log('Réponse de connexion reçue:', response);
 
-            // Stocker le token si présent dans la réponse
-            if (response.data.token) {
-              localStorage.setItem('auth_token', response.data.token);
-            }
+          // Extraire les données de la structure imbriquée
+          const { user, requireTwoFactor, accessToken, refreshToken } = response.data;
 
-            // Si "Se souvenir de moi" est coché, stocker cette préférence
-            if (rememberMe) {
-              localStorage.setItem('remember_me', 'true');
-            }
+          if (!requireTwoFactor && accessToken) {
+            console.log('Stockage des tokens et mise à jour de l\'utilisateur');
 
-            this.isAuthenticatedSubject.next(true);
+            // Stocker les tokens
+            this.tokenService.setTokens(
+              accessToken,
+              refreshToken,
+              credentials.rememberMe
+            );
+
+            // Mettre à jour l'état d'authentification
+            this.setCurrentUser(user);
+
+            console.log('État d\'authentification mis à jour:', {
+              isAuthenticated: this.isAuthenticated(),
+              user: this.currentUser()
+            });
+          } else if (requireTwoFactor) {
+            console.log('Authentification à deux facteurs requise');
+          } else {
+            console.error('Tokens manquants dans la réponse');
           }
         }),
         catchError(error => {
-          console.error('Login error:', error);
-
-          // Gérer les différents types d'erreurs d'authentification
-          let errorMessage = 'Une erreur est survenue lors de la connexion';
-
-          if (error.status === 401) {
-            // Erreur d'authentification (mot de passe incorrect)
-            errorMessage = error.error?.message || 'Identifiants incorrects';
-          } else if (error.status === 403) {
-            // Compte verrouillé
-            errorMessage = error.error?.message || 'Compte temporairement verrouillé';
-          } else if (error.status === 404) {
-            // Utilisateur non trouvé
-            errorMessage = 'Utilisateur non trouvé';
-          } else if (error.error) {
-            // Autres erreurs avec un message
-            errorMessage = error.error.message || error.error;
-          }
-
-          return of({ error: errorMessage });
+          console.error('Erreur lors de la connexion:', error);
+          return throwError(() => error);
         })
       );
   }
 
+  /**
+   * Déconnecte l'utilisateur
+   * @returns Observable avec la réponse de déconnexion
+   */
   logout(): Observable<any> {
-    // Nettoyer les données locales d'abord pour s'assurer que l'utilisateur est déconnecté
-    // même si l'appel API échoue
-    this.currentUserSubject.next(null);
-    this.isAuthenticatedSubject.next(false);
-    localStorage.removeItem('user_info');
-    localStorage.removeItem('remember_me');
-    localStorage.removeItem('auth_token'); // Supprimer le token
-    sessionStorage.clear(); // Nettoyer également le sessionStorage
-
-    // Supprimer tous les cookies liés à l'authentification
-    this.clearAuthCookies();
-
-    // Ensuite, essayer de se déconnecter côté serveur
-    return this.http.post<any>(`${this.apiUrl}/login/logout`, {}, { withCredentials: true })
+    // Utiliser withCredentials pour envoyer les cookies avec la requête
+    return this.http.post(`${this.API_URL}/auth/logout`, {}, { withCredentials: true })
       .pipe(
         tap(() => {
-          // La navigation est déjà effectuée ici pour éviter les problèmes de timing
-          this.router.navigate(['/login']);
+          this.clearAuthState();
         }),
         catchError(error => {
-          console.error('Logout error:', error);
-          // Même en cas d'erreur, on redirige vers la page de connexion
-          this.router.navigate(['/login']);
-          return of({ success: true }); // Simuler un succès pour le frontend
+          // Même en cas d'erreur, on nettoie l'état d'authentification côté client
+          this.clearAuthState();
+          return throwError(() => error);
         })
       );
   }
 
-  // Méthode pour supprimer tous les cookies liés à l'authentification
-  private clearAuthCookies(): void {
-    // Supprimer tous les cookies en les expirant
-    document.cookie.split(';').forEach(cookie => {
-      document.cookie = cookie.replace(/^ +/, '').replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
-    });
-  }
+  /**
+   * Vérifie l'état de la session utilisateur
+   * @returns Observable indiquant si l'utilisateur est authentifié
+   */
+  checkAuthStatus(): Observable<boolean> {
+    console.log('Vérification de l\'état d\'authentification');
 
-  isLoggedIn(): boolean {
-    // Vérifier d'abord l'état d'authentification du BehaviorSubject
-    if (this.isAuthenticatedSubject.value) {
-      return true;
+    const token = this.tokenService.getAccessToken();
+    console.log('Token d\'accès présent:', !!token);
+
+    if (!token) {
+      console.log('Pas de token d\'accès, nettoyage de l\'état d\'authentification');
+      this.clearAuthState();
+      return of(false);
     }
 
-    // Ensuite, vérifier si un token est présent dans le localStorage et si "Se souvenir de moi" est activé
-    const token = localStorage.getItem('auth_token');
-    const rememberMe = localStorage.getItem('remember_me') === 'true';
+    console.log('Envoi de la requête de vérification de session');
+    // Utiliser withCredentials pour envoyer les cookies avec la requête
+    return this.http.get<SessionCheckResponse>(`${this.API_URL}/auth/check-session`, { withCredentials: true })
+      .pipe(
+        tap(response => {
+          console.log('Réponse de vérification de session reçue:', response);
+        }),
+        map(response => {
+          // Extraire les données de la structure imbriquée
+          const { valid, user } = response.data;
+          console.log('Session valide:', valid, 'Utilisateur:', user);
 
-    return !!(token && rememberMe);
-  }
-
-  getToken(): string | null {
-    // Essayer d'abord de récupérer le token depuis le localStorage
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      return token;
-    }
-
-    // Sinon, essayer de récupérer depuis les cookies (comme fallback)
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'jwt_token') {
-        return value;
-      }
-    }
-    return null;
-  }
-
-  isAdmin(): boolean {
-    const currentUser = this.currentUserSubject.value;
-    return currentUser ? currentUser.isAdmin === true : false;
-  }
-
-  getCurrentUser(): any {
-    return this.currentUserSubject.value;
-  }
-
-  private checkAuthStatus(): void {
-    const userInfo = localStorage.getItem('user_info');
-    const rememberMe = localStorage.getItem('remember_me') === 'true';
-    const token = localStorage.getItem('auth_token');
-
-    if (userInfo) {
-      try {
-        const user = JSON.parse(userInfo);
-
-        // Vérifier si l'utilisateur est toujours authentifié côté serveur
-        this.verifySession(user, rememberMe);
-      } catch (e) {
-        console.error('Erreur lors de la vérification du statut d\'authentification:', e);
-        this.clearAuthData();
-      }
-    } else if (rememberMe && token) {
-      // Si "Se souvenir de moi" est activé et qu'un token est présent, essayer de reconnecter automatiquement
-      this.autoLogin();
-    } else {
-      // Aucune information utilisateur, s'assurer que l'état d'authentification est à false
-      this.isAuthenticatedSubject.next(false);
-    }
-  }
-
-  private clearAuthData(): void {
-    this.currentUserSubject.next(null);
-    this.isAuthenticatedSubject.next(false);
-
-    // Vérifier si "Se souvenir de moi" est activé
-    const rememberMe = localStorage.getItem('remember_me') === 'true';
-
-    // Supprimer les informations utilisateur
-    localStorage.removeItem('user_info');
-
-    // Si "Se souvenir de moi" n'est pas activé, supprimer également le token
-    if (!rememberMe) {
-      localStorage.removeItem('auth_token');
-    }
-    // Ne pas supprimer remember_me pour conserver la préférence de l'utilisateur
-  }
-
-  // Vérifier si la session est toujours valide côté serveur
-  private verifySession(user: any, rememberMe: boolean): void {
-    // Appel API pour vérifier si la session est toujours valide
-    this.http.get<any>(`${this.apiUrl}/auth/check-session`, { withCredentials: true })
-      .subscribe({
-        next: (response) => {
-          if (response && response.data && response.data.authenticated) {
-            // Session valide, mettre à jour l'utilisateur si nécessaire
-            const updatedUser = response.data.user || user;
-            this.currentUserSubject.next(updatedUser);
-            this.isAuthenticatedSubject.next(true);
-
-            // Mettre à jour les informations utilisateur dans le stockage local
-            localStorage.setItem('user_info', JSON.stringify(updatedUser));
+          if (valid && user) {
+            console.log('Session valide, mise à jour de l\'utilisateur');
+            this.setCurrentUser(user);
+            return true;
           } else {
-            // Session invalide
-            if (rememberMe) {
-              // Si "Se souvenir de moi" est activé, conserver l'état d'authentification côté client
-              // mais mettre à jour l'état pour refléter que la session côté serveur n'est plus valide
-              this.isAuthenticatedSubject.next(false);
-
-              // Conserver les informations utilisateur pour permettre la reconnexion automatique
-              this.currentUserSubject.next(user);
-            } else {
-              // Si "Se souvenir de moi" n'est pas activé, supprimer les données locales
-              this.clearAuthData();
-              this.router.navigate(['/login']);
-            }
+            console.log('Session invalide, nettoyage de l\'état d\'authentification');
+            this.clearAuthState();
+            return false;
           }
-        },
-        error: (error) => {
+        }),
+        catchError((error) => {
           console.error('Erreur lors de la vérification de la session:', error);
+          this.clearAuthState();
+          return of(false);
+        })
+      );
+  }
 
-          // En cas d'erreur, conserver l'état d'authentification si "Se souvenir de moi" est activé
-          if (rememberMe) {
-            // Mettre à jour l'état pour refléter que la session côté serveur n'est plus valide
-            this.isAuthenticatedSubject.next(false);
+  /**
+   * Rafraîchit le token d'accès
+   * @returns Observable avec les nouveaux tokens
+   */
+  refreshToken(): Observable<any> {
+    const refreshToken = this.tokenService.getRefreshToken();
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token available'));
+    }
 
-            // Conserver les informations utilisateur pour permettre la reconnexion automatique
-            this.currentUserSubject.next(user);
-          } else {
-            // Si "Se souvenir de moi" n'est pas activé, supprimer les données locales
-            this.clearAuthData();
-            this.router.navigate(['/login']);
+    // Utiliser withCredentials pour envoyer les cookies avec la requête
+    return this.http.post(`${this.API_URL}/token/refresh`, { refreshToken }, { withCredentials: true })
+      .pipe(
+        tap((response: any) => {
+          // Extraire les données de la structure imbriquée
+          if (response.data && response.data.accessToken) {
+            this.tokenService.setTokens(response.data.accessToken, response.data.refreshToken);
           }
-        }
-      });
+        }),
+        catchError(error => {
+          this.clearAuthState();
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Met à jour l'état d'authentification avec les informations utilisateur
+   * @param user Utilisateur connecté
+   */
+  private setCurrentUser(user: User): void {
+    console.log('Mise à jour de l\'utilisateur courant:', user);
+
+    // Vérifier que l'utilisateur est valide
+    if (!user || !user.id) {
+      console.error('Tentative de définir un utilisateur invalide:', user);
+      return;
+    }
+
+    // Mettre à jour l'état d'authentification
+    this.isAuthenticated.set(true);
+    this.currentUser.set(user);
+
+    console.log('État d\'authentification mis à jour avec succès');
+  }
+
+  /**
+   * Nettoie l'état d'authentification
+   */
+  private clearAuthState(): void {
+    this.tokenService.clearTokens();
+    this.isAuthenticated.set(false);
+    this.currentUser.set(null);
   }
 }
