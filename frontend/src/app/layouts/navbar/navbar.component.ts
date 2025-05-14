@@ -1,13 +1,15 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { WebsocketService } from '../../core/services/websocket.service';
+import { LoggingService } from '../../core/services/logging.service';
 import { User } from '../../core/models/user.model';
 import { Notification } from '../../core/models/notification.model';
 import { AppLogoComponent } from '../../shared/components/app-logo/app-logo.component';
 import { environment } from '../../../environments/environment';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-navbar',
@@ -39,13 +41,23 @@ import { environment } from '../../../environments/environment';
                 <!-- Icône de notifications avec compteur -->
                 <div class="relative dropdown-container">
                   <div class="flex items-center cursor-pointer p-1 hover:bg-gray-700 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      [class]="bellAnimationActive ? 'h-5 w-5 text-white animate-bell' : 'h-5 w-5 text-gray-300'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
 
                     <!-- Compteur de notifications -->
                     @if (notificationService.unreadCount() > 0) {
-                      <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                      <span
+                        [class]="bellAnimationActive
+                          ? 'absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center animate-pulse'
+                          : 'absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center'"
+                      >
                         {{ notificationService.unreadCount() > 9 ? '9+' : notificationService.unreadCount() }}
                       </span>
                     }
@@ -67,6 +79,7 @@ import { environment } from '../../../environments/environment';
                           [routerLink]="getNotificationUrl(notification)"
                           class="block px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
                           [class.bg-blue-50]="!notification.is_read"
+                          [class.animate-highlight]="notificationService.newNotification()?.id === notification.id"
                           (click)="markNotificationAsRead(notification)"
                         >
                           <div class="flex items-start">
@@ -159,6 +172,40 @@ import { environment } from '../../../environments/environment';
       opacity: 1;
       transition-delay: 0s;
     }
+
+    @keyframes bell-shake {
+      0% { transform: rotate(0); }
+      10% { transform: rotate(10deg); }
+      20% { transform: rotate(-10deg); }
+      30% { transform: rotate(10deg); }
+      40% { transform: rotate(-10deg); }
+      50% { transform: rotate(0); }
+      100% { transform: rotate(0); }
+    }
+
+    .animate-bell {
+      animation: bell-shake 1s ease-in-out;
+      animation-iteration-count: 2;
+    }
+
+    .animate-pulse {
+      animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @keyframes highlight {
+      0% { background-color: rgba(59, 130, 246, 0.3); }
+      50% { background-color: rgba(59, 130, 246, 0.1); }
+      100% { background-color: rgba(59, 130, 246, 0.3); }
+    }
+
+    .animate-highlight {
+      animation: highlight 2s ease-in-out;
+    }
   `]
 })
 export class NavbarComponent implements OnInit, OnDestroy {
@@ -168,11 +215,59 @@ export class NavbarComponent implements OnInit, OnDestroy {
   // Timestamp pour éviter la mise en cache des images
   private imageTimestamp: number = new Date().getTime();
 
+  // État d'animation pour l'icône de notification
+  bellAnimationActive = false;
+
+  // Timeout pour l'animation
+  private bellAnimationTimeout: any;
+
   constructor(
     public authService: AuthService,
     public notificationService: NotificationService,
-    private websocketService: WebsocketService
-  ) {}
+    private websocketService: WebsocketService,
+    private logger: LoggingService
+  ) {
+    // Réagir aux nouvelles notifications
+    effect(() => {
+      const newNotification = this.notificationService.newNotification();
+      if (newNotification) {
+        this.handleNewNotification(newNotification);
+      }
+    });
+  }
+
+  /**
+   * Gère l'arrivée d'une nouvelle notification
+   * @param notification Nouvelle notification
+   */
+  private handleNewNotification(notification: Notification): void {
+    this.logger.info('Nouvelle notification reçue dans la navbar', {
+      component: 'NavbarComponent',
+      notificationId: notification.id,
+      notificationType: notification.type
+    });
+
+    // Activer l'animation de la cloche
+    this.startBellAnimation();
+  }
+
+  /**
+   * Démarre l'animation de la cloche de notification
+   */
+  private startBellAnimation(): void {
+    // Arrêter l'animation précédente si elle est en cours
+    if (this.bellAnimationTimeout) {
+      clearTimeout(this.bellAnimationTimeout);
+    }
+
+    // Activer l'animation
+    this.bellAnimationActive = true;
+
+    // Arrêter l'animation après 3 secondes
+    this.bellAnimationTimeout = setTimeout(() => {
+      this.bellAnimationActive = false;
+    }, 3000);
+  }
 
   /**
    * Vérifie si l'utilisateur actuel est un administrateur
@@ -237,6 +332,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
     // Arrêter le rafraîchissement des notifications
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
+    }
+
+    // Arrêter l'animation de la cloche si elle est en cours
+    if (this.bellAnimationTimeout) {
+      clearTimeout(this.bellAnimationTimeout);
     }
   }
 

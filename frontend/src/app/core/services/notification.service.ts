@@ -1,6 +1,6 @@
 import { Injectable, signal, DestroyRef, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, throwError, Subject } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -11,6 +11,7 @@ import {
   MarkAsReadResponse
 } from '../models/notification.model';
 import { WebsocketService } from './websocket.service';
+import { LoggingService } from './logging.service';
 
 @Injectable({
   providedIn: 'root'
@@ -22,13 +23,24 @@ export class NotificationService {
   notifications = signal<Notification[]>([]);
   unreadCount = signal<number>(0);
 
+  // Signal pour les nouvelles notifications (pour les animations)
+  newNotification = signal<Notification | null>(null);
+
+  // Observable pour les nouvelles notifications (pour les composants qui veulent s'abonner)
+  private newNotificationSubject = new Subject<Notification>();
+  newNotificationReceived = this.newNotificationSubject.asObservable();
+
   private destroyRef = inject(DestroyRef);
   private websocketInitialized = false;
+  private logger = inject(LoggingService);
+  private notificationSound: HTMLAudioElement | null = null;
 
   constructor(
     private http: HttpClient,
     private websocketService: WebsocketService
   ) {
+    // Initialiser le son de notification
+    this.initNotificationSound();
     // Initialiser les notifications au démarrage du service
     this.loadNotifications();
 
@@ -64,6 +76,47 @@ export class NotificationService {
   }
 
   /**
+   * Initialise le son de notification
+   */
+  private initNotificationSound(): void {
+    try {
+      this.notificationSound = new Audio('/assets/sounds/notification.mp3');
+      this.notificationSound.volume = 0.5; // Volume à 50%
+      this.logger.info('Son de notification initialisé', {
+        service: 'NotificationService'
+      });
+    } catch (error) {
+      this.logger.error('Erreur lors de l\'initialisation du son de notification', {
+        service: 'NotificationService',
+        error
+      });
+    }
+  }
+
+  /**
+   * Joue le son de notification
+   */
+  private playNotificationSound(): void {
+    if (this.notificationSound) {
+      try {
+        // Réinitialiser le son pour pouvoir le jouer plusieurs fois
+        this.notificationSound.currentTime = 0;
+        this.notificationSound.play().catch(error => {
+          this.logger.error('Erreur lors de la lecture du son de notification', {
+            service: 'NotificationService',
+            error
+          });
+        });
+      } catch (error) {
+        this.logger.error('Erreur lors de la lecture du son de notification', {
+          service: 'NotificationService',
+          error
+        });
+      }
+    }
+  }
+
+  /**
    * Ajoute une notification à la liste
    * @param notification Notification à ajouter
    */
@@ -79,6 +132,19 @@ export class NotificationService {
       // Ajouter la notification au début de la liste
       this.notifications.set([processedNotification, ...currentNotifications]);
       this.updateUnreadCount();
+
+      // Signaler qu'une nouvelle notification a été reçue
+      this.newNotification.set(processedNotification);
+      this.newNotificationSubject.next(processedNotification);
+
+      // Jouer le son de notification
+      this.playNotificationSound();
+
+      this.logger.info('Nouvelle notification reçue et traitée', {
+        service: 'NotificationService',
+        notificationId: processedNotification.id,
+        notificationType: processedNotification.type
+      });
     }
   }
 
@@ -103,6 +169,20 @@ export class NotificationService {
       // Ajouter les nouvelles notifications au début de la liste
       this.notifications.set([...newNotifications, ...currentNotifications]);
       this.updateUnreadCount();
+
+      // Signaler la dernière notification reçue pour l'animation
+      if (newNotifications.length > 0) {
+        const latestNotification = newNotifications[0];
+        this.newNotification.set(latestNotification);
+        this.newNotificationSubject.next(latestNotification);
+
+        // Jouer le son de notification (une seule fois même s'il y a plusieurs notifications)
+        this.playNotificationSound();
+
+        this.logger.info(`${newNotifications.length} nouvelles notifications reçues et traitées`, {
+          service: 'NotificationService'
+        });
+      }
     }
   }
 
@@ -188,11 +268,20 @@ export class NotificationService {
         this.notifications.set(updatedNotifications);
         this.updateUnreadCount();
 
+        // Réinitialiser le signal de nouvelle notification si c'est celle qui était affichée
+        const currentNewNotification = this.newNotification();
+        if (currentNewNotification && currentNewNotification.id === notificationId) {
+          this.newNotification.set(null);
+        }
+
         // Informer le serveur WebSocket que la notification a été lue
         this.websocketService.emit('notification:mark-read', { notificationId });
       }),
       catchError(error => {
-        console.error(`Erreur lors du marquage de la notification ${notificationId} comme lue:`, error);
+        this.logger.error(`Erreur lors du marquage de la notification ${notificationId} comme lue:`, {
+          service: 'NotificationService',
+          error
+        });
         return throwError(() => error);
       })
     );
@@ -217,9 +306,15 @@ export class NotificationService {
         );
         this.notifications.set(updatedNotifications);
         this.unreadCount.set(0);
+
+        // Réinitialiser le signal de nouvelle notification
+        this.newNotification.set(null);
       }),
       catchError(error => {
-        console.error('Erreur lors du marquage de toutes les notifications comme lues:', error);
+        this.logger.error('Erreur lors du marquage de toutes les notifications comme lues:', {
+          service: 'NotificationService',
+          error
+        });
         return throwError(() => error);
       })
     );

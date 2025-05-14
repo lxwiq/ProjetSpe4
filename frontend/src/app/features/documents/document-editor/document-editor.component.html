@@ -95,11 +95,33 @@
         ></app-voice-call>
       </div>
 
-      <!-- Composant des collaborateurs -->
-      <app-document-collaborators
-        [documentId]="documentId"
-        [activeUsers]="collaborativeService.activeUsers()"
-      ></app-document-collaborators>
+      <!-- Collaborators component has been removed as part of the permissions system removal -->
+      <div class="p-4">
+        <h3 class="text-lg font-medium text-gray-900">Utilisateurs actifs</h3>
+        <div class="mt-4">
+          @if (collaborativeService.activeUsers().length === 0) {
+            <p class="text-sm text-gray-500 italic">Aucun utilisateur actif</p>
+          } @else {
+            <ul class="space-y-2">
+              @for (user of collaborativeService.activeUsers(); track user.id) {
+                <li class="flex items-center space-x-2">
+                  <div class="relative">
+                    @if (user.profile_picture) {
+                      <img [src]="user.profile_picture" alt="Avatar" class="h-8 w-8 rounded-full">
+                    } @else {
+                      <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                        {{ user.username.charAt(0).toUpperCase() }}
+                      </div>
+                    }
+                    <span class="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-white"></span>
+                  </div>
+                  <span class="text-sm">{{ user.username }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
     </div>
   </div>
 </div>

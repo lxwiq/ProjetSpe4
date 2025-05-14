@@ -20,7 +20,6 @@ export interface Document {
   // Relations
   owner?: DocumentUser;
   last_modifier?: DocumentUser;
-  collaborators?: DocumentCollaborator[];
   parent_folder?: Document;
 }
 
@@ -34,25 +33,7 @@ export interface DocumentUser {
   profile_picture?: string;
 }
 
-/**
- * Interface représentant un collaborateur sur un document
- */
-export interface DocumentCollaborator {
-  id: number;
-  user_id: number;
-  document_id: number;
-  permission_level: DocumentPermissionLevel;
-  is_active: boolean;
-  invited_at?: string;
-  username?: string;
-  profile_picture?: string;
-  user?: DocumentUser;
-}
-
-/**
- * Types de permissions pour les documents
- */
-export type DocumentPermissionLevel = 'read' | 'write' | 'admin';
+// Document permissions have been removed
 
 /**
  * Interface représentant une version d'un document
@@ -92,7 +73,8 @@ export interface CursorPosition {
  * Interface représentant une modification de document
  */
 export interface DocumentDelta {
-  ops: any[];
+  ops?: any[];
+  content?: string;
   userId: number;
   timestamp: string;
 }
@@ -103,14 +85,6 @@ export interface DocumentDelta {
 export interface DocumentResponse {
   message: string;
   data: Document | Document[];
-}
-
-/**
- * Interface pour les réponses de l'API concernant les collaborateurs
- */
-export interface CollaboratorsResponse {
-  message: string;
-  data: DocumentCollaborator[];
 }
 
 /**
@@ -140,10 +114,4 @@ export interface UpdateDocumentRequest {
   content?: string;
 }
 
-/**
- * Interface pour l'invitation d'un collaborateur
- */
-export interface InviteCollaboratorRequest {
-  invitedUserId: number;
-  permissionLevel?: DocumentPermissionLevel;
-}
+// Document sharing interfaces have been removed

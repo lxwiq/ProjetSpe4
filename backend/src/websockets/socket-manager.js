@@ -169,18 +169,51 @@ class SocketManager {
         console.log(`Document update received from user ${socket.userId} for document ${documentId}`);
         console.log(`Content length: ${content ? content.length : 'undefined'}, Delta: ${delta ? 'present' : 'undefined'}`);
 
+        // Vérifier si l'utilisateur est dans la salle du document
+        const rooms = Array.from(socket.rooms);
+        const isInDocumentRoom = rooms.includes(`document:${documentId}`);
+
+        if (!isInDocumentRoom) {
+          console.log(`User ${socket.userId} is not in room document:${documentId}, adding them now`);
+          socket.join(`document:${documentId}`);
+        }
+
         if (delta) {
           console.log('Delta received:', delta);
 
+          // Vérifier que le delta a une structure valide
+          if (!delta.ops || !Array.isArray(delta.ops)) {
+            console.warn(`Invalid delta structure received from user ${socket.userId}`);
+            if (callback) callback({
+              success: false,
+              error: 'Invalid delta structure'
+            });
+            return;
+          }
+
           // Diffuser le delta à tous les utilisateurs dans la salle
           this.io.to(`document:${documentId}`).emit('document:content-changed', {
-            delta,
+            ops: delta.ops,
             userId: socket.userId,
             timestamp: new Date()
           });
 
           // Si un callback est fourni, répondre avec succès
           if (callback) callback({ success: true });
+
+          // Si le delta contient des modifications substantielles, mettre également à jour le contenu complet
+          // pour assurer la synchronisation
+          if (content && delta.ops.length > 5) {
+            try {
+              // Mettre à jour le contenu du document en arrière-plan
+              realtimeDocumentService.updateDocumentContent(documentId, socket.userId, content)
+                .then(() => console.log(`Background content update successful for document ${documentId}`))
+                .catch(err => console.error(`Background content update failed for document ${documentId}:`, err));
+            } catch (backgroundError) {
+              console.error('Error in background content update:', backgroundError);
+              // Ne pas échouer l'opération principale si la mise à jour en arrière-plan échoue
+            }
+          }
         } else if (content) {
           console.log(`Updating document content: ${content.substring(0, 100)}...`);
 
@@ -214,24 +247,35 @@ class SocketManager {
 
     // Mettre à jour la position du curseur
     socket.on('document:cursor-update', (data) => {
-      const { documentId, index, length } = data;
+      const { documentId, position } = data;
 
-      console.log(`Cursor update received from user ${socket.userId} for document ${documentId}:`, { index, length });
+      console.log(`Cursor update received from user ${socket.userId} for document ${documentId}:`, position);
 
       // Récupérer les informations de l'utilisateur
       realtimeDocumentService.getUserInfo(socket.userId).then(userInfo => {
+        // Générer une couleur unique pour l'utilisateur basée sur son ID
+        const colors = [
+          '#FF5733', '#33A8FF', '#33FF57', '#FF33A8', '#A833FF',
+          '#FF9F33', '#33FFF9', '#9FFF33', '#FF33F5', '#33FFB8'
+        ];
+        const userColor = userInfo.color || colors[socket.userId % colors.length];
+
         const cursorData = {
           userId: socket.userId,
-          username: userInfo.username,
-          index,
-          length,
-          color: userInfo.color
+          username: userInfo.username || `Utilisateur ${socket.userId}`,
+          position: {
+            index: position.index,
+            length: position.length || 0
+          },
+          color: userColor,
+          profilePicture: userInfo.profile_picture || null,
+          timestamp: new Date().toISOString()
         };
 
         console.log(`Emitting cursor update to room document:${documentId}:`, cursorData);
 
         // Diffuser la mise à jour du curseur à tous les utilisateurs dans la salle
-        this.io.to(`document:${documentId}`).emit('document:cursor-update', cursorData);
+        this.io.to(`document:${documentId}`).emit('document:cursor-moved', cursorData);
       }).catch(error => {
         console.error('Error getting user info for cursor update:', error);
       });

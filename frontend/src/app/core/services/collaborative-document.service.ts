@@ -68,6 +68,17 @@ export class CollaborativeDocumentService {
         this.contentChanged.next(data);
       });
 
+    // Écouter les mouvements de curseur
+    this.websocketService.onDocumentCursorMoved()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(data => {
+        console.log('Curseur déplacé:', data);
+        this.cursorMoved.next({
+          userId: data.userId,
+          position: data.position
+        });
+      });
+
     // Écouter les sauvegardes de document
     this.websocketService.onDocumentSaved()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -110,8 +121,8 @@ export class CollaborativeDocumentService {
           this.activeDocument.set(response.data.document);
           this.updateActiveUsers(response.data.activeUsers);
 
-          // Configurer la sauvegarde automatique
-          this.setupAutoSave(documentId, response.data.document.auto_save_interval || 30);
+          // Configurer la sauvegarde automatique avec un intervalle de 10 secondes
+          this.setupAutoSave(documentId, 10);
 
           // Notifier l'observateur
           observer.next(response.data);
@@ -238,17 +249,39 @@ export class CollaborativeDocumentService {
       this.activeDocument.set(updatedDoc);
     }
 
+    // Toujours privilégier l'envoi du delta pour les mises à jour en temps réel
+    // si disponible, car c'est plus efficace et précis
     const data: any = { documentId };
 
     if (delta) {
       data.delta = delta;
       console.log('🔄 [CollaborativeDoc] Envoi: Delta au serveur');
+
+      // Vérifier que le delta a une structure valide avec des opérations
+      if (!delta.ops || !Array.isArray(delta.ops)) {
+        console.warn('🔄 [CollaborativeDoc] Alerte: Delta sans opérations valides, ajout d\'un tableau vide');
+        data.delta.ops = [];
+      }
+
+      // S'assurer que le WebSocket est connecté avant d'envoyer
+      if (this.websocketService.isConnected()) {
+        this.websocketService.emit('document:update', data);
+      } else {
+        console.warn('🔄 [CollaborativeDoc] Alerte: WebSocket non connecté, mise à jour différée');
+        // Stocker la dernière mise à jour pour l'envoyer lors de la reconnexion
+        setTimeout(() => {
+          if (this.websocketService.isConnected()) {
+            console.log('🔄 [CollaborativeDoc] Réessai d\'envoi du delta après reconnexion');
+            this.websocketService.emit('document:update', data);
+          }
+        }, 1000);
+      }
     } else {
+      // Fallback au contenu complet si aucun delta n'est disponible
       data.content = content;
       console.log(`🔄 [CollaborativeDoc] Envoi: Contenu complet au serveur (${content.length} caractères)`);
+      this.websocketService.emit('document:update', data);
     }
-
-    this.websocketService.emit('document:update', data);
   }
 
   /**

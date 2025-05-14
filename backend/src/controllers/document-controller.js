@@ -132,75 +132,7 @@ class DocumentController {
     }
   }
 
-  async inviteUserToDocument(req, res) {
-    try {
-      const documentId = req.params.id;
-      const { invitedUserId, permissionLevel } = req.body;
-      const invitingUserId = req.userId;
-
-      if (!invitedUserId) {
-        return res.status(400).json({ message: 'ID de l\'utilisateur invité manquant' });
-      }
-
-      const invitation = await documentService.inviteUserToDocument(
-        documentId,
-        invitedUserId,
-        invitingUserId,
-        permissionLevel || 'read'
-      );
-
-      // Créer une notification pour l'utilisateur invité
-      const document = await documentService.getDocumentById(documentId, invitingUserId);
-      await notificationService.createDocumentInviteNotification(
-        invitedUserId,
-        parseInt(documentId),
-        invitingUserId,
-        document.title,
-        permissionLevel || 'read'
-      );
-
-      res.status(201).json(invitation);
-    } catch (err) {
-      console.error(err);
-      if (err.message.includes('not found') || err.message.includes('permission')) {
-        return res.status(403).json({ message: err.message });
-      }
-      res.status(500).json({ message: 'Erreur lors de l\'invitation de l\'utilisateur' });
-    }
-  }
-
-  async getDocumentCollaborators(req, res) {
-    try {
-      const documentId = req.params.id;
-      const userId = req.userId;
-
-      const collaborators = await documentService.getDocumentCollaborators(documentId, userId);
-      res.json(collaborators);
-    } catch (err) {
-      console.error(err);
-      if (err.message.includes('not found') || err.message.includes('permission')) {
-        return res.status(403).json({ message: err.message });
-      }
-      res.status(500).json({ message: 'Erreur lors de la récupération des collaborateurs' });
-    }
-  }
-
-  async removeCollaborator(req, res) {
-    try {
-      const documentId = req.params.id;
-      const collaboratorId = req.params.collaboratorId;
-      const userId = req.userId;
-
-      await documentService.removeCollaborator(documentId, collaboratorId, userId);
-      res.json({ message: 'Collaborateur retiré avec succès' });
-    } catch (err) {
-      console.error(err);
-      if (err.message.includes('not found') || err.message.includes('permission')) {
-        return res.status(403).json({ message: err.message });
-      }
-      res.status(500).json({ message: 'Erreur lors du retrait du collaborateur' });
-    }
-  }
+  // Document sharing methods have been removed as part of the permissions system removal
 }
 
 module.exports = new DocumentController();

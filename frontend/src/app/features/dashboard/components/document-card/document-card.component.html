@@ -12,24 +12,7 @@
       </p>
     </div>
 
-    @if (document.collaborators && document.collaborators.length > 0) {
-      <div class="flex -space-x-2">
-        @for (collaborator of document.collaborators.slice(0, 3); track collaborator.id) {
-          <div class="w-6 h-6 rounded-full bg-indigo-100 border border-white flex items-center justify-center text-xs text-indigo-800 overflow-hidden">
-            @if (collaborator.profile_picture) {
-              <img [src]="collaborator.profile_picture" alt="Collaborator" class="w-full h-full object-cover">
-            } @else {
-              {{ collaborator.username?.charAt(0) || 'U' }}
-            }
-          </div>
-        }
-        @if (document.collaborators.length > 3) {
-          <div class="w-6 h-6 rounded-full bg-indigo-500 border border-white flex items-center justify-center text-xs text-white">
-            +{{ document.collaborators.length - 3 }}
-          </div>
-        }
-      </div>
-    }
+    <!-- Collaborators section removed as part of the permissions system removal -->
   </div>
 
   <div class="mt-3 flex justify-between items-center">

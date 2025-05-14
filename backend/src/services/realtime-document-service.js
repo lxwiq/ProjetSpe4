@@ -575,94 +575,18 @@ class RealtimeDocumentService {
     documentId = parseInt(documentId);
     userId = parseInt(userId);
 
-    // Vérifier si l'utilisateur est le propriétaire du document
+    // Vérifier si le document existe (tous les utilisateurs ont accès)
     const document = await prisma.documents.findFirst({
       where: {
         id: documentId,
-        OR: [
-          { owner_id: userId },
-          {
-            document_invitations: {
-              some: {
-                user_id: userId,
-                is_active: true
-              }
-            }
-          }
-        ]
+        is_deleted: false
       }
     });
 
     return !!document;
   }
 
-  /**
-   * Invite un utilisateur à éditer un document
-   * @param {number} documentId - ID du document
-   * @param {number} invitedUserId - ID de l'utilisateur invité
-   * @param {number} invitingUserId - ID de l'utilisateur qui invite
-   * @param {string} permissionLevel - Niveau de permission (read, write, admin)
-   * @returns {Promise<Object>} - Informations sur l'invitation
-   */
-  async inviteUserToDocument(documentId, invitedUserId, invitingUserId, permissionLevel = 'write') {
-    documentId = parseInt(documentId);
-    invitedUserId = parseInt(invitedUserId);
-    invitingUserId = parseInt(invitingUserId);
-
-    // Vérifier si l'utilisateur qui invite a accès au document
-    const document = await prisma.documents.findFirst({
-      where: {
-        id: documentId,
-        owner_id: invitingUserId
-      }
-    });
-
-    if (!document) {
-      throw new Error('Document non trouvé ou vous n\'avez pas les droits pour inviter');
-    }
-
-    // Vérifier si l'utilisateur invité existe
-    const invitedUser = await prisma.users.findUnique({
-      where: { id: invitedUserId }
-    });
-
-    if (!invitedUser) {
-      throw new Error('Utilisateur invité non trouvé');
-    }
-
-    // Vérifier si une invitation existe déjà
-    const existingInvitation = await prisma.document_invitations.findFirst({
-      where: {
-        document_id: documentId,
-        user_id: invitedUserId
-      }
-    });
-
-    if (existingInvitation) {
-      // Mettre à jour l'invitation existante
-      const updatedInvitation = await prisma.document_invitations.update({
-        where: { id: existingInvitation.id },
-        data: {
-          permission_level: permissionLevel,
-          invited_by: invitingUserId,
-          invitation_date: new Date(),
-          is_active: true
-        }
-      });
-      return updatedInvitation;
-    } else {
-      // Créer une nouvelle invitation
-      const newInvitation = await prisma.document_invitations.create({
-        data: {
-          document_id: documentId,
-          user_id: invitedUserId,
-          permission_level: permissionLevel,
-          invited_by: invitingUserId
-        }
-      });
-      return newInvitation;
-    }
-  }
+  // Document sharing methods have been removed as part of the permissions system removal
 
   /**
    * Récupère les utilisateurs actifs sur un document

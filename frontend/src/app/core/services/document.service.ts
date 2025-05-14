@@ -6,12 +6,9 @@ import { catchError, map, switchMap, retry, delay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   Document,
-  DocumentCollaborator,
   DocumentResponse,
-  CollaboratorsResponse,
   CreateDocumentRequest,
   UpdateDocumentRequest,
-  InviteCollaboratorRequest,
   ActiveUsersResponse,
   ActiveDocumentUser
 } from '../models/document.model';
@@ -275,37 +272,7 @@ export class DocumentService {
       );
   }
 
-  /**
-   * Récupère les collaborateurs d'un document
-   * @param documentId ID du document
-   * @returns Observable avec la liste des collaborateurs
-   */
-  getDocumentCollaborators(documentId: number): Observable<DocumentCollaborator[]> {
-    return this.http.get<CollaboratorsResponse>(`${this.API_URL}/documents/${documentId}/collaborators`, { withCredentials: true })
-      .pipe(
-        map(response => Array.isArray(response) ? response : (Array.isArray(response.data) ? response.data : [])),
-        catchError(error => {
-          console.error(`Erreur lors de la récupération des collaborateurs du document ${documentId}:`, error);
-          return throwError(() => error);
-        })
-      );
-  }
-
-  /**
-   * Invite un utilisateur à collaborer sur un document
-   * @param documentId ID du document
-   * @param inviteData Données de l'invitation
-   * @returns Observable avec le résultat de l'invitation
-   */
-  inviteCollaborator(documentId: number, inviteData: InviteCollaboratorRequest): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/documents/${documentId}/invite`, inviteData, { withCredentials: true })
-      .pipe(
-        catchError(error => {
-          console.error(`Erreur lors de l'invitation à collaborer sur le document ${documentId}:`, error);
-          return throwError(() => error);
-        })
-      );
-  }
+  // Document sharing methods have been removed as part of the permissions system removal
 
   /**
    * Récupère les utilisateurs actifs sur un document

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, signal, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -7,9 +7,10 @@ import { DocumentService } from '../../../core/services/document.service';
 import { CollaborativeDocumentService } from '../../../core/services/collaborative-document.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoggingService } from '../../../core/services/logging.service';
-import { Document, ActiveDocumentUser, DocumentCollaborator } from '../../../core/models/document.model';
-import { DocumentCollaboratorsComponent } from '../document-collaborators/document-collaborators.component';
+import { Document } from '../../../core/models/document.model';
+// Document collaborators component has been removed as part of the permissions system removal
 import { VoiceCallComponent } from '../voice-call/voice-call.component';
+import { CursorManager } from './cursor-manager';
 
 // Déclaration pour Quill
 declare var Quill: any;
@@ -17,7 +18,7 @@ declare var Quill: any;
 @Component({
   selector: 'app-document-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DocumentCollaboratorsComponent, VoiceCallComponent],
+  imports: [CommonModule, FormsModule, RouterLink, VoiceCallComponent],
   templateUrl: './document-editor.component.html',
   styleUrls: ['./document-editor.component.css']
 })
@@ -40,6 +41,8 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
   documentId!: number;
   private isEditorReady = false;
   private isContentLoaded = false;
+  private cursorManager: CursorManager | null = null;
+  private saveIndicator: HTMLElement | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -49,31 +52,53 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
     private authService: AuthService,
     private logger: LoggingService
   ) {
-    // Réagir aux changements d'état du service collaboratif
-    effect(() => {
-      this.isSaving.set(this.collaborativeService.isSaving());
-    });
+    // Au lieu d'utiliser des effets qui peuvent causer des boucles,
+    // nous allons configurer des écouteurs manuels pour les changements d'état
+    this.setupStateListeners();
+  }
 
-    effect(() => {
+  /**
+   * Configure les écouteurs pour les changements d'état
+   */
+  private setupStateListeners(): void {
+    // Créer un intervalle pour vérifier périodiquement les changements d'état
+    const stateCheckInterval = setInterval(() => {
+      // Vérifier l'état de sauvegarde
+      const isSaving = this.collaborativeService.isSaving();
+      if (this.isSaving() !== isSaving) {
+        this.isSaving.set(isSaving);
+      }
+
+      // Vérifier la dernière sauvegarde
       const lastSaved = this.collaborativeService.lastSaved();
-      if (lastSaved) {
+      if (lastSaved && (!this.lastSaved() || this.lastSaved()!.getTime() !== lastSaved.getTime())) {
         this.lastSaved.set(lastSaved);
         this.logger.debug('Dernière sauvegarde mise à jour', {
           component: 'DocumentEditorComponent',
           lastSaved
         });
       }
-    });
 
-    // Mettre à jour la liste des IDs des utilisateurs actifs
-    effect(() => {
+      // Mettre à jour la liste des IDs des utilisateurs actifs
       const activeUsers = this.collaborativeService.activeUsers();
-      this.activeUserIds.set(activeUsers.map(user => user.id));
-      this.logger.debug('Liste des utilisateurs actifs mise à jour', {
-        component: 'DocumentEditorComponent',
-        activeUserCount: activeUsers.length
-      });
-    });
+      const activeUserIds = activeUsers.map(user => user.id);
+      if (JSON.stringify(this.activeUserIds()) !== JSON.stringify(activeUserIds)) {
+        this.activeUserIds.set(activeUserIds);
+        this.logger.debug('Liste des utilisateurs actifs mise à jour', {
+          component: 'DocumentEditorComponent',
+          activeUserCount: activeUsers.length
+        });
+      }
+    }, 1000); // Vérifier toutes les secondes
+
+    // Nettoyer l'intervalle lors de la destruction du composant
+    const originalOnDestroy = this.ngOnDestroy;
+    this.ngOnDestroy = function() {
+      clearInterval(stateCheckInterval);
+      if (originalOnDestroy) {
+        originalOnDestroy.apply(this);
+      }
+    };
   }
 
   ngOnInit(): void {
@@ -116,43 +141,72 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
     if (this.documentId) {
       this.collaborativeService.leaveDocument(this.documentId);
     }
+
+    // Supprimer tous les curseurs
+    if (this.cursorManager) {
+      this.cursorManager.removeAllCursors();
+    }
+
+    // Supprimer l'indicateur de sauvegarde
+    if (this.saveIndicator && document.body.contains(this.saveIndicator)) {
+      document.body.removeChild(this.saveIndicator);
+    }
   }
+
+  // Compteur de tentatives d'initialisation
+  private initAttempts = 0;
+  private maxInitAttempts = 3;
 
   /**
    * Initialise l'éditeur Quill
    */
   private initEditor(): void {
+    // Limiter le nombre de tentatives pour éviter les boucles infinies
+    if (this.initAttempts >= this.maxInitAttempts) {
+      this.logger.error(`Abandon de l'initialisation de l'éditeur après ${this.initAttempts} tentatives`, {
+        component: 'DocumentEditorComponent'
+      });
+      this.error.set('Impossible d\'initialiser l\'éditeur. Veuillez rafraîchir la page.');
+      return;
+    }
+
+    this.initAttempts++;
+
     try {
       if (!this.editorElement || !this.editorElement.nativeElement) {
         this.logger.error('Élément d\'éditeur non trouvé', {
-          component: 'DocumentEditorComponent'
+          component: 'DocumentEditorComponent',
+          attempt: this.initAttempts
         });
 
         // Réessayer après un court délai si l'élément n'est pas trouvé
-        setTimeout(() => {
-          this.logger.info('Tentative de réinitialisation de l\'éditeur...', {
-            component: 'DocumentEditorComponent'
-          });
-          this.initEditor();
-        }, 500);
-
+        if (this.initAttempts < this.maxInitAttempts) {
+          setTimeout(() => {
+            this.logger.info(`Tentative de réinitialisation de l'éditeur (${this.initAttempts + 1}/${this.maxInitAttempts})...`, {
+              component: 'DocumentEditorComponent'
+            });
+            this.initEditor();
+          }, 500);
+        }
         return;
       }
 
       // Vérifier si l'élément est bien dans le DOM
       if (!document.body.contains(this.editorElement.nativeElement)) {
         this.logger.error('L\'élément d\'éditeur n\'est pas dans le DOM', {
-          component: 'DocumentEditorComponent'
+          component: 'DocumentEditorComponent',
+          attempt: this.initAttempts
         });
 
         // Réessayer après un court délai
-        setTimeout(() => {
-          this.logger.info('Tentative de réinitialisation de l\'éditeur...', {
-            component: 'DocumentEditorComponent'
-          });
-          this.initEditor();
-        }, 500);
-
+        if (this.initAttempts < this.maxInitAttempts) {
+          setTimeout(() => {
+            this.logger.info(`Tentative de réinitialisation de l'éditeur (${this.initAttempts + 1}/${this.maxInitAttempts})...`, {
+              component: 'DocumentEditorComponent'
+            });
+            this.initEditor();
+          }, 500);
+        }
         return;
       }
 
@@ -183,17 +237,26 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
         component: 'DocumentEditorComponent'
       });
 
+      // Initialiser le gestionnaire de curseurs
+      this.cursorManager = new CursorManager(this.editor, this.getCurrentUserId());
+
+      // Créer l'indicateur de sauvegarde
+      this.createSaveIndicator();
+
       // Configurer les événements de l'éditeur
-      this.editor.on('text-change', (delta: any, oldDelta: any, source: string) => {
+      this.editor.on('text-change', (delta: any, _oldDelta: any, source: string) => {
         if (source === 'user' && this.documentId) {
           // Envoyer les modifications au service collaboratif
           const content = this.editor.root.innerHTML;
           this.collaborativeService.updateContent(this.documentId, content, delta);
+
+          // Mettre en évidence les modifications locales
+          this.highlightLocalChanges(delta);
         }
       });
 
       // Configurer les événements de sélection
-      this.editor.on('selection-change', (range: any, oldRange: any, source: string) => {
+      this.editor.on('selection-change', (range: any, _oldRange: any, source: string) => {
         if (source === 'user' && range && this.documentId) {
           // Envoyer la position du curseur au service collaboratif
           this.collaborativeService.updateCursorPosition(this.documentId, {
@@ -205,19 +268,27 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
 
       this.isEditorReady = true;
       this.loadEditorContent();
+
+      // Réinitialiser le compteur de tentatives après une initialisation réussie
+      this.initAttempts = 0;
     } catch (error) {
       this.logger.error('Erreur lors de l\'initialisation de l\'éditeur', {
         component: 'DocumentEditorComponent',
-        error
+        error,
+        attempt: this.initAttempts
       });
 
-      // Réessayer après un court délai en cas d'erreur
-      setTimeout(() => {
-        this.logger.info('Tentative de réinitialisation de l\'éditeur après erreur...', {
-          component: 'DocumentEditorComponent'
-        });
-        this.initEditor();
-      }, 1000);
+      // Réessayer après un court délai en cas d'erreur, mais seulement si on n'a pas dépassé le nombre max de tentatives
+      if (this.initAttempts < this.maxInitAttempts) {
+        setTimeout(() => {
+          this.logger.info(`Tentative de réinitialisation de l'éditeur après erreur (${this.initAttempts + 1}/${this.maxInitAttempts})...`, {
+            component: 'DocumentEditorComponent'
+          });
+          this.initEditor();
+        }, 1000);
+      } else {
+        this.error.set('Impossible d\'initialiser l\'éditeur. Veuillez rafraîchir la page.');
+      }
     }
   }
 
@@ -369,16 +440,66 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
       // Charger le contenu
       this.editor.root.innerHTML = content;
 
-      // Réactiver les événements
-      this.editor.on('text-change', (delta: any, oldDelta: any, source: string) => {
+      // Réactiver les événements avec une gestion d'erreur robuste
+      this.editor.on('text-change', (delta: any, _oldDelta: any, source: string) => {
         if (source === 'user' && this.documentId) {
-          const content = this.editor.root.innerHTML;
-          this.collaborativeService.updateContent(this.documentId, content, delta);
+          try {
+            const content = this.editor.root.innerHTML;
+
+            // Vérifier que le delta a une structure valide
+            if (!delta || !delta.ops) {
+              this.logger.warn('Delta invalide détecté dans l\'événement text-change', {
+                component: 'DocumentEditorComponent',
+                delta
+              });
+              // Envoyer uniquement le contenu si le delta est invalide
+              this.collaborativeService.updateContent(this.documentId, content);
+            } else {
+              // Envoyer le contenu et le delta
+              this.collaborativeService.updateContent(this.documentId, content, delta);
+            }
+          } catch (error) {
+            this.logger.error('Erreur lors de l\'envoi des modifications', {
+              component: 'DocumentEditorComponent',
+              error
+            });
+
+            // Tenter d'envoyer uniquement le contenu en cas d'erreur
+            try {
+              const content = this.editor.root.innerHTML;
+              this.collaborativeService.updateContent(this.documentId, content);
+            } catch (fallbackError) {
+              this.logger.error('Erreur lors de la tentative de fallback', {
+                component: 'DocumentEditorComponent',
+                error: fallbackError
+              });
+            }
+          }
         }
       });
+
+      this.logger.info('Contenu chargé avec succès dans l\'éditeur', {
+        component: 'DocumentEditorComponent',
+        contentLength: content.length
+      });
     } catch (error) {
-      console.error('Erreur lors du chargement du contenu dans l\'éditeur:', error);
+      this.logger.error('Erreur lors du chargement du contenu dans l\'éditeur', {
+        component: 'DocumentEditorComponent',
+        error
+      });
       this.error.set('Erreur lors du chargement du contenu. Veuillez rafraîchir la page.');
+
+      // Tenter de récupérer en réinitialisant l'éditeur
+      setTimeout(() => {
+        try {
+          this.initEditor();
+        } catch (reinitError) {
+          this.logger.error('Échec de la réinitialisation de l\'éditeur', {
+            component: 'DocumentEditorComponent',
+            error: reinitError
+          });
+        }
+      }, 2000);
     }
   }
 
@@ -392,30 +513,97 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
 
       // Appliquer les modifications si elles ne viennent pas de cet utilisateur
       if (delta.userId !== this.getCurrentUserId()) {
-        // Désactiver temporairement les événements pour éviter les boucles
-        this.editor.off('text-change');
+        try {
+          // Désactiver temporairement les événements pour éviter les boucles
+          this.editor.off('text-change');
 
-        // Appliquer le delta
-        this.editor.updateContents(delta.ops);
-
-        // Réactiver les événements
-        this.editor.on('text-change', (delta: any, oldDelta: any, source: string) => {
-          if (source === 'user' && this.documentId) {
-            const content = this.editor.root.innerHTML;
-            this.collaborativeService.updateContent(this.documentId, content, delta);
+          // Vérifier si nous avons reçu un delta ou un contenu complet
+          if (delta.ops && Array.isArray(delta.ops)) {
+            // Appliquer le delta
+            this.logger.debug('Application du delta reçu', {
+              component: 'DocumentEditorComponent',
+              deltaOps: delta.ops
+            });
+            this.editor.updateContents(delta.ops);
+          } else if (delta.content) {
+            // Appliquer le contenu complet
+            this.logger.debug('Application du contenu complet reçu', {
+              component: 'DocumentEditorComponent',
+              contentLength: delta.content.length
+            });
+            this.editor.root.innerHTML = delta.content;
+          } else {
+            this.logger.warn('Delta reçu sans ops ni contenu', {
+              component: 'DocumentEditorComponent',
+              delta
+            });
           }
-        });
+
+          // Réactiver les événements avec une fonction de rappel robuste
+          this.editor.on('text-change', (newDelta: any, _oldDelta: any, source: string) => {
+            if (source === 'user' && this.documentId) {
+              try {
+                const content = this.editor.root.innerHTML;
+                this.collaborativeService.updateContent(this.documentId, content, newDelta);
+              } catch (error) {
+                this.logger.error('Erreur lors de l\'envoi des modifications', {
+                  component: 'DocumentEditorComponent',
+                  error
+                });
+              }
+            }
+          });
+        } catch (error) {
+          this.logger.error('Erreur lors de l\'application du delta', {
+            component: 'DocumentEditorComponent',
+            error,
+            delta
+          });
+
+          // Tenter de récupérer en réattachant l'événement text-change
+          try {
+            this.editor.on('text-change', (newDelta: any, _oldDelta: any, source: string) => {
+              if (source === 'user' && this.documentId) {
+                const content = this.editor.root.innerHTML;
+                this.collaborativeService.updateContent(this.documentId, content, newDelta);
+              }
+            });
+          } catch (reattachError) {
+            this.logger.error('Erreur lors de la récupération après échec d\'application de delta', {
+              component: 'DocumentEditorComponent',
+              error: reattachError
+            });
+          }
+        }
       }
     });
 
     // Écouter les mouvements de curseur
     this.collaborativeService.onCursorMoved().subscribe(data => {
-      // Implémenter l'affichage des curseurs des autres utilisateurs
-      this.logger.debug('Curseur déplacé', {
-        component: 'DocumentEditorComponent',
-        userId: data.userId,
-        position: data.position
-      });
+      if (!this.cursorManager) return;
+
+      // Récupérer les informations de l'utilisateur
+      const activeUsers = this.collaborativeService.activeUsers();
+      const user = activeUsers.find(u => u.id === data.userId);
+
+      if (user) {
+        // Mettre à jour le curseur
+        this.cursorManager.updateCursor(
+          data.userId,
+          user.username || `Utilisateur ${data.userId}`,
+          {
+            index: data.position.index,
+            length: data.position.length || 0
+          }
+        );
+
+        this.logger.debug('Curseur mis à jour', {
+          component: 'DocumentEditorComponent',
+          userId: data.userId,
+          username: user.username,
+          position: data.position
+        });
+      }
     });
 
     // Écouter les sauvegardes de document
@@ -658,6 +846,141 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
         }
       });
     }, 1000);
+  }
+
+  /**
+   * Crée l'indicateur de sauvegarde
+   */
+  private createSaveIndicator(): void {
+    // Supprimer l'ancien indicateur s'il existe
+    if (this.saveIndicator && document.body.contains(this.saveIndicator)) {
+      document.body.removeChild(this.saveIndicator);
+    }
+
+    // Créer le nouvel indicateur
+    this.saveIndicator = document.createElement('div');
+    this.saveIndicator.className = 'save-indicator';
+    this.saveIndicator.innerHTML = '<span>Prêt</span>';
+    document.body.appendChild(this.saveIndicator);
+
+    // Masquer l'indicateur après 3 secondes
+    setTimeout(() => {
+      if (this.saveIndicator) {
+        this.saveIndicator.style.opacity = '0';
+      }
+    }, 3000);
+
+    // Configurer les souscriptions pour mettre à jour l'indicateur
+    this.setupSaveIndicatorSubscriptions();
+  }
+
+  /**
+   * Configure les souscriptions pour l'indicateur de sauvegarde
+   */
+  private setupSaveIndicatorSubscriptions(): void {
+    // Créer une référence locale pour éviter les problèmes de contexte
+    const component = this;
+
+    // Utiliser un intervalle pour vérifier périodiquement l'état de sauvegarde
+    // au lieu d'utiliser effect() qui peut causer des boucles infinies
+    const checkInterval = setInterval(() => {
+      if (!component.saveIndicator || !document.body.contains(component.saveIndicator)) {
+        // Arrêter l'intervalle si l'indicateur n'existe plus
+        clearInterval(checkInterval);
+        return;
+      }
+
+      const isSaving = component.collaborativeService.isSaving();
+      const lastSaved = component.collaborativeService.lastSaved();
+      component.updateSaveIndicator(isSaving, lastSaved);
+    }, 500); // Vérifier toutes les 500ms
+
+    // Nettoyer l'intervalle lors de la destruction du composant
+    this.ngOnDestroy = (function() {
+      const originalOnDestroy = component.ngOnDestroy;
+      return function() {
+        clearInterval(checkInterval);
+        if (originalOnDestroy) {
+          originalOnDestroy.apply(component);
+        }
+      };
+    })();
+  }
+
+  /**
+   * Met à jour l'indicateur de sauvegarde
+   * @param isSaving Indique si une sauvegarde est en cours
+   * @param lastSaved Date de la dernière sauvegarde
+   */
+  private updateSaveIndicator(isSaving: boolean, lastSaved: Date | null): void {
+    if (!this.saveIndicator) return;
+
+    if (isSaving) {
+      this.saveIndicator.className = 'save-indicator saving';
+      this.saveIndicator.innerHTML = '<span>Sauvegarde en cours...</span>';
+      this.saveIndicator.style.opacity = '1';
+    } else if (lastSaved) {
+      const formattedTime = this.formatDate(lastSaved);
+      this.saveIndicator.className = 'save-indicator saved';
+      this.saveIndicator.innerHTML = `<span>Sauvegardé à ${formattedTime}</span>`;
+      this.saveIndicator.style.opacity = '1';
+
+      // Masquer l'indicateur après 3 secondes
+      setTimeout(() => {
+        if (this.saveIndicator) {
+          this.saveIndicator.style.opacity = '0';
+        }
+      }, 3000);
+    }
+  }
+
+  /**
+   * Met en évidence les modifications locales
+   * @param delta Delta de modification
+   */
+  private highlightLocalChanges(delta: any): void {
+    if (!delta || !delta.ops || !this.editor) return;
+
+    // Parcourir les opérations du delta
+    let index = 0;
+    delta.ops.forEach((op: any) => {
+      if (op.insert) {
+        // Texte inséré
+        const length = op.insert.length || 1;
+        this.highlightRange(index, length, '#e6f7ff'); // Bleu clair
+        index += length;
+      } else if (op.delete) {
+        // Texte supprimé (rien à faire car il n'existe plus)
+      } else if (op.retain) {
+        // Texte conservé
+        index += op.retain;
+      }
+    });
+  }
+
+  /**
+   * Met en évidence une plage de texte
+   * @param index Index de début
+   * @param length Longueur
+   * @param color Couleur
+   */
+  private highlightRange(index: number, length: number, color: string): void {
+    try {
+      // Appliquer une classe temporaire
+      this.editor.formatText(index, length, {
+        'background-color': color,
+        'class': 'ql-recent-change'
+      });
+
+      // Supprimer la mise en évidence après 2 secondes
+      setTimeout(() => {
+        this.editor.formatText(index, length, {
+          'background-color': false
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Erreur lors de la mise en évidence:', error);
+    }
   }
 
   /**

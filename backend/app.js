@@ -60,8 +60,8 @@ app.use(cookieParser());
 app.use('/uploads', express.static('src/uploads'));
 app.use('/uploads/profile_pictures', express.static('src/uploads/profile_pictures'));
 
-// Appliquer le rate limiter global à toutes les routes API
-app.use(apiLimiter);
+// Le rate limiter global a été retiré pour n'appliquer la limitation qu'aux routes d'authentification
+// app.use(apiLimiter);
 
 // Mount Routes
 app.use('/users', verifyToken, userRoutes);

@@ -52,9 +52,8 @@ export class DashboardComponent implements OnInit {
   // Computed values
   documentCount = computed(() => this.documents().length);
   folderCount = computed(() => this.documents().filter(doc => doc.is_folder).length);
-  collaborativeDocumentCount = computed(() =>
-    this.documents().filter(doc => doc.collaborators && doc.collaborators.length > 0).length
-  );
+  // Collaborative document count removed as part of the permissions system removal
+  collaborativeDocumentCount = computed(() => 0);
   unreadNotificationCount = computed(() =>
     this.notifications().filter(notification => !notification.is_read).length
   );
