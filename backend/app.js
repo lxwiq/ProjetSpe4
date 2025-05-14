@@ -5,6 +5,11 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const http = require('http');
 const { setupSwagger } = require('./src/config/swagger');
+const initDirectories = require('./src/utils/init-directories');
+
+// Initialiser les répertoires nécessaires
+initDirectories();
+
 const app = express();
 const server = http.createServer(app);
 

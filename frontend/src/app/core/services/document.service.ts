@@ -47,7 +47,55 @@ export class DocumentService {
   getDocumentById(documentId: number): Observable<Document> {
     return this.http.get<DocumentResponse>(`${this.API_URL}/documents/${documentId}`, { withCredentials: true })
       .pipe(
-        map(response => Array.isArray(response) ? response[0] : (Array.isArray(response.data) ? response.data[0] : response.data as Document)),
+        map(response => {
+          console.log('Réponse du serveur pour getDocumentById:', response);
+
+          // Si la réponse est directement un objet document (comme dans l'erreur signalée)
+          if (response && typeof response === 'object' && 'id' in response) {
+            console.log('Réponse identifiée comme un objet document direct');
+            // Vérifier que l'objet a les propriétés minimales requises pour un Document
+            if ('title' in response && 'owner_id' in response) {
+              return response as unknown as Document;
+            } else {
+              console.warn('Objet avec ID mais sans propriétés requises pour un Document');
+              // Créer un Document valide à partir des données disponibles
+              return {
+                id: response.id as number,
+                title: (response as any).title || 'Document sans titre',
+                owner_id: (response as any).owner_id || 0,
+                content: (response as any).content,
+                is_folder: (response as any).is_folder || false
+              } as Document;
+            }
+          }
+
+          // Vérifier si la réponse est un tableau
+          if (Array.isArray(response)) {
+            return response[0];
+          }
+
+          // Vérifier si la réponse a une propriété data qui est un tableau
+          if (response && response.data && Array.isArray(response.data)) {
+            return response.data[0];
+          }
+
+          // Vérifier si la réponse a une propriété data qui est un objet
+          if (response && response.data && typeof response.data === 'object') {
+            return response.data as Document;
+          }
+
+          // Si aucune des conditions ci-dessus n'est remplie, retourner un document par défaut
+          console.warn('Format de réponse inattendu pour getDocumentById, création d\'un document par défaut');
+          return {
+            id: documentId,
+            title: 'Document sans titre',
+            content: '',
+            owner_id: 0,
+            is_folder: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          } as Document;
+        }),
         catchError(error => {
           console.error(`Erreur lors de la récupération du document ${documentId}:`, error);
           return throwError(() => error);
@@ -63,19 +111,19 @@ export class DocumentService {
   createDocument(documentData: CreateDocumentRequest): Observable<Document> {
     const formData = new FormData();
     formData.append('title', documentData.title);
-    
+
     if (documentData.content) {
       formData.append('content', documentData.content);
     }
-    
+
     if (documentData.parentFolderId) {
       formData.append('parentFolderId', documentData.parentFolderId.toString());
     }
-    
+
     if (documentData.isFolder !== undefined) {
       formData.append('isFolder', documentData.isFolder.toString());
     }
-    
+
     if (documentData.file) {
       formData.append('file', documentData.file);
     }

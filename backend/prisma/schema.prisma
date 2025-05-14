@@ -60,32 +60,60 @@ model document_versions {
   id                Int       @id @default(autoincrement())
   document_id       Int
   version_number    Int
+  title             String?   @db.VarChar(255)
   content           String?
+  file_path         String?   @db.VarChar(500)
+  file_size         BigInt?
+  file_type         String?   @db.VarChar(50)
   modified_by       Int
-  modification_date DateTime? @default(now()) @db.Timestamptz(6)
-  change_summary    String?
+  modification_date DateTime  @default(now()) @db.Timestamptz(6)
+  change_summary    String?   @db.VarChar(500)
+  is_major_version  Boolean   @default(false)
   documents         documents @relation(fields: [document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users             users     @relation(fields: [modified_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([document_id, version_number])
   @@index([document_id], map: "idx_document_versions_document")
+  @@index([modified_by], map: "idx_document_versions_modified_by")
+  @@index([modification_date], map: "idx_document_versions_modification_date")
 }
 
 model documents {
   id                                      Int                    @id @default(autoincrement())
   title                                   String                 @db.VarChar(255)
+  description                             String?                @db.VarChar(500)
   content                                 String?
+
+  // Informations sur le fichier
   file_path                               String?                @db.VarChar(500)
+  file_name                               String?                @db.VarChar(255)
+  file_original_name                      String?                @db.VarChar(255)
   file_type                               String?                @db.VarChar(50)
   file_size                               BigInt?
+  file_extension                          String?                @db.VarChar(20)
+  file_upload_date                        DateTime?              @db.Timestamptz(6)
+
+  // Informations sur le propriétaire et les modifications
   owner_id                                Int
   parent_folder_id                        Int?
-  is_folder                               Boolean?               @default(false)
-  is_deleted                              Boolean?               @default(false)
-  created_at                              DateTime?              @default(now()) @db.Timestamptz(6)
-  updated_at                              DateTime?              @default(now()) @db.Timestamptz(6)
+  is_folder                               Boolean                @default(false)
+  is_deleted                              Boolean                @default(false)
+  is_public                               Boolean                @default(false)
+  is_template                             Boolean                @default(false)
+  created_at                              DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at                              DateTime               @default(now()) @db.Timestamptz(6)
   last_modified_by                        Int?
-  auto_save_interval                      Int?                   @default(30)
+  last_accessed_at                        DateTime?              @db.Timestamptz(6)
+
+  // Paramètres de collaboration
+  auto_save_interval                      Int                    @default(30)
+  allow_comments                          Boolean                @default(true)
+
+  // Tags et métadonnées
+  tags                                    String?                @db.VarChar(500)
+  metadata                                Json?
+
+  // Relations
   calls                                   calls[]
   document_invitations                    document_invitations[]
   document_versions                       document_versions[]
@@ -96,6 +124,11 @@ model documents {
 
   @@index([owner_id], map: "idx_documents_owner")
   @@index([parent_folder_id], map: "idx_documents_parent")
+  @@index([title], map: "idx_documents_title")
+  @@index([file_type], map: "idx_documents_file_type")
+  @@index([created_at], map: "idx_documents_created_at")
+  @@index([updated_at], map: "idx_documents_updated_at")
+  @@index([is_folder], map: "idx_documents_is_folder")
 }
 
 model users {

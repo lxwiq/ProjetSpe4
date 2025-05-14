@@ -154,27 +154,43 @@ exports.Prisma.Document_versionsScalarFieldEnum = {
   id: 'id',
   document_id: 'document_id',
   version_number: 'version_number',
+  title: 'title',
   content: 'content',
+  file_path: 'file_path',
+  file_size: 'file_size',
+  file_type: 'file_type',
   modified_by: 'modified_by',
   modification_date: 'modification_date',
-  change_summary: 'change_summary'
+  change_summary: 'change_summary',
+  is_major_version: 'is_major_version'
 };
 
 exports.Prisma.DocumentsScalarFieldEnum = {
   id: 'id',
   title: 'title',
+  description: 'description',
   content: 'content',
   file_path: 'file_path',
+  file_name: 'file_name',
+  file_original_name: 'file_original_name',
   file_type: 'file_type',
   file_size: 'file_size',
+  file_extension: 'file_extension',
+  file_upload_date: 'file_upload_date',
   owner_id: 'owner_id',
   parent_folder_id: 'parent_folder_id',
   is_folder: 'is_folder',
   is_deleted: 'is_deleted',
+  is_public: 'is_public',
+  is_template: 'is_template',
   created_at: 'created_at',
   updated_at: 'updated_at',
   last_modified_by: 'last_modified_by',
-  auto_save_interval: 'auto_save_interval'
+  last_accessed_at: 'last_accessed_at',
+  auto_save_interval: 'auto_save_interval',
+  allow_comments: 'allow_comments',
+  tags: 'tags',
+  metadata: 'metadata'
 };
 
 exports.Prisma.UsersScalarFieldEnum = {
@@ -239,6 +255,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
@@ -247,6 +268,12 @@ exports.Prisma.NullsOrder = {
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
+};
+
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
 };
 
 

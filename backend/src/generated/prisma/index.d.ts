@@ -5425,6 +5425,7 @@ export namespace Prisma {
     id: number | null
     document_id: number | null
     version_number: number | null
+    file_size: number | null
     modified_by: number | null
   }
 
@@ -5432,6 +5433,7 @@ export namespace Prisma {
     id: number | null
     document_id: number | null
     version_number: number | null
+    file_size: bigint | null
     modified_by: number | null
   }
 
@@ -5439,30 +5441,45 @@ export namespace Prisma {
     id: number | null
     document_id: number | null
     version_number: number | null
+    title: string | null
     content: string | null
+    file_path: string | null
+    file_size: bigint | null
+    file_type: string | null
     modified_by: number | null
     modification_date: Date | null
     change_summary: string | null
+    is_major_version: boolean | null
   }
 
   export type Document_versionsMaxAggregateOutputType = {
     id: number | null
     document_id: number | null
     version_number: number | null
+    title: string | null
     content: string | null
+    file_path: string | null
+    file_size: bigint | null
+    file_type: string | null
     modified_by: number | null
     modification_date: Date | null
     change_summary: string | null
+    is_major_version: boolean | null
   }
 
   export type Document_versionsCountAggregateOutputType = {
     id: number
     document_id: number
     version_number: number
+    title: number
     content: number
+    file_path: number
+    file_size: number
+    file_type: number
     modified_by: number
     modification_date: number
     change_summary: number
+    is_major_version: number
     _all: number
   }
 
@@ -5471,6 +5488,7 @@ export namespace Prisma {
     id?: true
     document_id?: true
     version_number?: true
+    file_size?: true
     modified_by?: true
   }
 
@@ -5478,6 +5496,7 @@ export namespace Prisma {
     id?: true
     document_id?: true
     version_number?: true
+    file_size?: true
     modified_by?: true
   }
 
@@ -5485,30 +5504,45 @@ export namespace Prisma {
     id?: true
     document_id?: true
     version_number?: true
+    title?: true
     content?: true
+    file_path?: true
+    file_size?: true
+    file_type?: true
     modified_by?: true
     modification_date?: true
     change_summary?: true
+    is_major_version?: true
   }
 
   export type Document_versionsMaxAggregateInputType = {
     id?: true
     document_id?: true
     version_number?: true
+    title?: true
     content?: true
+    file_path?: true
+    file_size?: true
+    file_type?: true
     modified_by?: true
     modification_date?: true
     change_summary?: true
+    is_major_version?: true
   }
 
   export type Document_versionsCountAggregateInputType = {
     id?: true
     document_id?: true
     version_number?: true
+    title?: true
     content?: true
+    file_path?: true
+    file_size?: true
+    file_type?: true
     modified_by?: true
     modification_date?: true
     change_summary?: true
+    is_major_version?: true
     _all?: true
   }
 
@@ -5602,10 +5636,15 @@ export namespace Prisma {
     id: number
     document_id: number
     version_number: number
+    title: string | null
     content: string | null
+    file_path: string | null
+    file_size: bigint | null
+    file_type: string | null
     modified_by: number
-    modification_date: Date | null
+    modification_date: Date
     change_summary: string | null
+    is_major_version: boolean
     _count: Document_versionsCountAggregateOutputType | null
     _avg: Document_versionsAvgAggregateOutputType | null
     _sum: Document_versionsSumAggregateOutputType | null
@@ -5631,10 +5670,15 @@ export namespace Prisma {
     id?: boolean
     document_id?: boolean
     version_number?: boolean
+    title?: boolean
     content?: boolean
+    file_path?: boolean
+    file_size?: boolean
+    file_type?: boolean
     modified_by?: boolean
     modification_date?: boolean
     change_summary?: boolean
+    is_major_version?: boolean
     documents?: boolean | documentsDefaultArgs<ExtArgs>
     users?: boolean | usersDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["document_versions"]>
@@ -5643,10 +5687,15 @@ export namespace Prisma {
     id?: boolean
     document_id?: boolean
     version_number?: boolean
+    title?: boolean
     content?: boolean
+    file_path?: boolean
+    file_size?: boolean
+    file_type?: boolean
     modified_by?: boolean
     modification_date?: boolean
     change_summary?: boolean
+    is_major_version?: boolean
     documents?: boolean | documentsDefaultArgs<ExtArgs>
     users?: boolean | usersDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["document_versions"]>
@@ -5655,10 +5704,15 @@ export namespace Prisma {
     id?: boolean
     document_id?: boolean
     version_number?: boolean
+    title?: boolean
     content?: boolean
+    file_path?: boolean
+    file_size?: boolean
+    file_type?: boolean
     modified_by?: boolean
     modification_date?: boolean
     change_summary?: boolean
+    is_major_version?: boolean
     documents?: boolean | documentsDefaultArgs<ExtArgs>
     users?: boolean | usersDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["document_versions"]>
@@ -5667,13 +5721,18 @@ export namespace Prisma {
     id?: boolean
     document_id?: boolean
     version_number?: boolean
+    title?: boolean
     content?: boolean
+    file_path?: boolean
+    file_size?: boolean
+    file_type?: boolean
     modified_by?: boolean
     modification_date?: boolean
     change_summary?: boolean
+    is_major_version?: boolean
   }
 
-  export type document_versionsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "document_id" | "version_number" | "content" | "modified_by" | "modification_date" | "change_summary", ExtArgs["result"]["document_versions"]>
+  export type document_versionsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "document_id" | "version_number" | "title" | "content" | "file_path" | "file_size" | "file_type" | "modified_by" | "modification_date" | "change_summary" | "is_major_version", ExtArgs["result"]["document_versions"]>
   export type document_versionsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     documents?: boolean | documentsDefaultArgs<ExtArgs>
     users?: boolean | usersDefaultArgs<ExtArgs>
@@ -5697,10 +5756,15 @@ export namespace Prisma {
       id: number
       document_id: number
       version_number: number
+      title: string | null
       content: string | null
+      file_path: string | null
+      file_size: bigint | null
+      file_type: string | null
       modified_by: number
-      modification_date: Date | null
+      modification_date: Date
       change_summary: string | null
+      is_major_version: boolean
     }, ExtArgs["result"]["document_versions"]>
     composites: {}
   }
@@ -6129,10 +6193,15 @@ export namespace Prisma {
     readonly id: FieldRef<"document_versions", 'Int'>
     readonly document_id: FieldRef<"document_versions", 'Int'>
     readonly version_number: FieldRef<"document_versions", 'Int'>
+    readonly title: FieldRef<"document_versions", 'String'>
     readonly content: FieldRef<"document_versions", 'String'>
+    readonly file_path: FieldRef<"document_versions", 'String'>
+    readonly file_size: FieldRef<"document_versions", 'BigInt'>
+    readonly file_type: FieldRef<"document_versions", 'String'>
     readonly modified_by: FieldRef<"document_versions", 'Int'>
     readonly modification_date: FieldRef<"document_versions", 'DateTime'>
     readonly change_summary: FieldRef<"document_versions", 'String'>
+    readonly is_major_version: FieldRef<"document_versions", 'Boolean'>
   }
     
 
@@ -6580,52 +6649,83 @@ export namespace Prisma {
   export type DocumentsMinAggregateOutputType = {
     id: number | null
     title: string | null
+    description: string | null
     content: string | null
     file_path: string | null
+    file_name: string | null
+    file_original_name: string | null
     file_type: string | null
     file_size: bigint | null
+    file_extension: string | null
+    file_upload_date: Date | null
     owner_id: number | null
     parent_folder_id: number | null
     is_folder: boolean | null
     is_deleted: boolean | null
+    is_public: boolean | null
+    is_template: boolean | null
     created_at: Date | null
     updated_at: Date | null
     last_modified_by: number | null
+    last_accessed_at: Date | null
     auto_save_interval: number | null
+    allow_comments: boolean | null
+    tags: string | null
   }
 
   export type DocumentsMaxAggregateOutputType = {
     id: number | null
     title: string | null
+    description: string | null
     content: string | null
     file_path: string | null
+    file_name: string | null
+    file_original_name: string | null
     file_type: string | null
     file_size: bigint | null
+    file_extension: string | null
+    file_upload_date: Date | null
     owner_id: number | null
     parent_folder_id: number | null
     is_folder: boolean | null
     is_deleted: boolean | null
+    is_public: boolean | null
+    is_template: boolean | null
     created_at: Date | null
     updated_at: Date | null
     last_modified_by: number | null
+    last_accessed_at: Date | null
     auto_save_interval: number | null
+    allow_comments: boolean | null
+    tags: string | null
   }
 
   export type DocumentsCountAggregateOutputType = {
     id: number
     title: number
+    description: number
     content: number
     file_path: number
+    file_name: number
+    file_original_name: number
     file_type: number
     file_size: number
+    file_extension: number
+    file_upload_date: number
     owner_id: number
     parent_folder_id: number
     is_folder: number
     is_deleted: number
+    is_public: number
+    is_template: number
     created_at: number
     updated_at: number
     last_modified_by: number
+    last_accessed_at: number
     auto_save_interval: number
+    allow_comments: number
+    tags: number
+    metadata: number
     _all: number
   }
 
@@ -6651,52 +6751,83 @@ export namespace Prisma {
   export type DocumentsMinAggregateInputType = {
     id?: true
     title?: true
+    description?: true
     content?: true
     file_path?: true
+    file_name?: true
+    file_original_name?: true
     file_type?: true
     file_size?: true
+    file_extension?: true
+    file_upload_date?: true
     owner_id?: true
     parent_folder_id?: true
     is_folder?: true
     is_deleted?: true
+    is_public?: true
+    is_template?: true
     created_at?: true
     updated_at?: true
     last_modified_by?: true
+    last_accessed_at?: true
     auto_save_interval?: true
+    allow_comments?: true
+    tags?: true
   }
 
   export type DocumentsMaxAggregateInputType = {
     id?: true
     title?: true
+    description?: true
     content?: true
     file_path?: true
+    file_name?: true
+    file_original_name?: true
     file_type?: true
     file_size?: true
+    file_extension?: true
+    file_upload_date?: true
     owner_id?: true
     parent_folder_id?: true
     is_folder?: true
     is_deleted?: true
+    is_public?: true
+    is_template?: true
     created_at?: true
     updated_at?: true
     last_modified_by?: true
+    last_accessed_at?: true
     auto_save_interval?: true
+    allow_comments?: true
+    tags?: true
   }
 
   export type DocumentsCountAggregateInputType = {
     id?: true
     title?: true
+    description?: true
     content?: true
     file_path?: true
+    file_name?: true
+    file_original_name?: true
     file_type?: true
     file_size?: true
+    file_extension?: true
+    file_upload_date?: true
     owner_id?: true
     parent_folder_id?: true
     is_folder?: true
     is_deleted?: true
+    is_public?: true
+    is_template?: true
     created_at?: true
     updated_at?: true
     last_modified_by?: true
+    last_accessed_at?: true
     auto_save_interval?: true
+    allow_comments?: true
+    tags?: true
+    metadata?: true
     _all?: true
   }
 
@@ -6789,18 +6920,29 @@ export namespace Prisma {
   export type DocumentsGroupByOutputType = {
     id: number
     title: string
+    description: string | null
     content: string | null
     file_path: string | null
+    file_name: string | null
+    file_original_name: string | null
     file_type: string | null
     file_size: bigint | null
+    file_extension: string | null
+    file_upload_date: Date | null
     owner_id: number
     parent_folder_id: number | null
-    is_folder: boolean | null
-    is_deleted: boolean | null
-    created_at: Date | null
-    updated_at: Date | null
+    is_folder: boolean
+    is_deleted: boolean
+    is_public: boolean
+    is_template: boolean
+    created_at: Date
+    updated_at: Date
     last_modified_by: number | null
-    auto_save_interval: number | null
+    last_accessed_at: Date | null
+    auto_save_interval: number
+    allow_comments: boolean
+    tags: string | null
+    metadata: JsonValue | null
     _count: DocumentsCountAggregateOutputType | null
     _avg: DocumentsAvgAggregateOutputType | null
     _sum: DocumentsSumAggregateOutputType | null
@@ -6825,18 +6967,29 @@ export namespace Prisma {
   export type documentsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
+    description?: boolean
     content?: boolean
     file_path?: boolean
+    file_name?: boolean
+    file_original_name?: boolean
     file_type?: boolean
     file_size?: boolean
+    file_extension?: boolean
+    file_upload_date?: boolean
     owner_id?: boolean
     parent_folder_id?: boolean
     is_folder?: boolean
     is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
     created_at?: boolean
     updated_at?: boolean
     last_modified_by?: boolean
+    last_accessed_at?: boolean
     auto_save_interval?: boolean
+    allow_comments?: boolean
+    tags?: boolean
+    metadata?: boolean
     calls?: boolean | documents$callsArgs<ExtArgs>
     document_invitations?: boolean | documents$document_invitationsArgs<ExtArgs>
     document_versions?: boolean | documents$document_versionsArgs<ExtArgs>
@@ -6850,18 +7003,29 @@ export namespace Prisma {
   export type documentsSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
+    description?: boolean
     content?: boolean
     file_path?: boolean
+    file_name?: boolean
+    file_original_name?: boolean
     file_type?: boolean
     file_size?: boolean
+    file_extension?: boolean
+    file_upload_date?: boolean
     owner_id?: boolean
     parent_folder_id?: boolean
     is_folder?: boolean
     is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
     created_at?: boolean
     updated_at?: boolean
     last_modified_by?: boolean
+    last_accessed_at?: boolean
     auto_save_interval?: boolean
+    allow_comments?: boolean
+    tags?: boolean
+    metadata?: boolean
     users_documents_last_modified_byTousers?: boolean | documents$users_documents_last_modified_byTousersArgs<ExtArgs>
     users_documents_owner_idTousers?: boolean | usersDefaultArgs<ExtArgs>
     documents?: boolean | documents$documentsArgs<ExtArgs>
@@ -6870,18 +7034,29 @@ export namespace Prisma {
   export type documentsSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
+    description?: boolean
     content?: boolean
     file_path?: boolean
+    file_name?: boolean
+    file_original_name?: boolean
     file_type?: boolean
     file_size?: boolean
+    file_extension?: boolean
+    file_upload_date?: boolean
     owner_id?: boolean
     parent_folder_id?: boolean
     is_folder?: boolean
     is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
     created_at?: boolean
     updated_at?: boolean
     last_modified_by?: boolean
+    last_accessed_at?: boolean
     auto_save_interval?: boolean
+    allow_comments?: boolean
+    tags?: boolean
+    metadata?: boolean
     users_documents_last_modified_byTousers?: boolean | documents$users_documents_last_modified_byTousersArgs<ExtArgs>
     users_documents_owner_idTousers?: boolean | usersDefaultArgs<ExtArgs>
     documents?: boolean | documents$documentsArgs<ExtArgs>
@@ -6890,21 +7065,32 @@ export namespace Prisma {
   export type documentsSelectScalar = {
     id?: boolean
     title?: boolean
+    description?: boolean
     content?: boolean
     file_path?: boolean
+    file_name?: boolean
+    file_original_name?: boolean
     file_type?: boolean
     file_size?: boolean
+    file_extension?: boolean
+    file_upload_date?: boolean
     owner_id?: boolean
     parent_folder_id?: boolean
     is_folder?: boolean
     is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
     created_at?: boolean
     updated_at?: boolean
     last_modified_by?: boolean
+    last_accessed_at?: boolean
     auto_save_interval?: boolean
+    allow_comments?: boolean
+    tags?: boolean
+    metadata?: boolean
   }
 
-  export type documentsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "content" | "file_path" | "file_type" | "file_size" | "owner_id" | "parent_folder_id" | "is_folder" | "is_deleted" | "created_at" | "updated_at" | "last_modified_by" | "auto_save_interval", ExtArgs["result"]["documents"]>
+  export type documentsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "content" | "file_path" | "file_name" | "file_original_name" | "file_type" | "file_size" | "file_extension" | "file_upload_date" | "owner_id" | "parent_folder_id" | "is_folder" | "is_deleted" | "is_public" | "is_template" | "created_at" | "updated_at" | "last_modified_by" | "last_accessed_at" | "auto_save_interval" | "allow_comments" | "tags" | "metadata", ExtArgs["result"]["documents"]>
   export type documentsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     calls?: boolean | documents$callsArgs<ExtArgs>
     document_invitations?: boolean | documents$document_invitationsArgs<ExtArgs>
@@ -6940,18 +7126,29 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: number
       title: string
+      description: string | null
       content: string | null
       file_path: string | null
+      file_name: string | null
+      file_original_name: string | null
       file_type: string | null
       file_size: bigint | null
+      file_extension: string | null
+      file_upload_date: Date | null
       owner_id: number
       parent_folder_id: number | null
-      is_folder: boolean | null
-      is_deleted: boolean | null
-      created_at: Date | null
-      updated_at: Date | null
+      is_folder: boolean
+      is_deleted: boolean
+      is_public: boolean
+      is_template: boolean
+      created_at: Date
+      updated_at: Date
       last_modified_by: number | null
-      auto_save_interval: number | null
+      last_accessed_at: Date | null
+      auto_save_interval: number
+      allow_comments: boolean
+      tags: string | null
+      metadata: Prisma.JsonValue | null
     }, ExtArgs["result"]["documents"]>
     composites: {}
   }
@@ -7384,18 +7581,29 @@ export namespace Prisma {
   interface documentsFieldRefs {
     readonly id: FieldRef<"documents", 'Int'>
     readonly title: FieldRef<"documents", 'String'>
+    readonly description: FieldRef<"documents", 'String'>
     readonly content: FieldRef<"documents", 'String'>
     readonly file_path: FieldRef<"documents", 'String'>
+    readonly file_name: FieldRef<"documents", 'String'>
+    readonly file_original_name: FieldRef<"documents", 'String'>
     readonly file_type: FieldRef<"documents", 'String'>
     readonly file_size: FieldRef<"documents", 'BigInt'>
+    readonly file_extension: FieldRef<"documents", 'String'>
+    readonly file_upload_date: FieldRef<"documents", 'DateTime'>
     readonly owner_id: FieldRef<"documents", 'Int'>
     readonly parent_folder_id: FieldRef<"documents", 'Int'>
     readonly is_folder: FieldRef<"documents", 'Boolean'>
     readonly is_deleted: FieldRef<"documents", 'Boolean'>
+    readonly is_public: FieldRef<"documents", 'Boolean'>
+    readonly is_template: FieldRef<"documents", 'Boolean'>
     readonly created_at: FieldRef<"documents", 'DateTime'>
     readonly updated_at: FieldRef<"documents", 'DateTime'>
     readonly last_modified_by: FieldRef<"documents", 'Int'>
+    readonly last_accessed_at: FieldRef<"documents", 'DateTime'>
     readonly auto_save_interval: FieldRef<"documents", 'Int'>
+    readonly allow_comments: FieldRef<"documents", 'Boolean'>
+    readonly tags: FieldRef<"documents", 'String'>
+    readonly metadata: FieldRef<"documents", 'Json'>
   }
     
 
@@ -14135,10 +14343,15 @@ export namespace Prisma {
     id: 'id',
     document_id: 'document_id',
     version_number: 'version_number',
+    title: 'title',
     content: 'content',
+    file_path: 'file_path',
+    file_size: 'file_size',
+    file_type: 'file_type',
     modified_by: 'modified_by',
     modification_date: 'modification_date',
-    change_summary: 'change_summary'
+    change_summary: 'change_summary',
+    is_major_version: 'is_major_version'
   };
 
   export type Document_versionsScalarFieldEnum = (typeof Document_versionsScalarFieldEnum)[keyof typeof Document_versionsScalarFieldEnum]
@@ -14147,18 +14360,29 @@ export namespace Prisma {
   export const DocumentsScalarFieldEnum: {
     id: 'id',
     title: 'title',
+    description: 'description',
     content: 'content',
     file_path: 'file_path',
+    file_name: 'file_name',
+    file_original_name: 'file_original_name',
     file_type: 'file_type',
     file_size: 'file_size',
+    file_extension: 'file_extension',
+    file_upload_date: 'file_upload_date',
     owner_id: 'owner_id',
     parent_folder_id: 'parent_folder_id',
     is_folder: 'is_folder',
     is_deleted: 'is_deleted',
+    is_public: 'is_public',
+    is_template: 'is_template',
     created_at: 'created_at',
     updated_at: 'updated_at',
     last_modified_by: 'last_modified_by',
-    auto_save_interval: 'auto_save_interval'
+    last_accessed_at: 'last_accessed_at',
+    auto_save_interval: 'auto_save_interval',
+    allow_comments: 'allow_comments',
+    tags: 'tags',
+    metadata: 'metadata'
   };
 
   export type DocumentsScalarFieldEnum = (typeof DocumentsScalarFieldEnum)[keyof typeof DocumentsScalarFieldEnum]
@@ -14244,6 +14468,14 @@ export namespace Prisma {
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
   export const NullsOrder: {
     first: 'first',
     last: 'last'
@@ -14258,6 +14490,15 @@ export namespace Prisma {
   };
 
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+  export const JsonNullValueFilter: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull,
+    AnyNull: typeof AnyNull
+  };
+
+  export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
   /**
@@ -14325,6 +14566,20 @@ export namespace Prisma {
    * Reference to a field of type 'BigInt[]'
    */
   export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -14570,10 +14825,15 @@ export namespace Prisma {
     id?: IntFilter<"document_versions"> | number
     document_id?: IntFilter<"document_versions"> | number
     version_number?: IntFilter<"document_versions"> | number
+    title?: StringNullableFilter<"document_versions"> | string | null
     content?: StringNullableFilter<"document_versions"> | string | null
+    file_path?: StringNullableFilter<"document_versions"> | string | null
+    file_size?: BigIntNullableFilter<"document_versions"> | bigint | number | null
+    file_type?: StringNullableFilter<"document_versions"> | string | null
     modified_by?: IntFilter<"document_versions"> | number
-    modification_date?: DateTimeNullableFilter<"document_versions"> | Date | string | null
+    modification_date?: DateTimeFilter<"document_versions"> | Date | string
     change_summary?: StringNullableFilter<"document_versions"> | string | null
+    is_major_version?: BoolFilter<"document_versions"> | boolean
     documents?: XOR<DocumentsScalarRelationFilter, documentsWhereInput>
     users?: XOR<UsersScalarRelationFilter, usersWhereInput>
   }
@@ -14582,10 +14842,15 @@ export namespace Prisma {
     id?: SortOrder
     document_id?: SortOrder
     version_number?: SortOrder
+    title?: SortOrderInput | SortOrder
     content?: SortOrderInput | SortOrder
+    file_path?: SortOrderInput | SortOrder
+    file_size?: SortOrderInput | SortOrder
+    file_type?: SortOrderInput | SortOrder
     modified_by?: SortOrder
-    modification_date?: SortOrderInput | SortOrder
+    modification_date?: SortOrder
     change_summary?: SortOrderInput | SortOrder
+    is_major_version?: SortOrder
     documents?: documentsOrderByWithRelationInput
     users?: usersOrderByWithRelationInput
   }
@@ -14598,10 +14863,15 @@ export namespace Prisma {
     NOT?: document_versionsWhereInput | document_versionsWhereInput[]
     document_id?: IntFilter<"document_versions"> | number
     version_number?: IntFilter<"document_versions"> | number
+    title?: StringNullableFilter<"document_versions"> | string | null
     content?: StringNullableFilter<"document_versions"> | string | null
+    file_path?: StringNullableFilter<"document_versions"> | string | null
+    file_size?: BigIntNullableFilter<"document_versions"> | bigint | number | null
+    file_type?: StringNullableFilter<"document_versions"> | string | null
     modified_by?: IntFilter<"document_versions"> | number
-    modification_date?: DateTimeNullableFilter<"document_versions"> | Date | string | null
+    modification_date?: DateTimeFilter<"document_versions"> | Date | string
     change_summary?: StringNullableFilter<"document_versions"> | string | null
+    is_major_version?: BoolFilter<"document_versions"> | boolean
     documents?: XOR<DocumentsScalarRelationFilter, documentsWhereInput>
     users?: XOR<UsersScalarRelationFilter, usersWhereInput>
   }, "id" | "document_id_version_number">
@@ -14610,10 +14880,15 @@ export namespace Prisma {
     id?: SortOrder
     document_id?: SortOrder
     version_number?: SortOrder
+    title?: SortOrderInput | SortOrder
     content?: SortOrderInput | SortOrder
+    file_path?: SortOrderInput | SortOrder
+    file_size?: SortOrderInput | SortOrder
+    file_type?: SortOrderInput | SortOrder
     modified_by?: SortOrder
-    modification_date?: SortOrderInput | SortOrder
+    modification_date?: SortOrder
     change_summary?: SortOrderInput | SortOrder
+    is_major_version?: SortOrder
     _count?: document_versionsCountOrderByAggregateInput
     _avg?: document_versionsAvgOrderByAggregateInput
     _max?: document_versionsMaxOrderByAggregateInput
@@ -14628,10 +14903,15 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"document_versions"> | number
     document_id?: IntWithAggregatesFilter<"document_versions"> | number
     version_number?: IntWithAggregatesFilter<"document_versions"> | number
+    title?: StringNullableWithAggregatesFilter<"document_versions"> | string | null
     content?: StringNullableWithAggregatesFilter<"document_versions"> | string | null
+    file_path?: StringNullableWithAggregatesFilter<"document_versions"> | string | null
+    file_size?: BigIntNullableWithAggregatesFilter<"document_versions"> | bigint | number | null
+    file_type?: StringNullableWithAggregatesFilter<"document_versions"> | string | null
     modified_by?: IntWithAggregatesFilter<"document_versions"> | number
-    modification_date?: DateTimeNullableWithAggregatesFilter<"document_versions"> | Date | string | null
+    modification_date?: DateTimeWithAggregatesFilter<"document_versions"> | Date | string
     change_summary?: StringNullableWithAggregatesFilter<"document_versions"> | string | null
+    is_major_version?: BoolWithAggregatesFilter<"document_versions"> | boolean
   }
 
   export type documentsWhereInput = {
@@ -14640,18 +14920,29 @@ export namespace Prisma {
     NOT?: documentsWhereInput | documentsWhereInput[]
     id?: IntFilter<"documents"> | number
     title?: StringFilter<"documents"> | string
+    description?: StringNullableFilter<"documents"> | string | null
     content?: StringNullableFilter<"documents"> | string | null
     file_path?: StringNullableFilter<"documents"> | string | null
+    file_name?: StringNullableFilter<"documents"> | string | null
+    file_original_name?: StringNullableFilter<"documents"> | string | null
     file_type?: StringNullableFilter<"documents"> | string | null
     file_size?: BigIntNullableFilter<"documents"> | bigint | number | null
+    file_extension?: StringNullableFilter<"documents"> | string | null
+    file_upload_date?: DateTimeNullableFilter<"documents"> | Date | string | null
     owner_id?: IntFilter<"documents"> | number
     parent_folder_id?: IntNullableFilter<"documents"> | number | null
-    is_folder?: BoolNullableFilter<"documents"> | boolean | null
-    is_deleted?: BoolNullableFilter<"documents"> | boolean | null
-    created_at?: DateTimeNullableFilter<"documents"> | Date | string | null
-    updated_at?: DateTimeNullableFilter<"documents"> | Date | string | null
+    is_folder?: BoolFilter<"documents"> | boolean
+    is_deleted?: BoolFilter<"documents"> | boolean
+    is_public?: BoolFilter<"documents"> | boolean
+    is_template?: BoolFilter<"documents"> | boolean
+    created_at?: DateTimeFilter<"documents"> | Date | string
+    updated_at?: DateTimeFilter<"documents"> | Date | string
     last_modified_by?: IntNullableFilter<"documents"> | number | null
-    auto_save_interval?: IntNullableFilter<"documents"> | number | null
+    last_accessed_at?: DateTimeNullableFilter<"documents"> | Date | string | null
+    auto_save_interval?: IntFilter<"documents"> | number
+    allow_comments?: BoolFilter<"documents"> | boolean
+    tags?: StringNullableFilter<"documents"> | string | null
+    metadata?: JsonNullableFilter<"documents">
     calls?: CallsListRelationFilter
     document_invitations?: Document_invitationsListRelationFilter
     document_versions?: Document_versionsListRelationFilter
@@ -14664,18 +14955,29 @@ export namespace Prisma {
   export type documentsOrderByWithRelationInput = {
     id?: SortOrder
     title?: SortOrder
+    description?: SortOrderInput | SortOrder
     content?: SortOrderInput | SortOrder
     file_path?: SortOrderInput | SortOrder
+    file_name?: SortOrderInput | SortOrder
+    file_original_name?: SortOrderInput | SortOrder
     file_type?: SortOrderInput | SortOrder
     file_size?: SortOrderInput | SortOrder
+    file_extension?: SortOrderInput | SortOrder
+    file_upload_date?: SortOrderInput | SortOrder
     owner_id?: SortOrder
     parent_folder_id?: SortOrderInput | SortOrder
-    is_folder?: SortOrderInput | SortOrder
-    is_deleted?: SortOrderInput | SortOrder
-    created_at?: SortOrderInput | SortOrder
-    updated_at?: SortOrderInput | SortOrder
+    is_folder?: SortOrder
+    is_deleted?: SortOrder
+    is_public?: SortOrder
+    is_template?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
     last_modified_by?: SortOrderInput | SortOrder
-    auto_save_interval?: SortOrderInput | SortOrder
+    last_accessed_at?: SortOrderInput | SortOrder
+    auto_save_interval?: SortOrder
+    allow_comments?: SortOrder
+    tags?: SortOrderInput | SortOrder
+    metadata?: SortOrderInput | SortOrder
     calls?: callsOrderByRelationAggregateInput
     document_invitations?: document_invitationsOrderByRelationAggregateInput
     document_versions?: document_versionsOrderByRelationAggregateInput
@@ -14691,18 +14993,29 @@ export namespace Prisma {
     OR?: documentsWhereInput[]
     NOT?: documentsWhereInput | documentsWhereInput[]
     title?: StringFilter<"documents"> | string
+    description?: StringNullableFilter<"documents"> | string | null
     content?: StringNullableFilter<"documents"> | string | null
     file_path?: StringNullableFilter<"documents"> | string | null
+    file_name?: StringNullableFilter<"documents"> | string | null
+    file_original_name?: StringNullableFilter<"documents"> | string | null
     file_type?: StringNullableFilter<"documents"> | string | null
     file_size?: BigIntNullableFilter<"documents"> | bigint | number | null
+    file_extension?: StringNullableFilter<"documents"> | string | null
+    file_upload_date?: DateTimeNullableFilter<"documents"> | Date | string | null
     owner_id?: IntFilter<"documents"> | number
     parent_folder_id?: IntNullableFilter<"documents"> | number | null
-    is_folder?: BoolNullableFilter<"documents"> | boolean | null
-    is_deleted?: BoolNullableFilter<"documents"> | boolean | null
-    created_at?: DateTimeNullableFilter<"documents"> | Date | string | null
-    updated_at?: DateTimeNullableFilter<"documents"> | Date | string | null
+    is_folder?: BoolFilter<"documents"> | boolean
+    is_deleted?: BoolFilter<"documents"> | boolean
+    is_public?: BoolFilter<"documents"> | boolean
+    is_template?: BoolFilter<"documents"> | boolean
+    created_at?: DateTimeFilter<"documents"> | Date | string
+    updated_at?: DateTimeFilter<"documents"> | Date | string
     last_modified_by?: IntNullableFilter<"documents"> | number | null
-    auto_save_interval?: IntNullableFilter<"documents"> | number | null
+    last_accessed_at?: DateTimeNullableFilter<"documents"> | Date | string | null
+    auto_save_interval?: IntFilter<"documents"> | number
+    allow_comments?: BoolFilter<"documents"> | boolean
+    tags?: StringNullableFilter<"documents"> | string | null
+    metadata?: JsonNullableFilter<"documents">
     calls?: CallsListRelationFilter
     document_invitations?: Document_invitationsListRelationFilter
     document_versions?: Document_versionsListRelationFilter
@@ -14715,18 +15028,29 @@ export namespace Prisma {
   export type documentsOrderByWithAggregationInput = {
     id?: SortOrder
     title?: SortOrder
+    description?: SortOrderInput | SortOrder
     content?: SortOrderInput | SortOrder
     file_path?: SortOrderInput | SortOrder
+    file_name?: SortOrderInput | SortOrder
+    file_original_name?: SortOrderInput | SortOrder
     file_type?: SortOrderInput | SortOrder
     file_size?: SortOrderInput | SortOrder
+    file_extension?: SortOrderInput | SortOrder
+    file_upload_date?: SortOrderInput | SortOrder
     owner_id?: SortOrder
     parent_folder_id?: SortOrderInput | SortOrder
-    is_folder?: SortOrderInput | SortOrder
-    is_deleted?: SortOrderInput | SortOrder
-    created_at?: SortOrderInput | SortOrder
-    updated_at?: SortOrderInput | SortOrder
+    is_folder?: SortOrder
+    is_deleted?: SortOrder
+    is_public?: SortOrder
+    is_template?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
     last_modified_by?: SortOrderInput | SortOrder
-    auto_save_interval?: SortOrderInput | SortOrder
+    last_accessed_at?: SortOrderInput | SortOrder
+    auto_save_interval?: SortOrder
+    allow_comments?: SortOrder
+    tags?: SortOrderInput | SortOrder
+    metadata?: SortOrderInput | SortOrder
     _count?: documentsCountOrderByAggregateInput
     _avg?: documentsAvgOrderByAggregateInput
     _max?: documentsMaxOrderByAggregateInput
@@ -14740,18 +15064,29 @@ export namespace Prisma {
     NOT?: documentsScalarWhereWithAggregatesInput | documentsScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"documents"> | number
     title?: StringWithAggregatesFilter<"documents"> | string
+    description?: StringNullableWithAggregatesFilter<"documents"> | string | null
     content?: StringNullableWithAggregatesFilter<"documents"> | string | null
     file_path?: StringNullableWithAggregatesFilter<"documents"> | string | null
+    file_name?: StringNullableWithAggregatesFilter<"documents"> | string | null
+    file_original_name?: StringNullableWithAggregatesFilter<"documents"> | string | null
     file_type?: StringNullableWithAggregatesFilter<"documents"> | string | null
     file_size?: BigIntNullableWithAggregatesFilter<"documents"> | bigint | number | null
+    file_extension?: StringNullableWithAggregatesFilter<"documents"> | string | null
+    file_upload_date?: DateTimeNullableWithAggregatesFilter<"documents"> | Date | string | null
     owner_id?: IntWithAggregatesFilter<"documents"> | number
     parent_folder_id?: IntNullableWithAggregatesFilter<"documents"> | number | null
-    is_folder?: BoolNullableWithAggregatesFilter<"documents"> | boolean | null
-    is_deleted?: BoolNullableWithAggregatesFilter<"documents"> | boolean | null
-    created_at?: DateTimeNullableWithAggregatesFilter<"documents"> | Date | string | null
-    updated_at?: DateTimeNullableWithAggregatesFilter<"documents"> | Date | string | null
+    is_folder?: BoolWithAggregatesFilter<"documents"> | boolean
+    is_deleted?: BoolWithAggregatesFilter<"documents"> | boolean
+    is_public?: BoolWithAggregatesFilter<"documents"> | boolean
+    is_template?: BoolWithAggregatesFilter<"documents"> | boolean
+    created_at?: DateTimeWithAggregatesFilter<"documents"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"documents"> | Date | string
     last_modified_by?: IntNullableWithAggregatesFilter<"documents"> | number | null
-    auto_save_interval?: IntNullableWithAggregatesFilter<"documents"> | number | null
+    last_accessed_at?: DateTimeNullableWithAggregatesFilter<"documents"> | Date | string | null
+    auto_save_interval?: IntWithAggregatesFilter<"documents"> | number
+    allow_comments?: BoolWithAggregatesFilter<"documents"> | boolean
+    tags?: StringNullableWithAggregatesFilter<"documents"> | string | null
+    metadata?: JsonNullableWithAggregatesFilter<"documents">
   }
 
   export type usersWhereInput = {
@@ -15373,9 +15708,14 @@ export namespace Prisma {
 
   export type document_versionsCreateInput = {
     version_number: number
+    title?: string | null
     content?: string | null
-    modification_date?: Date | string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
     documents: documentsCreateNestedOneWithoutDocument_versionsInput
     users: usersCreateNestedOneWithoutDocument_versionsInput
   }
@@ -15384,17 +15724,27 @@ export namespace Prisma {
     id?: number
     document_id: number
     version_number: number
+    title?: string | null
     content?: string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
     modified_by: number
-    modification_date?: Date | string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
   }
 
   export type document_versionsUpdateInput = {
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
     documents?: documentsUpdateOneRequiredWithoutDocument_versionsNestedInput
     users?: usersUpdateOneRequiredWithoutDocument_versionsNestedInput
   }
@@ -15403,50 +15753,81 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     document_id?: IntFieldUpdateOperationsInput | number
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
     modified_by?: IntFieldUpdateOperationsInput | number
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type document_versionsCreateManyInput = {
     id?: number
     document_id: number
     version_number: number
+    title?: string | null
     content?: string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
     modified_by: number
-    modification_date?: Date | string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
   }
 
   export type document_versionsUpdateManyMutationInput = {
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type document_versionsUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     document_id?: IntFieldUpdateOperationsInput | number
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
     modified_by?: IntFieldUpdateOperationsInput | number
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type documentsCreateInput = {
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
@@ -15459,18 +15840,29 @@ export namespace Prisma {
   export type documentsUncheckedCreateInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
@@ -15479,15 +15871,26 @@ export namespace Prisma {
 
   export type documentsUpdateInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
@@ -15500,18 +15903,29 @@ export namespace Prisma {
   export type documentsUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
@@ -15521,48 +15935,81 @@ export namespace Prisma {
   export type documentsCreateManyInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type documentsUpdateManyMutationInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type documentsUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type usersCreateInput = {
@@ -16329,55 +16776,6 @@ export namespace Prisma {
     _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
-  export type document_versionsDocument_idVersion_numberCompoundUniqueInput = {
-    document_id: number
-    version_number: number
-  }
-
-  export type document_versionsCountOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    version_number?: SortOrder
-    content?: SortOrder
-    modified_by?: SortOrder
-    modification_date?: SortOrder
-    change_summary?: SortOrder
-  }
-
-  export type document_versionsAvgOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    version_number?: SortOrder
-    modified_by?: SortOrder
-  }
-
-  export type document_versionsMaxOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    version_number?: SortOrder
-    content?: SortOrder
-    modified_by?: SortOrder
-    modification_date?: SortOrder
-    change_summary?: SortOrder
-  }
-
-  export type document_versionsMinOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    version_number?: SortOrder
-    content?: SortOrder
-    modified_by?: SortOrder
-    modification_date?: SortOrder
-    change_summary?: SortOrder
-  }
-
-  export type document_versionsSumOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    version_number?: SortOrder
-    modified_by?: SortOrder
-  }
-
   export type BigIntNullableFilter<$PrismaModel = never> = {
     equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
     in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
@@ -16387,6 +16785,149 @@ export namespace Prisma {
     gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
     gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
     not?: NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
+  }
+
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type document_versionsDocument_idVersion_numberCompoundUniqueInput = {
+    document_id: number
+    version_number: number
+  }
+
+  export type document_versionsCountOrderByAggregateInput = {
+    id?: SortOrder
+    document_id?: SortOrder
+    version_number?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    file_path?: SortOrder
+    file_size?: SortOrder
+    file_type?: SortOrder
+    modified_by?: SortOrder
+    modification_date?: SortOrder
+    change_summary?: SortOrder
+    is_major_version?: SortOrder
+  }
+
+  export type document_versionsAvgOrderByAggregateInput = {
+    id?: SortOrder
+    document_id?: SortOrder
+    version_number?: SortOrder
+    file_size?: SortOrder
+    modified_by?: SortOrder
+  }
+
+  export type document_versionsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    document_id?: SortOrder
+    version_number?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    file_path?: SortOrder
+    file_size?: SortOrder
+    file_type?: SortOrder
+    modified_by?: SortOrder
+    modification_date?: SortOrder
+    change_summary?: SortOrder
+    is_major_version?: SortOrder
+  }
+
+  export type document_versionsMinOrderByAggregateInput = {
+    id?: SortOrder
+    document_id?: SortOrder
+    version_number?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    file_path?: SortOrder
+    file_size?: SortOrder
+    file_type?: SortOrder
+    modified_by?: SortOrder
+    modification_date?: SortOrder
+    change_summary?: SortOrder
+    is_major_version?: SortOrder
+  }
+
+  export type document_versionsSumOrderByAggregateInput = {
+    id?: SortOrder
+    document_id?: SortOrder
+    version_number?: SortOrder
+    file_size?: SortOrder
+    modified_by?: SortOrder
+  }
+
+  export type BigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntNullableWithAggregatesFilter<$PrismaModel> | bigint | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedBigIntNullableFilter<$PrismaModel>
+    _min?: NestedBigIntNullableFilter<$PrismaModel>
+    _max?: NestedBigIntNullableFilter<$PrismaModel>
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type CallsListRelationFilter = {
@@ -16437,18 +16978,29 @@ export namespace Prisma {
   export type documentsCountOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
+    description?: SortOrder
     content?: SortOrder
     file_path?: SortOrder
+    file_name?: SortOrder
+    file_original_name?: SortOrder
     file_type?: SortOrder
     file_size?: SortOrder
+    file_extension?: SortOrder
+    file_upload_date?: SortOrder
     owner_id?: SortOrder
     parent_folder_id?: SortOrder
     is_folder?: SortOrder
     is_deleted?: SortOrder
+    is_public?: SortOrder
+    is_template?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
     last_modified_by?: SortOrder
+    last_accessed_at?: SortOrder
     auto_save_interval?: SortOrder
+    allow_comments?: SortOrder
+    tags?: SortOrder
+    metadata?: SortOrder
   }
 
   export type documentsAvgOrderByAggregateInput = {
@@ -16463,35 +17015,55 @@ export namespace Prisma {
   export type documentsMaxOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
+    description?: SortOrder
     content?: SortOrder
     file_path?: SortOrder
+    file_name?: SortOrder
+    file_original_name?: SortOrder
     file_type?: SortOrder
     file_size?: SortOrder
+    file_extension?: SortOrder
+    file_upload_date?: SortOrder
     owner_id?: SortOrder
     parent_folder_id?: SortOrder
     is_folder?: SortOrder
     is_deleted?: SortOrder
+    is_public?: SortOrder
+    is_template?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
     last_modified_by?: SortOrder
+    last_accessed_at?: SortOrder
     auto_save_interval?: SortOrder
+    allow_comments?: SortOrder
+    tags?: SortOrder
   }
 
   export type documentsMinOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
+    description?: SortOrder
     content?: SortOrder
     file_path?: SortOrder
+    file_name?: SortOrder
+    file_original_name?: SortOrder
     file_type?: SortOrder
     file_size?: SortOrder
+    file_extension?: SortOrder
+    file_upload_date?: SortOrder
     owner_id?: SortOrder
     parent_folder_id?: SortOrder
     is_folder?: SortOrder
     is_deleted?: SortOrder
+    is_public?: SortOrder
+    is_template?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
     last_modified_by?: SortOrder
+    last_accessed_at?: SortOrder
     auto_save_interval?: SortOrder
+    allow_comments?: SortOrder
+    tags?: SortOrder
   }
 
   export type documentsSumOrderByAggregateInput = {
@@ -16502,21 +17074,31 @@ export namespace Prisma {
     last_modified_by?: SortOrder
     auto_save_interval?: SortOrder
   }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
 
-  export type BigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
-    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
-    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
-    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
-    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
-    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
-    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
-    not?: NestedBigIntNullableWithAggregatesFilter<$PrismaModel> | bigint | number | null
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
     _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedBigIntNullableFilter<$PrismaModel>
-    _min?: NestedBigIntNullableFilter<$PrismaModel>
-    _max?: NestedBigIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type ConversationsListRelationFilter = {
@@ -16623,22 +17205,6 @@ export namespace Prisma {
     login_attempts?: SortOrder
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
-  export type DateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
-  }
-
   export type conversationsCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
@@ -16674,28 +17240,6 @@ export namespace Prisma {
   export type conversationsSumOrderByAggregateInput = {
     id?: SortOrder
     created_by?: SortOrder
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
-  }
-
-  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type ConversationsScalarRelationFilter = {
@@ -17020,6 +17564,22 @@ export namespace Prisma {
     connect?: usersWhereUniqueInput
   }
 
+  export type NullableBigIntFieldUpdateOperationsInput = {
+    set?: bigint | number | null
+    increment?: bigint | number
+    decrement?: bigint | number
+    multiply?: bigint | number
+    divide?: bigint | number
+  }
+
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
   export type documentsUpdateOneRequiredWithoutDocument_versionsNestedInput = {
     create?: XOR<documentsCreateWithoutDocument_versionsInput, documentsUncheckedCreateWithoutDocument_versionsInput>
     connectOrCreate?: documentsCreateOrConnectWithoutDocument_versionsInput
@@ -17108,14 +17668,6 @@ export namespace Prisma {
     connectOrCreate?: documentsCreateOrConnectWithoutDocumentsInput | documentsCreateOrConnectWithoutDocumentsInput[]
     createMany?: documentsCreateManyDocumentsInputEnvelope
     connect?: documentsWhereUniqueInput | documentsWhereUniqueInput[]
-  }
-
-  export type NullableBigIntFieldUpdateOperationsInput = {
-    set?: bigint | number | null
-    increment?: bigint | number
-    decrement?: bigint | number
-    multiply?: bigint | number
-    divide?: bigint | number
   }
 
   export type callsUpdateManyWithoutDocumentsNestedInput = {
@@ -17796,14 +18348,6 @@ export namespace Prisma {
     connect?: messagesWhereUniqueInput | messagesWhereUniqueInput[]
   }
 
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
-  }
-
-  export type DateTimeFieldUpdateOperationsInput = {
-    set?: Date | string
-  }
-
   export type usersUpdateOneRequiredWithoutConversations_createdNestedInput = {
     create?: XOR<usersCreateWithoutConversations_createdInput, usersUncheckedCreateWithoutConversations_createdInput>
     connectOrCreate?: usersCreateOrConnectWithoutConversations_createdInput
@@ -18141,6 +18685,22 @@ export namespace Prisma {
     not?: NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
   }
 
+  export type NestedDateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type NestedBigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
     in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
@@ -18157,30 +18717,6 @@ export namespace Prisma {
     _max?: NestedBigIntNullableFilter<$PrismaModel>
   }
 
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
-  export type NestedDateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
-  }
-
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -18193,6 +18729,37 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type callsCreateWithoutCall_participantsInput = {
@@ -18406,15 +18973,26 @@ export namespace Prisma {
 
   export type documentsCreateWithoutCallsInput = {
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
@@ -18426,18 +19004,29 @@ export namespace Prisma {
   export type documentsUncheckedCreateWithoutCallsInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
@@ -18551,15 +19140,26 @@ export namespace Prisma {
 
   export type documentsUpdateWithoutCallsInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
@@ -18571,18 +19171,29 @@ export namespace Prisma {
   export type documentsUncheckedUpdateWithoutCallsInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
@@ -18658,15 +19269,26 @@ export namespace Prisma {
 
   export type documentsCreateWithoutDocument_invitationsInput = {
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
@@ -18678,18 +19300,29 @@ export namespace Prisma {
   export type documentsUncheckedCreateWithoutDocument_invitationsInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
@@ -18837,15 +19470,26 @@ export namespace Prisma {
 
   export type documentsUpdateWithoutDocument_invitationsInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
@@ -18857,18 +19501,29 @@ export namespace Prisma {
   export type documentsUncheckedUpdateWithoutDocument_invitationsInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
@@ -19012,15 +19667,26 @@ export namespace Prisma {
 
   export type documentsCreateWithoutDocument_versionsInput = {
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
@@ -19032,18 +19698,29 @@ export namespace Prisma {
   export type documentsUncheckedCreateWithoutDocument_versionsInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
@@ -19129,15 +19806,26 @@ export namespace Prisma {
 
   export type documentsUpdateWithoutDocument_versionsInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
@@ -19149,18 +19837,29 @@ export namespace Prisma {
   export type documentsUncheckedUpdateWithoutDocument_versionsInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
@@ -19294,19 +19993,29 @@ export namespace Prisma {
 
   export type document_versionsCreateWithoutDocumentsInput = {
     version_number: number
+    title?: string | null
     content?: string | null
-    modification_date?: Date | string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
     users: usersCreateNestedOneWithoutDocument_versionsInput
   }
 
   export type document_versionsUncheckedCreateWithoutDocumentsInput = {
     id?: number
     version_number: number
+    title?: string | null
     content?: string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
     modified_by: number
-    modification_date?: Date | string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
   }
 
   export type document_versionsCreateOrConnectWithoutDocumentsInput = {
@@ -19445,15 +20154,26 @@ export namespace Prisma {
 
   export type documentsCreateWithoutOther_documentsInput = {
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
@@ -19465,18 +20185,29 @@ export namespace Prisma {
   export type documentsUncheckedCreateWithoutOther_documentsInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
@@ -19489,15 +20220,26 @@ export namespace Prisma {
 
   export type documentsCreateWithoutDocumentsInput = {
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
@@ -19509,17 +20251,28 @@ export namespace Prisma {
   export type documentsUncheckedCreateWithoutDocumentsInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
@@ -19618,10 +20371,15 @@ export namespace Prisma {
     id?: IntFilter<"document_versions"> | number
     document_id?: IntFilter<"document_versions"> | number
     version_number?: IntFilter<"document_versions"> | number
+    title?: StringNullableFilter<"document_versions"> | string | null
     content?: StringNullableFilter<"document_versions"> | string | null
+    file_path?: StringNullableFilter<"document_versions"> | string | null
+    file_size?: BigIntNullableFilter<"document_versions"> | bigint | number | null
+    file_type?: StringNullableFilter<"document_versions"> | string | null
     modified_by?: IntFilter<"document_versions"> | number
-    modification_date?: DateTimeNullableFilter<"document_versions"> | Date | string | null
+    modification_date?: DateTimeFilter<"document_versions"> | Date | string
     change_summary?: StringNullableFilter<"document_versions"> | string | null
+    is_major_version?: BoolFilter<"document_versions"> | boolean
   }
 
   export type usersUpsertWithoutDocuments_documents_last_modified_byTousersInput = {
@@ -19773,15 +20531,26 @@ export namespace Prisma {
 
   export type documentsUpdateWithoutOther_documentsInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
@@ -19793,18 +20562,29 @@ export namespace Prisma {
   export type documentsUncheckedUpdateWithoutOther_documentsInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
@@ -19832,18 +20612,29 @@ export namespace Prisma {
     NOT?: documentsScalarWhereInput | documentsScalarWhereInput[]
     id?: IntFilter<"documents"> | number
     title?: StringFilter<"documents"> | string
+    description?: StringNullableFilter<"documents"> | string | null
     content?: StringNullableFilter<"documents"> | string | null
     file_path?: StringNullableFilter<"documents"> | string | null
+    file_name?: StringNullableFilter<"documents"> | string | null
+    file_original_name?: StringNullableFilter<"documents"> | string | null
     file_type?: StringNullableFilter<"documents"> | string | null
     file_size?: BigIntNullableFilter<"documents"> | bigint | number | null
+    file_extension?: StringNullableFilter<"documents"> | string | null
+    file_upload_date?: DateTimeNullableFilter<"documents"> | Date | string | null
     owner_id?: IntFilter<"documents"> | number
     parent_folder_id?: IntNullableFilter<"documents"> | number | null
-    is_folder?: BoolNullableFilter<"documents"> | boolean | null
-    is_deleted?: BoolNullableFilter<"documents"> | boolean | null
-    created_at?: DateTimeNullableFilter<"documents"> | Date | string | null
-    updated_at?: DateTimeNullableFilter<"documents"> | Date | string | null
+    is_folder?: BoolFilter<"documents"> | boolean
+    is_deleted?: BoolFilter<"documents"> | boolean
+    is_public?: BoolFilter<"documents"> | boolean
+    is_template?: BoolFilter<"documents"> | boolean
+    created_at?: DateTimeFilter<"documents"> | Date | string
+    updated_at?: DateTimeFilter<"documents"> | Date | string
     last_modified_by?: IntNullableFilter<"documents"> | number | null
-    auto_save_interval?: IntNullableFilter<"documents"> | number | null
+    last_accessed_at?: DateTimeNullableFilter<"documents"> | Date | string | null
+    auto_save_interval?: IntFilter<"documents"> | number
+    allow_comments?: BoolFilter<"documents"> | boolean
+    tags?: StringNullableFilter<"documents"> | string | null
+    metadata?: JsonNullableFilter<"documents">
   }
 
   export type call_participantsCreateWithoutUsersInput = {
@@ -19960,9 +20751,14 @@ export namespace Prisma {
 
   export type document_versionsCreateWithoutUsersInput = {
     version_number: number
+    title?: string | null
     content?: string | null
-    modification_date?: Date | string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
     documents: documentsCreateNestedOneWithoutDocument_versionsInput
   }
 
@@ -19970,9 +20766,14 @@ export namespace Prisma {
     id?: number
     document_id: number
     version_number: number
+    title?: string | null
     content?: string | null
-    modification_date?: Date | string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
   }
 
   export type document_versionsCreateOrConnectWithoutUsersInput = {
@@ -19987,15 +20788,26 @@ export namespace Prisma {
 
   export type documentsCreateWithoutUsers_documents_last_modified_byTousersInput = {
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
@@ -20007,17 +20819,28 @@ export namespace Prisma {
   export type documentsUncheckedCreateWithoutUsers_documents_last_modified_byTousersInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
@@ -20036,15 +20859,26 @@ export namespace Prisma {
 
   export type documentsCreateWithoutUsers_documents_owner_idTousersInput = {
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
@@ -20056,17 +20890,28 @@ export namespace Prisma {
   export type documentsUncheckedCreateWithoutUsers_documents_owner_idTousersInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
     document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
@@ -21360,26 +22205,42 @@ export namespace Prisma {
   export type document_versionsCreateManyDocumentsInput = {
     id?: number
     version_number: number
+    title?: string | null
     content?: string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
     modified_by: number
-    modification_date?: Date | string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
   }
 
   export type documentsCreateManyDocumentsInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type callsUpdateWithoutDocumentsInput = {
@@ -21441,41 +22302,67 @@ export namespace Prisma {
 
   export type document_versionsUpdateWithoutDocumentsInput = {
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
     users?: usersUpdateOneRequiredWithoutDocument_versionsNestedInput
   }
 
   export type document_versionsUncheckedUpdateWithoutDocumentsInput = {
     id?: IntFieldUpdateOperationsInput | number
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
     modified_by?: IntFieldUpdateOperationsInput | number
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type document_versionsUncheckedUpdateManyWithoutDocumentsInput = {
     id?: IntFieldUpdateOperationsInput | number
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
     modified_by?: IntFieldUpdateOperationsInput | number
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type documentsUpdateWithoutDocumentsInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
@@ -21487,17 +22374,28 @@ export namespace Prisma {
   export type documentsUncheckedUpdateWithoutDocumentsInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
@@ -21507,17 +22405,28 @@ export namespace Prisma {
   export type documentsUncheckedUpdateManyWithoutDocumentsInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type call_participantsCreateManyUsersInput = {
@@ -21561,41 +22470,68 @@ export namespace Prisma {
     id?: number
     document_id: number
     version_number: number
+    title?: string | null
     content?: string | null
-    modification_date?: Date | string | null
+    file_path?: string | null
+    file_size?: bigint | number | null
+    file_type?: string | null
+    modification_date?: Date | string
     change_summary?: string | null
+    is_major_version?: boolean
   }
 
   export type documentsCreateManyUsers_documents_last_modified_byTousersInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     owner_id: number
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    auto_save_interval?: number | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type documentsCreateManyUsers_documents_owner_idTousersInput = {
     id?: number
     title: string
+    description?: string | null
     content?: string | null
     file_path?: string | null
+    file_name?: string | null
+    file_original_name?: string | null
     file_type?: string | null
     file_size?: bigint | number | null
+    file_extension?: string | null
+    file_upload_date?: Date | string | null
     parent_folder_id?: number | null
-    is_folder?: boolean | null
-    is_deleted?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+    is_folder?: boolean
+    is_deleted?: boolean
+    is_public?: boolean
+    is_template?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     last_modified_by?: number | null
-    auto_save_interval?: number | null
+    last_accessed_at?: Date | string | null
+    auto_save_interval?: number
+    allow_comments?: boolean
+    tags?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type conversationsCreateManyUsersInput = {
@@ -21754,9 +22690,14 @@ export namespace Prisma {
 
   export type document_versionsUpdateWithoutUsersInput = {
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
     documents?: documentsUpdateOneRequiredWithoutDocument_versionsNestedInput
   }
 
@@ -21764,31 +22705,52 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     document_id?: IntFieldUpdateOperationsInput | number
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type document_versionsUncheckedUpdateManyWithoutUsersInput = {
     id?: IntFieldUpdateOperationsInput | number
     document_id?: IntFieldUpdateOperationsInput | number
     version_number?: IntFieldUpdateOperationsInput | number
+    title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
-    modification_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_type?: NullableStringFieldUpdateOperationsInput | string | null
+    modification_date?: DateTimeFieldUpdateOperationsInput | Date | string
     change_summary?: NullableStringFieldUpdateOperationsInput | string | null
+    is_major_version?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type documentsUpdateWithoutUsers_documents_last_modified_byTousersInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
@@ -21800,17 +22762,28 @@ export namespace Prisma {
   export type documentsUncheckedUpdateWithoutUsers_documents_last_modified_byTousersInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
@@ -21820,30 +22793,52 @@ export namespace Prisma {
   export type documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     owner_id?: IntFieldUpdateOperationsInput | number
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type documentsUpdateWithoutUsers_documents_owner_idTousersInput = {
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
@@ -21855,17 +22850,28 @@ export namespace Prisma {
   export type documentsUncheckedUpdateWithoutUsers_documents_owner_idTousersInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
@@ -21875,17 +22881,28 @@ export namespace Prisma {
   export type documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersInput = {
     id?: IntFieldUpdateOperationsInput | number
     title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
     content?: NullableStringFieldUpdateOperationsInput | string | null
     file_path?: NullableStringFieldUpdateOperationsInput | string | null
+    file_name?: NullableStringFieldUpdateOperationsInput | string | null
+    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
     file_type?: NullableStringFieldUpdateOperationsInput | string | null
     file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
+    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_deleted?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    is_folder?: BoolFieldUpdateOperationsInput | boolean
+    is_deleted?: BoolFieldUpdateOperationsInput | boolean
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_template?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    auto_save_interval?: NullableIntFieldUpdateOperationsInput | number | null
+    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    auto_save_interval?: IntFieldUpdateOperationsInput | number
+    allow_comments?: BoolFieldUpdateOperationsInput | boolean
+    tags?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type conversationsUpdateWithoutUsersInput = {

@@ -217,6 +217,9 @@ export class DocumentListComponent implements OnInit {
 
     this.documentService.createDocument(newDocument).subscribe({
       next: (document) => {
+        // Mettre à jour la liste des documents avant de naviguer
+        this.loadDocuments();
+        // Naviguer vers l'éditeur de document
         this.router.navigate(['/documents', document.id]);
       },
       error: (err) => {

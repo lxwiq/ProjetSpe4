@@ -7,8 +7,8 @@ const fs = require('fs');
 const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
 const profilePicsDir = path.join(uploadsDir, 'profile_pictures');
 
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-if (!fs.existsSync(profilePicsDir)) fs.mkdirSync(profilePicsDir);
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+if (!fs.existsSync(profilePicsDir)) fs.mkdirSync(profilePicsDir, { recursive: true });
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -17,9 +17,9 @@ const storage = multer.diskStorage({
                                 req.originalUrl.includes('/profile');
 
         if (isProfilePicture) {
-            cb(null, '../backend/src/uploads/profile_pictures/'); // Répertoire pour les photos de profil
+            cb(null, profilePicsDir); // Utiliser le chemin absolu pour les photos de profil
         } else {
-            cb(null, '../backend/src/uploads/'); // Répertoire par défaut
+            cb(null, uploadsDir); // Utiliser le chemin absolu pour les autres fichiers
         }
     },
     filename: (req, file, cb) => {
@@ -27,12 +27,20 @@ const storage = multer.diskStorage({
         const isProfilePicture = req.originalUrl.includes('/profile/picture') ||
                                 req.originalUrl.includes('/profile');
 
+        // Obtenir l'extension du fichier
+        let extension = path.extname(file.originalname).toLowerCase();
+
+        // Pour les fichiers texte sans extension ou avec une extension différente de .txt
+        if (file.mimetype.includes('text/plain') && extension !== '.txt') {
+            extension = '.txt';
+        }
+
         if (isProfilePicture && req.userId) {
             // Format: user_ID_timestamp.extension
-            cb(null, `user_${req.userId}_${Date.now()}${path.extname(file.originalname)}`);
+            cb(null, `user_${req.userId}_${Date.now()}${extension}`);
         } else {
             // Format standard pour les autres fichiers
-            cb(null, Date.now() + path.extname(file.originalname));
+            cb(null, `${Date.now()}${extension}`);
         }
     }
 });
@@ -53,12 +61,18 @@ const fileFilter = (req, file, cb) => {
         cb('Seules les images sont autorisées pour les photos de profil (jpg, jpeg, png, gif, webp)');
     } else {
         // Pour les autres fichiers, autoriser plus de types
-        const allowedTypes = /pdf|doc|docx|txt|png|jpg|jpeg|svg|/;
+        const allowedTypes = /pdf|doc|docx|txt|png|jpg|jpeg|svg/;
+
+        // Vérifier si c'est un fichier texte brut
+        if (file.mimetype.includes('text/plain')) {
+            return cb(null, true);
+        }
+
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
 
         if (extname && mimetype) return cb(null, true);
-        cb('Type de fichier non autorisé');
+        cb('Type de fichier non autorisé. Les types autorisés sont: pdf, doc, docx, txt, png, jpg, jpeg, svg et les fichiers texte.');
     }
 };
 

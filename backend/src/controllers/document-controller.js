@@ -34,21 +34,45 @@ class DocumentController {
     try {
       const { title, content, parentFolderId, isFolder } = req.body;
       const file = req.file;
-      console.log(file);
+      console.log("Fichier reçu:", file);
       const userId = req.userId;
+
+      // Traitement du chemin de fichier pour le stockage en base de données
+      let filePath = null;
+      let fileSize = null;
+      let fileType = null;
+
+      if (file) {
+        // Utiliser un chemin relatif pour le stockage en base de données
+        // Cela permettra de servir le fichier correctement via l'URL
+        filePath = file.path.replace(/^.*[\\\/]uploads[\\\/]/, '/uploads/');
+
+        // Si c'est un fichier texte, s'assurer qu'il a l'extension .txt
+        if (file.mimetype.includes('text/plain') && !file.originalname.toLowerCase().endsWith('.txt')) {
+          filePath = filePath + '.txt';
+        }
+
+        fileSize = file.size;
+        fileType = file.mimetype;
+      }
+
       const newDocument = await documentService.addDocument({
-        title : file ? file.originalname : title,
+        title: file ? file.originalname : title,
         content,
         parentFolderId,
         isFolder,
         userId,
-        filePath: file ? file.path : null,
-        size: file ? file.size : null,
-        fileType: file ? file.mimetype : null,
+        filePath,
+        size: fileSize,
+        fileType,
       });
-      res.status(201).send('Document ajouté avec succès !');
+
+      res.status(201).json({
+        message: 'Document ajouté avec succès !',
+        data: newDocument
+      });
     } catch (err) {
-      console.error(err);
+      console.error("Erreur lors de l'ajout du document:", err);
       res.status(500).json({ message: 'Erreur lors de l\'ajout du document' });
     }
   }

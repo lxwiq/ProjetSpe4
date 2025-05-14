@@ -1,0 +1,191 @@
+<div class="container mx-auto px-4 py-6">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Documents</h1>
+      @if (currentFolder()) {
+        <div class="flex items-center text-sm text-gray-600 mt-1">
+          <button (click)="navigateUp()" class="flex items-center hover:text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Retour
+          </button>
+          <span class="mx-2">|</span>
+          <span>{{ currentFolder()?.title }}</span>
+        </div>
+      }
+    </div>
+    
+    <div class="flex space-x-2">
+      <button (click)="createFolder()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Nouveau dossier
+      </button>
+      <button (click)="createDocument()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Nouveau document
+      </button>
+    </div>
+  </div>
+  
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <!-- Filtres et recherche -->
+    <div class="flex flex-col md:flex-row justify-between mb-6 space-y-4 md:space-y-0">
+      <div class="flex items-center space-x-4">
+        <div class="relative">
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            (ngModelChange)="applyFiltersAndSort()"
+            placeholder="Rechercher..." 
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        
+        <select 
+          [(ngModel)]="filterType" 
+          (ngModelChange)="applyFiltersAndSort()"
+          class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="all">Tous</option>
+          <option value="folders">Dossiers</option>
+          <option value="documents">Documents</option>
+          <option value="owned">Mes documents</option>
+          <option value="shared">Partagés avec moi</option>
+        </select>
+      </div>
+      
+      <div class="flex items-center space-x-2">
+        <span class="text-sm text-gray-600">Trier par:</span>
+        <select 
+          [(ngModel)]="sortField" 
+          (ngModelChange)="applyFiltersAndSort()"
+          class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="updated_at">Date de modification</option>
+          <option value="title">Titre</option>
+          <option value="owner">Propriétaire</option>
+        </select>
+        
+        <button (click)="sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'; applyFiltersAndSort()" class="p-2 rounded-md hover:bg-gray-100">
+          @if (sortDirection === 'asc') {
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+            </svg>
+          }
+        </button>
+      </div>
+    </div>
+    
+    <!-- État de chargement -->
+    @if (isLoading()) {
+      <div class="flex justify-center items-center py-12">
+        <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+    }
+    
+    <!-- Message d'erreur -->
+    @if (error()) {
+      <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+        <p>{{ error() }}</p>
+        <button (click)="loadDocuments()" class="mt-2 text-sm font-medium hover:underline">Réessayer</button>
+      </div>
+    }
+    
+    <!-- Liste vide -->
+    @if (!isLoading() && !error() && filteredDocuments().length === 0) {
+      <div class="text-center py-12">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-1">Aucun document</h3>
+        <p class="text-gray-500">
+          @if (searchTerm || filterType !== 'all') {
+            Aucun résultat ne correspond à vos critères de recherche.
+          } @else {
+            Commencez par créer un nouveau document ou dossier.
+          }
+        </p>
+      </div>
+    }
+    
+    <!-- Liste des documents -->
+    @if (!isLoading() && filteredDocuments().length > 0) {
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Propriétaire</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dernière modification</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            @for (document of filteredDocuments(); track document.id) {
+              <tr class="hover:bg-gray-50 cursor-pointer" (click)="openDocument(document)">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    @if (document.is_folder) {
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    } @else if (document.file_type?.includes('pdf')) {
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    } @else if (document.file_type?.includes('image')) {
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    } @else {
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    }
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">{{ document.title }}</div>
+                      @if (!document.is_folder && document.file_type) {
+                        <div class="text-xs text-gray-500">{{ document.file_type }}</div>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ document.owner?.username || 'Inconnu' }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ formatDate(document.updated_at) }}</div>
+                  @if (document.last_modifier) {
+                    <div class="text-xs text-gray-500">par {{ document.last_modifier.username }}</div>
+                  }
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button (click)="deleteDocument(document, $event)" class="text-red-600 hover:text-red-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

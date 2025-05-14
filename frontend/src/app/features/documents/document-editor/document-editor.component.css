@@ -1,0 +1,54 @@
+/* Styles pour l'éditeur de document */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Styles pour l'éditeur Quill */
+.ql-container {
+  font-size: 16px;
+  height: calc(100% - 42px); /* Hauteur totale moins la hauteur de la barre d'outils */
+  overflow-y: auto;
+}
+
+.ql-editor {
+  min-height: 100%;
+  padding: 1rem;
+  line-height: 1.6;
+}
+
+/* Styles pour les curseurs des autres utilisateurs */
+.ql-cursor {
+  position: absolute;
+  pointer-events: none;
+}
+
+.ql-cursor-flag {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: white;
+  white-space: nowrap;
+}
+
+.ql-cursor-caret {
+  position: absolute;
+  width: 2px;
+  margin-left: -1px;
+  height: 16px;
+}
+
+.ql-cursor-selection {
+  position: absolute;
+  opacity: 0.3;
+}
+
+/* Styles pour les boutons */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
