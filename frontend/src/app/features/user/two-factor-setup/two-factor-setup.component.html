@@ -1,0 +1,105 @@
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Configuration de l'authentification à deux facteurs</h1>
+  </header>
+
+  <div class="flex flex-col gap-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+      @if (error) {
+        <div class="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded mb-6">{{ error }}</div>
+      }
+
+      @if (loading) {
+        <div class="flex flex-col items-center justify-center py-8">
+          <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+          <p>Chargement en cours...</p>
+        </div>
+      } @else {
+        <!-- Step 1: Introduction -->
+        @if (setupStep === 1) {
+          <div class="flex flex-col gap-6">
+            <h2 class="text-2xl font-semibold text-gray-800">Étape 1: Préparation</h2>
+            <p class="text-gray-700">L'authentification à deux facteurs (2FA) ajoute une couche de sécurité supplémentaire à votre compte.</p>
+            <p class="text-gray-700">Pour configurer la 2FA, vous aurez besoin d'une application d'authentification sur votre téléphone, comme:</p>
+            <ul class="list-disc pl-6 space-y-2 text-gray-700">
+              <li>Google Authenticator</li>
+              <li>Microsoft Authenticator</li>
+              <li>Authy</li>
+            </ul>
+            <p class="text-gray-700">Si vous n'avez pas encore installé l'une de ces applications, veuillez le faire avant de continuer.</p>
+
+            <div class="flex justify-center gap-4 mt-4">
+              <button class="px-6 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 transition-colors" (click)="setupTwoFactor()">Continuer</button>
+              <button class="px-6 py-2 bg-gray-500 text-white font-medium rounded-md hover:bg-gray-600 transition-colors" (click)="goToProfile()">Annuler</button>
+            </div>
+          </div>
+        }
+
+        <!-- Step 2: QR Code -->
+        @if (setupStep === 2) {
+          <div class="flex flex-col gap-6">
+            <h2 class="text-2xl font-semibold text-gray-800">Étape 2: Scanner le code QR</h2>
+            <p class="text-gray-700">Scannez ce code QR avec votre application d'authentification:</p>
+
+            <div class="flex justify-center my-6">
+              <img [src]="qrCodeUrl" alt="QR Code pour l'authentification à deux facteurs" class="max-w-[200px] border border-gray-300 p-2 bg-white">
+            </div>
+
+            <div class="bg-gray-100 p-4 rounded-md mb-6">
+              <p class="text-gray-700 mb-2">Si vous ne pouvez pas scanner le code QR, entrez manuellement cette clé secrète dans votre application:</p>
+              <div class="font-mono text-lg bg-white p-3 border border-gray-300 rounded-md text-center break-all">{{ secret }}</div>
+            </div>
+
+            <div class="mt-4">
+              <h3 class="text-xl font-medium text-gray-700 mb-4">Vérification</h3>
+              <p class="text-gray-700 mb-4">Entrez le code à 6 chiffres généré par votre application d'authentification:</p>
+
+              <form [formGroup]="verificationForm" (ngSubmit)="verifySetup()">
+                <div class="mb-6">
+                  <input
+                    type="text"
+                    formControlName="verificationCode"
+                    class="font-mono text-xl tracking-widest text-center py-3 w-full max-w-[200px] mx-auto block border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="000000"
+                    maxlength="6"
+                    [ngClass]="{ 'border-red-500': submitted && f['verificationCode'].errors }"
+                  />
+                  @if (submitted && f['verificationCode'].errors) {
+                    <div class="text-red-600 text-sm text-center mt-1">
+                      @if (f['verificationCode'].errors['required']) {
+                        <div>Le code de vérification est requis</div>
+                      }
+                      @if (f['verificationCode'].errors['pattern']) {
+                        <div>Le code doit contenir 6 chiffres</div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="flex justify-center gap-4 mt-4">
+                  <button type="submit" class="px-6 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 transition-colors" [disabled]="verificationForm.invalid">Vérifier</button>
+                  <button type="button" class="px-6 py-2 bg-gray-500 text-white font-medium rounded-md hover:bg-gray-600 transition-colors" (click)="goToProfile()">Annuler</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- Step 3: Success -->
+        @if (setupStep === 3) {
+          <div class="flex flex-col items-center gap-6 text-center py-4">
+            <div class="text-6xl text-green-500">✓</div>
+            <h2 class="text-2xl font-semibold text-green-600">Configuration réussie!</h2>
+            <p class="text-gray-700">L'authentification à deux facteurs a été activée avec succès pour votre compte.</p>
+            <p class="text-gray-700">Désormais, vous devrez fournir un code de vérification à chaque connexion.</p>
+            <p class="text-gray-700"><strong>Important:</strong> Conservez précieusement vos codes de récupération en cas de perte d'accès à votre application d'authentification.</p>
+
+            <div class="mt-4">
+              <button class="px-6 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 transition-colors" (click)="goToProfile()">Retour au profil</button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
