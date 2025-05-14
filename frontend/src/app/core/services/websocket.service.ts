@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 import { TokenService } from './token.service';
 import { AuthService } from './auth.service';
 import { TokenRefreshService } from './token-refresh.service';
+import { LoggingService } from './logging.service';
 
 @Injectable({
   providedIn: 'root'
@@ -41,12 +42,16 @@ export class WebsocketService {
   constructor(
     private tokenService: TokenService,
     private authService: AuthService,
-    private tokenRefreshService: TokenRefreshService
+    private tokenRefreshService: TokenRefreshService,
+    private logger: LoggingService
   ) {
     // Utiliser effect() pour réagir aux changements du signal isAuthenticated
     effect(() => {
       const isAuthenticated = this.authService.isAuthenticated();
-      console.log('WebsocketService: État d\'authentification changé:', isAuthenticated);
+      this.logger.info('État d\'authentification changé', {
+        service: 'WebsocketService',
+        isAuthenticated
+      });
 
       if (isAuthenticated) {
         this.connect();
@@ -57,7 +62,9 @@ export class WebsocketService {
 
     // Écouter l'événement de rafraîchissement des tokens
     document.addEventListener('tokens-refreshed', (event: any) => {
-      console.log('WebsocketService: Tokens rafraîchis, reconnexion du WebSocket');
+      this.logger.info('Tokens rafraîchis, reconnexion du WebSocket', {
+        service: 'WebsocketService'
+      });
       this.reconnectWithNewToken(event.detail?.accessToken);
     });
 
@@ -66,7 +73,9 @@ export class WebsocketService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         if (this.authService.isAuthenticated() && !this.isConnected()) {
-          console.log('WebsocketService: Connexion WebSocket perdue, tentative de reconnexion');
+          this.logger.info('Connexion WebSocket perdue, tentative de reconnexion', {
+            service: 'WebsocketService'
+          });
           this.reconnect();
         }
       });
@@ -98,11 +107,15 @@ export class WebsocketService {
 
     const token = this.tokenService.getAccessToken();
     if (!token) {
-      console.error('WebsocketService: Pas de token disponible pour la connexion WebSocket');
+      this.logger.error('Pas de token disponible pour la connexion WebSocket', {
+        service: 'WebsocketService'
+      });
       return;
     }
 
-    console.log('WebsocketService: Tentative de connexion au serveur WebSocket');
+    this.logger.info('Tentative de connexion au serveur WebSocket', {
+      service: 'WebsocketService'
+    });
 
     try {
       this.socket = io(environment.apiUrl, {
@@ -119,7 +132,10 @@ export class WebsocketService {
       this.connectionStatus.next(true);
       this.reconnectAttempts = 0;
     } catch (error) {
-      console.error('WebsocketService: Erreur lors de la création du socket', error);
+      this.logger.error('Erreur lors de la création du socket', {
+        service: 'WebsocketService',
+        error
+      });
       this.connected.set(false);
       this.connectionStatus.next(false);
       this.scheduleReconnect();
@@ -131,7 +147,9 @@ export class WebsocketService {
    * @param newToken Nouveau token d'accès
    */
   private reconnectWithNewToken(newToken?: string): void {
-    console.log('WebsocketService: Reconnexion avec un nouveau token');
+    this.logger.info('Reconnexion avec un nouveau token', {
+      service: 'WebsocketService'
+    });
 
     // Déconnecter d'abord
     this.disconnect();
@@ -154,7 +172,12 @@ export class WebsocketService {
     }
 
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      console.log(`WebsocketService: Planification de la reconnexion dans ${this.reconnectInterval / 1000} secondes (tentative ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
+      this.logger.info(`Planification de la reconnexion dans ${this.reconnectInterval / 1000} secondes (tentative ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`, {
+        service: 'WebsocketService',
+        reconnectAttempts: this.reconnectAttempts,
+        maxReconnectAttempts: this.maxReconnectAttempts,
+        reconnectInterval: this.reconnectInterval
+      });
 
       this.reconnectTimer = setTimeout(() => {
         this.reconnect();
@@ -163,18 +186,26 @@ export class WebsocketService {
       // Augmenter l'intervalle pour la prochaine tentative (backoff exponentiel)
       this.reconnectInterval = Math.min(this.reconnectInterval * 1.5, 60000); // Max 1 minute
     } else {
-      console.error('WebsocketService: Nombre maximum de tentatives de reconnexion atteint');
+      this.logger.error('Nombre maximum de tentatives de reconnexion atteint', {
+        service: 'WebsocketService',
+        reconnectAttempts: this.reconnectAttempts
+      });
 
       // Essayer de rafraîchir le token
       this.tokenRefreshService.refreshToken().subscribe({
         next: () => {
-          console.log('WebsocketService: Token rafraîchi, réinitialisation des tentatives de reconnexion');
+          this.logger.info('Token rafraîchi, réinitialisation des tentatives de reconnexion', {
+            service: 'WebsocketService'
+          });
           this.reconnectAttempts = 0;
           this.reconnectInterval = 5000;
           this.scheduleReconnect();
         },
         error: (error) => {
-          console.error('WebsocketService: Échec du rafraîchissement du token', error);
+          this.logger.error('Échec du rafraîchissement du token', {
+            service: 'WebsocketService',
+            error
+          });
         }
       });
     }
@@ -189,14 +220,20 @@ export class WebsocketService {
     }
 
     this.reconnectAttempts++;
-    console.log(`WebsocketService: Tentative de reconnexion ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+    this.logger.info(`Tentative de reconnexion ${this.reconnectAttempts}/${this.maxReconnectAttempts}`, {
+      service: 'WebsocketService',
+      reconnectAttempts: this.reconnectAttempts,
+      maxReconnectAttempts: this.maxReconnectAttempts
+    });
 
     this.connect();
 
     if (!this.connected()) {
       this.scheduleReconnect();
     } else {
-      console.log('WebsocketService: Reconnexion réussie');
+      this.logger.info('Reconnexion réussie', {
+        service: 'WebsocketService'
+      });
       this.reconnectAttempts = 0;
       this.reconnectInterval = 5000;
 
@@ -210,7 +247,10 @@ export class WebsocketService {
    */
   private replayPendingEmits(): void {
     if (this.pendingEmits.length > 0) {
-      console.log(`WebsocketService: Rejeu de ${this.pendingEmits.length} émissions en attente`);
+      this.logger.info(`Rejeu de ${this.pendingEmits.length} émissions en attente`, {
+        service: 'WebsocketService',
+        pendingEmitsCount: this.pendingEmits.length
+      });
 
       const emits = [...this.pendingEmits];
       this.pendingEmits = [];
@@ -226,7 +266,9 @@ export class WebsocketService {
    */
   disconnect(): void {
     if (this.socket) {
-      console.log('WebsocketService: Déconnexion du serveur WebSocket');
+      this.logger.info('Déconnexion du serveur WebSocket', {
+        service: 'WebsocketService'
+      });
       this.socket.disconnect();
       this.socket = null;
       this.connected.set(false);
@@ -249,7 +291,9 @@ export class WebsocketService {
 
     // Événements de connexion
     this.socket.on('connect', () => {
-      console.log('WebsocketService: Connecté au serveur WebSocket');
+      this.logger.info('Connecté au serveur WebSocket', {
+        service: 'WebsocketService'
+      });
       this.connected.set(true);
       this.connectionStatus.next(true);
       this.reconnectAttempts = 0;
@@ -260,21 +304,31 @@ export class WebsocketService {
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('WebsocketService: Erreur de connexion WebSocket', error);
+      this.logger.error('Erreur de connexion WebSocket', {
+        service: 'WebsocketService',
+        error
+      });
       this.connected.set(false);
       this.connectionStatus.next(false);
 
       // Vérifier si l'erreur est liée à l'authentification
       if (error.message && error.message.includes('Authentication error')) {
-        console.log('WebsocketService: Erreur d\'authentification, tentative de rafraîchissement du token');
+        this.logger.info('Erreur d\'authentification, tentative de rafraîchissement du token', {
+          service: 'WebsocketService'
+        });
 
         this.tokenRefreshService.refreshToken().subscribe({
           next: () => {
-            console.log('WebsocketService: Token rafraîchi, tentative de reconnexion');
+            this.logger.info('Token rafraîchi, tentative de reconnexion', {
+              service: 'WebsocketService'
+            });
             setTimeout(() => this.reconnect(), 1000);
           },
           error: (refreshError) => {
-            console.error('WebsocketService: Échec du rafraîchissement du token', refreshError);
+            this.logger.error('Échec du rafraîchissement du token', {
+              service: 'WebsocketService',
+              error: refreshError
+            });
             this.scheduleReconnect();
           }
         });
@@ -284,88 +338,142 @@ export class WebsocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('WebsocketService: Déconnecté du serveur WebSocket', reason);
+      this.logger.info('Déconnecté du serveur WebSocket', {
+        service: 'WebsocketService',
+        reason
+      });
       this.connected.set(false);
       this.connectionStatus.next(false);
 
       // Si la déconnexion est due à une erreur, tenter de se reconnecter
       if (reason === 'io server disconnect' || reason === 'transport close' || reason === 'ping timeout') {
-        console.log('WebsocketService: Déconnexion due à une erreur, tentative de reconnexion');
+        this.logger.info('Déconnexion due à une erreur, tentative de reconnexion', {
+          service: 'WebsocketService',
+          reason
+        });
         this.scheduleReconnect();
       }
     });
 
     // Événements de notification
     this.socket.on('notification:received', (data) => {
-      console.log('WebsocketService: Notification reçue', data);
+      this.logger.debug('Notification reçue', {
+        service: 'WebsocketService',
+        notification: data.notification
+      });
       this.notificationReceived.next(data.notification);
     });
 
     this.socket.on('notification:pending', (data) => {
-      console.log('WebsocketService: Notifications en attente reçues', data);
+      this.logger.debug('Notifications en attente reçues', {
+        service: 'WebsocketService',
+        count: data.notifications?.length
+      });
       this.pendingNotifications.next(data.notifications);
     });
 
     // Événements de document
     this.socket.on('document:user-joined', (data) => {
-      console.log('WebsocketService: Utilisateur a rejoint le document', data);
+      this.logger.debug('Utilisateur a rejoint le document', {
+        service: 'WebsocketService',
+        documentId: data.documentId,
+        userId: data.userId
+      });
       this.documentUserJoined.next(data);
     });
 
     this.socket.on('document:user-left', (data) => {
-      console.log('WebsocketService: Utilisateur a quitté le document', data);
+      this.logger.debug('Utilisateur a quitté le document', {
+        service: 'WebsocketService',
+        documentId: data.documentId,
+        userId: data.userId
+      });
       this.documentUserLeft.next(data);
     });
 
     this.socket.on('document:content-changed', (data) => {
-      console.log('WebsocketService: Contenu du document modifié', data);
+      this.logger.debug('Contenu du document modifié', {
+        service: 'WebsocketService',
+        documentId: data.documentId
+      });
       this.documentContentChanged.next(data);
     });
 
     this.socket.on('document:saved', (data) => {
-      console.log('WebsocketService: Document sauvegardé', data);
+      this.logger.debug('Document sauvegardé', {
+        service: 'WebsocketService',
+        documentId: data.documentId
+      });
       this.documentSaved.next(data);
     });
 
     this.socket.on('document:invitation', (data) => {
-      console.log('WebsocketService: Invitation à un document reçue', data);
+      this.logger.debug('Invitation à un document reçue', {
+        service: 'WebsocketService',
+        documentId: data.documentId
+      });
       this.documentInvitation.next(data);
     });
 
     // Événements d'appel
     this.socket.on('call:started', (data) => {
-      console.log('WebsocketService: Appel démarré', data);
+      this.logger.debug('Appel démarré', {
+        service: 'WebsocketService',
+        callId: data.callId
+      });
       this.callStarted.next(data);
     });
 
     this.socket.on('call:ended', (data) => {
-      console.log('WebsocketService: Appel terminé', data);
+      this.logger.debug('Appel terminé', {
+        service: 'WebsocketService',
+        callId: data.callId
+      });
       this.callEnded.next(data);
     });
 
     this.socket.on('call:joined', (data) => {
-      console.log('WebsocketService: Utilisateur a rejoint l\'appel', data);
+      this.logger.debug('Utilisateur a rejoint l\'appel', {
+        service: 'WebsocketService',
+        callId: data.callId,
+        userId: data.userId
+      });
       this.callJoined.next(data);
     });
 
     this.socket.on('call:left', (data) => {
-      console.log('WebsocketService: Utilisateur a quitté l\'appel', data);
+      this.logger.debug('Utilisateur a quitté l\'appel', {
+        service: 'WebsocketService',
+        callId: data.callId,
+        userId: data.userId
+      });
       this.callLeft.next(data);
     });
 
     this.socket.on('call:signal', (data) => {
-      console.log('WebsocketService: Signal d\'appel reçu', data);
+      this.logger.debug('Signal d\'appel reçu', {
+        service: 'WebsocketService',
+        callId: data.callId,
+        fromUserId: data.fromUserId
+      });
       this.callSignal.next(data);
     });
 
     this.socket.on('call:voice-activity', (data) => {
-      console.log('WebsocketService: Activité vocale détectée', data);
+      this.logger.debug('Activité vocale détectée', {
+        service: 'WebsocketService',
+        callId: data.callId,
+        userId: data.userId
+      });
       this.callVoiceActivity.next(data);
     });
 
     // Événements de messagerie
     this.socket.on('message:received', (data) => {
-      console.log('WebsocketService: Message reçu', data);
+      this.logger.debug('Message reçu', {
+        service: 'WebsocketService',
+        conversationId: data.conversationId
+      });
       this.messageReceived.next(data);
     });
   }
@@ -378,7 +486,10 @@ export class WebsocketService {
    */
   emit(event: string, data: any, callback?: (response: any) => void): void {
     if (!this.socket || !this.isConnected()) {
-      console.warn(`WebsocketService: Impossible d'émettre l'événement ${event}, socket non connecté. Mise en file d'attente.`);
+      this.logger.warn(`Impossible d'émettre l'événement ${event}, socket non connecté. Mise en file d'attente.`, {
+        service: 'WebsocketService',
+        event
+      });
 
       // Stocker l'émission pour la rejouer plus tard
       this.pendingEmits.push({event, data, callback});
@@ -393,7 +504,11 @@ export class WebsocketService {
         // Vérifier si la réponse indique une erreur d'authentification
         if (response && response.error &&
             (response.error.includes('Authentication') || response.error.includes('token'))) {
-          console.warn('WebsocketService: Erreur d\'authentification lors de l\'émission, tentative de rafraîchissement du token');
+          this.logger.warn('Erreur d\'authentification lors de l\'émission, tentative de rafraîchissement du token', {
+            service: 'WebsocketService',
+            event,
+            error: response.error
+          });
 
           // Stocker l'émission pour la rejouer après le rafraîchissement du token
           this.pendingEmits.push({event, data, callback});
@@ -405,7 +520,11 @@ export class WebsocketService {
         }
       });
     } catch (error) {
-      console.error(`WebsocketService: Erreur lors de l'émission de l'événement ${event}`, error);
+      this.logger.error(`Erreur lors de l'émission de l'événement ${event}`, {
+        service: 'WebsocketService',
+        event,
+        error
+      });
 
       // Stocker l'émission pour la rejouer plus tard
       this.pendingEmits.push({event, data, callback});

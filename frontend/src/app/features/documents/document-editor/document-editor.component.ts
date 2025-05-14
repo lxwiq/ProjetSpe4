@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { DocumentService } from '../../../core/services/document.service';
 import { CollaborativeDocumentService } from '../../../core/services/collaborative-document.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { LoggingService } from '../../../core/services/logging.service';
 import { Document, ActiveDocumentUser, DocumentCollaborator } from '../../../core/models/document.model';
 import { DocumentCollaboratorsComponent } from '../document-collaborators/document-collaborators.component';
 import { VoiceCallComponent } from '../voice-call/voice-call.component';
@@ -45,7 +46,8 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
     private router: Router,
     private documentService: DocumentService,
     public collaborativeService: CollaborativeDocumentService,
-    private authService: AuthService
+    private authService: AuthService,
+    private logger: LoggingService
   ) {
     // Réagir aux changements d'état du service collaboratif
     effect(() => {
@@ -56,6 +58,10 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
       const lastSaved = this.collaborativeService.lastSaved();
       if (lastSaved) {
         this.lastSaved.set(lastSaved);
+        this.logger.debug('Dernière sauvegarde mise à jour', {
+          component: 'DocumentEditorComponent',
+          lastSaved
+        });
       }
     });
 
@@ -63,6 +69,10 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
     effect(() => {
       const activeUsers = this.collaborativeService.activeUsers();
       this.activeUserIds.set(activeUsers.map(user => user.id));
+      this.logger.debug('Liste des utilisateurs actifs mise à jour', {
+        component: 'DocumentEditorComponent',
+        activeUserCount: activeUsers.length
+      });
     });
   }
 
@@ -73,10 +83,16 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
       // Vérifier que l'ID est valide et peut être converti en nombre
       if (id && !isNaN(+id) && +id > 0) {
         this.documentId = +id;
-        console.log(`DocumentEditorComponent: ID de document valide: ${this.documentId}`);
+        this.logger.info(`ID de document valide: ${this.documentId}`, {
+          component: 'DocumentEditorComponent',
+          documentId: this.documentId
+        });
         this.loadDocument();
       } else {
-        console.error(`DocumentEditorComponent: ID de document invalide: ${id}`);
+        this.logger.error(`ID de document invalide: ${id}`, {
+          component: 'DocumentEditorComponent',
+          documentId: id
+        });
         this.error.set(`ID de document non valide: ${id}`);
         this.isLoading.set(false);
 
@@ -108,11 +124,15 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
   private initEditor(): void {
     try {
       if (!this.editorElement || !this.editorElement.nativeElement) {
-        console.error('Élément d\'éditeur non trouvé');
+        this.logger.error('Élément d\'éditeur non trouvé', {
+          component: 'DocumentEditorComponent'
+        });
 
         // Réessayer après un court délai si l'élément n'est pas trouvé
         setTimeout(() => {
-          console.log('Tentative de réinitialisation de l\'éditeur...');
+          this.logger.info('Tentative de réinitialisation de l\'éditeur...', {
+            component: 'DocumentEditorComponent'
+          });
           this.initEditor();
         }, 500);
 
@@ -121,18 +141,24 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
 
       // Vérifier si l'élément est bien dans le DOM
       if (!document.body.contains(this.editorElement.nativeElement)) {
-        console.error('L\'élément d\'éditeur n\'est pas dans le DOM');
+        this.logger.error('L\'élément d\'éditeur n\'est pas dans le DOM', {
+          component: 'DocumentEditorComponent'
+        });
 
         // Réessayer après un court délai
         setTimeout(() => {
-          console.log('Tentative de réinitialisation de l\'éditeur...');
+          this.logger.info('Tentative de réinitialisation de l\'éditeur...', {
+            component: 'DocumentEditorComponent'
+          });
           this.initEditor();
         }, 500);
 
         return;
       }
 
-      console.log('Initialisation de l\'éditeur Quill avec l\'élément:', this.editorElement.nativeElement);
+      this.logger.info('Initialisation de l\'éditeur Quill', {
+        component: 'DocumentEditorComponent'
+      });
 
       // Configurer les options de l'éditeur
       const options = {
@@ -153,7 +179,9 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
 
       // Créer l'instance de l'éditeur
       this.editor = new Quill(this.editorElement.nativeElement, options);
-      console.log('Éditeur Quill initialisé avec succès');
+      this.logger.info('Éditeur Quill initialisé avec succès', {
+        component: 'DocumentEditorComponent'
+      });
 
       // Configurer les événements de l'éditeur
       this.editor.on('text-change', (delta: any, oldDelta: any, source: string) => {
@@ -178,11 +206,16 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
       this.isEditorReady = true;
       this.loadEditorContent();
     } catch (error) {
-      console.error('Erreur lors de l\'initialisation de l\'éditeur:', error);
+      this.logger.error('Erreur lors de l\'initialisation de l\'éditeur', {
+        component: 'DocumentEditorComponent',
+        error
+      });
 
       // Réessayer après un court délai en cas d'erreur
       setTimeout(() => {
-        console.log('Tentative de réinitialisation de l\'éditeur après erreur...');
+        this.logger.info('Tentative de réinitialisation de l\'éditeur après erreur...', {
+          component: 'DocumentEditorComponent'
+        });
         this.initEditor();
       }, 1000);
     }
@@ -378,12 +411,21 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
     // Écouter les mouvements de curseur
     this.collaborativeService.onCursorMoved().subscribe(data => {
       // Implémenter l'affichage des curseurs des autres utilisateurs
-      console.log('Curseur déplacé:', data);
+      this.logger.debug('Curseur déplacé', {
+        component: 'DocumentEditorComponent',
+        userId: data.userId,
+        position: data.position
+      });
     });
 
     // Écouter les sauvegardes de document
     this.collaborativeService.onDocumentSaved().subscribe(data => {
-      console.log('Document sauvegardé:', data);
+      this.logger.debug('Document sauvegardé', {
+        component: 'DocumentEditorComponent',
+        documentId: data.documentId,
+        savedAt: data.savedAt,
+        versionNumber: data.versionNumber
+      });
     });
   }
 
@@ -392,7 +434,10 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
    */
   saveDocument(): void {
     if (!this.editor || !this.documentId) {
-      console.error('DocumentEditorComponent: Éditeur ou ID de document non disponible');
+      this.logger.error('Éditeur ou ID de document non disponible', {
+        component: 'DocumentEditorComponent',
+        documentId: this.documentId
+      });
       return;
     }
 
@@ -406,7 +451,10 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
 
     // Vérifier si le contenu est vide
     if (!content || content.trim() === '') {
-      console.warn('📄 [DocumentEditor] Alerte: Contenu vide détecté');
+      this.logger.warn('Contenu vide détecté', {
+        component: 'DocumentEditorComponent',
+        documentId: this.documentId
+      });
       // Si le contenu est vide, utiliser un contenu par défaut pour éviter les problèmes
       const defaultContent = '<p>Document vide</p>';
       // Mettre à jour l'éditeur avec le contenu par défaut
@@ -416,19 +464,30 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
     }
 
     // Log du contenu à sauvegarder
-    console.log(`📄 [DocumentEditor] Sauvegarde: ${content.length} caractères`);
-    console.log(`📝 [DocumentEditor] Contenu: ${content.substring(0, 50)}...`);
+    this.logger.debug('Sauvegarde du document', {
+      component: 'DocumentEditorComponent',
+      documentId: this.documentId,
+      contentLength: content.length,
+      contentPreview: content.substring(0, 50)
+    });
 
     // Mettre à jour le document local avec le contenu actuel
     const currentDoc = this.document();
     if (currentDoc) {
       currentDoc.content = content;
       this.document.set(currentDoc);
-      console.log(`DocumentEditorComponent: Document local mis à jour avec le contenu (${content.length} caractères)`);
+      this.logger.debug('Document local mis à jour', {
+        component: 'DocumentEditorComponent',
+        documentId: this.documentId,
+        contentLength: content.length
+      });
 
       // Mettre également à jour le document actif dans le service collaboratif
       this.collaborativeService.updateContent(this.documentId, content);
-      console.log(`DocumentEditorComponent: Document actif mis à jour dans le service collaboratif`);
+      this.logger.debug('Document actif mis à jour dans le service collaboratif', {
+        component: 'DocumentEditorComponent',
+        documentId: this.documentId
+      });
     }
 
     // Afficher un message de sauvegarde en cours
@@ -448,14 +507,28 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
     // Mettre à jour le titre si nécessaire
     let titleUpdatePromise = Promise.resolve();
     if (title !== this.document()?.title) {
-      titleUpdatePromise = new Promise<void>((resolve, reject) => {
+      titleUpdatePromise = new Promise<void>((resolve) => {
+        this.logger.info('Mise à jour du titre du document', {
+          component: 'DocumentEditorComponent',
+          documentId: this.documentId,
+          oldTitle: this.document()?.title,
+          newTitle: title
+        });
+
         this.documentService.updateDocument(this.documentId, { title }).subscribe({
           next: () => {
-            console.log('Titre mis à jour avec succès');
+            this.logger.info('Titre mis à jour avec succès', {
+              component: 'DocumentEditorComponent',
+              documentId: this.documentId
+            });
             resolve();
           },
           error: (err) => {
-            console.error('Erreur lors de la mise à jour du titre:', err);
+            this.logger.error('Erreur lors de la mise à jour du titre', {
+              component: 'DocumentEditorComponent',
+              documentId: this.documentId,
+              error: err
+            });
             // Ne pas rejeter la promesse pour continuer avec la sauvegarde du contenu
             resolve();
           }
@@ -468,7 +541,11 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
       // Sauvegarder le contenu
       this.collaborativeService.saveDocument(this.documentId).subscribe({
         next: (data) => {
-          console.log('Document sauvegardé avec succès:', data);
+          this.logger.info('Document sauvegardé avec succès', {
+            component: 'DocumentEditorComponent',
+            documentId: this.documentId,
+            versionNumber: data.versionNumber
+          });
 
           // Mettre à jour le message de sauvegarde
           saveMessage.textContent = 'Document sauvegardé !';
@@ -485,7 +562,11 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
           this.verifyDocumentSaved();
         },
         error: (err) => {
-          console.error('Erreur lors de la sauvegarde du document:', err);
+          this.logger.error('Erreur lors de la sauvegarde du document', {
+            component: 'DocumentEditorComponent',
+            documentId: this.documentId,
+            error: err
+          });
 
           // Mettre à jour le message d'erreur
           saveMessage.textContent = 'Erreur lors de la sauvegarde. Nouvelle tentative...';
