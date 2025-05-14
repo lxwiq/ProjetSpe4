@@ -24,14 +24,14 @@ async function createUsers() {
       {
         username: 'admin',
         email: 'admin@admin.fr',
-        password: 'test',
+        password: 'testtest',
         full_name: 'Administrateur',
         is_admin: true
       },
       {
         username: 'user',
         email: 'user@user.fr',
-        password: 'test',
+        password: 'testtest',
         full_name: 'Utilisateur Standard',
         is_admin: false
       }

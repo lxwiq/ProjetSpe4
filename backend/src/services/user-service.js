@@ -65,15 +65,57 @@ class UserService {
     });
   }
 
-  async updateUser(id, username, email, full_name, password) {
-    const password_hash = await bcrypt.hash(password, saltRounds);
+  async updateUser(id, userData) {
+    const { username, email, full_name, password, profile_picture } = userData;
+
+    // Prepare data object for update
+    const updateData = {};
+
+    // Only include fields that are provided
+    if (username) updateData.username = username;
+    if (email) updateData.email = email;
+    if (full_name) updateData.full_name = full_name;
+    if (profile_picture) updateData.profile_picture = profile_picture;
+
+    // Only hash password if it's provided
+    if (password) {
+      updateData.password_hash = await bcrypt.hash(password, saltRounds);
+    }
+
+    return await prisma.users.update({
+      where: { id: parseInt(id) },
+      data: updateData,
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        full_name: true,
+        profile_picture: true,
+        is_active: true,
+        is_admin: true
+      }
+    });
+  }
+
+  /**
+   * Update user's profile picture
+   * @param {number} id - User ID
+   * @param {string} profilePicturePath - Path to the uploaded profile picture
+   * @returns {Object} - Updated user data
+   */
+  async updateProfilePicture(id, profilePicturePath) {
     return await prisma.users.update({
       where: { id: parseInt(id) },
       data: {
-        username,
-        email,
-        full_name,
-        password_hash
+        profile_picture: profilePicturePath,
+        updated_at: new Date()
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        full_name: true,
+        profile_picture: true
       }
     });
   }

@@ -4,12 +4,70 @@ const prisma = require('../lib/prisma');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const verifyToken = require('../middlewares/jwt');
+const twoFactorAuthService = require('../services/2fa-service');
+const tokenService = require('../services/token-service');
+const { asyncHandler, ApiError } = require('../middlewares/error-handler');
+const { validate, schemas } = require('../middlewares/validator');
 
-router.post('/', async (req, res) => {
-    try {
-        const { email, password } = req.body;
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Authentification utilisateur
+ *     description: Permet à un utilisateur de se connecter avec son email et son mot de passe
+ *     tags: [Authentification]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Authentification réussie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Données de requête invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Mot de passe incorrect
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Mot de passe incorrect. 4 tentative(s) restante(s) avant verrouillage du compte."
+ *       403:
+ *         description: Compte verrouillé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Compte temporairement verrouillé. Veuillez réessayer dans 15 minute(s)."
+ *       404:
+ *         description: Utilisateur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/', validate(schemas.login), asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
 
-        // Vérifier si l'utilisateur existe
+    // Vérifier si l'utilisateur existe
         const user = await prisma.users.findUnique({
             where: { email }
         });
@@ -40,31 +98,66 @@ router.post('/', async (req, res) => {
                 }
             });
 
-            const token = jwt.sign({
-                userId: user.id,
-                isAdmin: user.is_admin || false // Inclure le statut d'administrateur dans le token
-            }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+            // Vérifier si l'utilisateur a activé la 2FA
+            const isTwoFactorEnabled = await twoFactorAuthService.isTwoFactorEnabled(user.id);
 
-            // Configurer le cookie HTTP-only
-            res.cookie('jwt_token', token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production', // Utiliser HTTPS en production
-                sameSite: 'strict',
-                maxAge: 3600000 // 1 heure en millisecondes
-            });
+            if (isTwoFactorEnabled) {
+                // Si la 2FA est activée, générer un token temporaire
+                const tempToken = jwt.sign({
+                    userId: user.id,
+                    isTemp: true
+                }, process.env.JWT_SECRET_KEY, { expiresIn: '5m' }); // Token temporaire valide 5 minutes
 
-            return res.status(200).json({
-                message: 'Authentification réussie',
-                data: {
-                    user: {
-                        id: user.id,
-                        email: user.email,
-                        username: user.username,
-                        isAdmin: user.is_admin || false
-                    },
-                    token: token // Inclure le token dans la réponse
-                }
-            });
+                return res.status(200).json({
+                    message: 'Authentification partielle - 2FA requise',
+                    data: {
+                        requireTwoFactor: true,
+                        tempToken: tempToken,
+                        userId: user.id
+                    }
+                });
+            } else {
+                // Si la 2FA n'est pas activée, procéder à l'authentification normale
+                const payload = {
+                    userId: user.id,
+                    isAdmin: user.is_admin || false // Inclure le statut d'administrateur dans le token
+                };
+
+                // Générer une paire de tokens (accès + rafraîchissement)
+                const { accessToken, refreshToken } = tokenService.generateTokenPair(payload);
+
+                // Configurer le cookie HTTP-only pour le token d'accès
+                res.cookie('jwt_token', accessToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production', // Utiliser HTTPS en production
+                    sameSite: 'strict',
+                    maxAge: 15 * 60 * 1000 // 15 minutes en millisecondes
+                });
+
+                // Configurer le cookie HTTP-only pour le token de rafraîchissement
+                res.cookie('refresh_token', refreshToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'strict',
+                    path: '/token/refresh', // Limiter le cookie à la route de rafraîchissement
+                    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours en millisecondes
+                });
+
+                return res.status(200).json({
+                    message: 'Authentification réussie',
+                    data: {
+                        user: {
+                            id: user.id,
+                            email: user.email,
+                            username: user.username,
+                            isAdmin: user.is_admin || false
+                        },
+                        accessToken: accessToken, // Inclure le token d'accès dans la réponse
+                        refreshToken: refreshToken, // Inclure le token de rafraîchissement dans la réponse
+                        requireTwoFactor: false
+                    }
+                });
+            }
         } else {
             // Mot de passe incorrect - incrémenter le compteur de tentatives
             const maxAttempts = 5; // Nombre maximum de tentatives avant verrouillage
@@ -100,55 +193,93 @@ router.post('/', async (req, res) => {
                 });
             }
         }
-    } catch (err) {
-        console.error(err);
-        return res.status(500).send('Erreur lors de l\'authentification');
-    }
-});
+}));
 
-// Route de déconnexion
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Déconnexion utilisateur
+ *     description: Déconnecte l'utilisateur en supprimant son token JWT
+ *     tags: [Authentification]
+ *     responses:
+ *       200:
+ *         description: Déconnexion réussie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Déconnexion réussie"
+ */
 router.post('/logout', (req, res) => {
     // Supprimer le cookie JWT
     res.clearCookie('jwt_token');
     return res.status(200).json({ message: 'Déconnexion réussie' });
 });
 
-// Route pour vérifier si l'utilisateur est toujours authentifié
-router.get('/check-session', verifyToken, async (req, res) => {
-    try {
-        // Si le middleware verifyToken a passé, l'utilisateur est authentifié
-        // Récupérer les informations de l'utilisateur
-        const user = await prisma.users.findUnique({
-            where: { id: req.userId }
-        });
+/**
+ * @swagger
+ * /auth/check-session:
+ *   get:
+ *     summary: Vérifier la session utilisateur
+ *     description: Vérifie si l'utilisateur est toujours authentifié et renvoie ses informations
+ *     tags: [Authentification]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Session valide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Session valide"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     authenticated:
+ *                       type: boolean
+ *                       example: true
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Non authentifié
+ *       404:
+ *         description: Utilisateur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/check-session', verifyToken, asyncHandler(async (req, res) => {
+    // Si le middleware verifyToken a passé, l'utilisateur est authentifié
+    // Récupérer les informations de l'utilisateur
+    const user = await prisma.users.findUnique({
+        where: { id: req.userId }
+    });
 
-        if (!user) {
-            return res.status(404).json({
-                message: 'Utilisateur non trouvé',
-                data: { authenticated: false }
-            });
-        }
-
-        return res.status(200).json({
-            message: 'Session valide',
-            data: {
-                authenticated: true,
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    username: user.username,
-                    full_name: user.full_name,
-                    isAdmin: user.is_admin || false
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Erreur lors de la vérification de la session:', error);
-        return res.status(500).json({
-            message: 'Erreur lors de la vérification de la session',
-            data: { authenticated: false }
-        });
+    if (!user) {
+        throw new ApiError(404, 'Utilisateur non trouvé', { authenticated: false });
     }
-});
+
+    return res.status(200).json({
+        message: 'Session valide',
+        data: {
+            authenticated: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                full_name: user.full_name,
+                isAdmin: user.is_admin || false
+            }
+        }
+    });
+}));
 
 module.exports = router;
