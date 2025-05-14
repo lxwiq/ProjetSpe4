@@ -272,6 +272,40 @@ export class DocumentService {
       );
   }
 
+  /**
+   * Télécharge un document
+   * @param documentId ID du document à télécharger
+   */
+  downloadDocument(documentId: number): Observable<Blob> {
+    return this.http.get(`${this.API_URL}/documents/download/${documentId}`, {
+      responseType: 'blob',
+      withCredentials: true
+    }).pipe(
+      catchError(error => {
+        console.error(`Erreur lors du téléchargement du document ${documentId}:`, error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Met à jour un document avec un nouveau fichier
+   * @param documentId ID du document à mettre à jour
+   * @param formData FormData contenant le fichier et les métadonnées
+   * @returns Observable avec le document mis à jour
+   */
+  updateDocumentFile(documentId: number, formData: FormData): Observable<Document> {
+    return this.http.put<DocumentResponse>(`${this.API_URL}/documents/${documentId}/file`, formData, {
+      withCredentials: true
+    }).pipe(
+      map(response => Array.isArray(response.data) ? response.data[0] : response.data as Document),
+      catchError(error => {
+        console.error(`Erreur lors de la mise à jour du fichier pour le document ${documentId}:`, error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   // Document sharing methods have been removed as part of the permissions system removal
 
   /**

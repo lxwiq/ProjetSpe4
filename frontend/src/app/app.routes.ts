@@ -50,6 +50,11 @@ export const routes: Routes = [
       },
       {
         path: 'documents/:id',
+        loadComponent: () => import('./features/documents/document-viewer/document-viewer.component').then(m => m.DocumentViewerComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'documents/edit/:id',
         loadComponent: () => import('./features/documents/document-editor/document-editor.component').then(m => m.DocumentEditorComponent),
         canActivate: [AuthGuard]
       },

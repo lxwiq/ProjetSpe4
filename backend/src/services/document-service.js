@@ -74,8 +74,11 @@ class DocumentService {
     return document;
   }
 
-  async addDocument({title, content, parentFolderId, isFolder,
-                      userId, filePath, size, fileType}) {
+  async addDocument({
+    title, content, parentFolderId, isFolder, userId,
+    filePath, size, fileType, fileName, fileOriginalName,
+    fileExtension, fileUploadDate
+  }) {
     const fs = require('fs');
     const path = require('path');
 
@@ -90,7 +93,11 @@ class DocumentService {
           owner_id: parseInt(userId),
           file_path: null,
           file_size: null,
-          file_type: null
+          file_type: null,
+          file_name: null,
+          file_original_name: null,
+          file_extension: null,
+          file_upload_date: null
         }
       });
     }
@@ -103,7 +110,7 @@ class DocumentService {
       const fileName = `${timestamp}.txt`;
 
       // Chemin complet du fichier
-      const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+      const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads', 'documents');
       const fullPath = path.join(uploadsDir, fileName);
 
       // S'assurer que le répertoire existe
@@ -119,7 +126,7 @@ class DocumentService {
       const fileSize = stats.size;
 
       // Chemin relatif pour la base de données
-      const relativePath = `/uploads/${fileName}`;
+      const relativePath = `/uploads/documents/${fileName}`;
 
       // Créer le document dans la base de données sans le contenu
       return await prisma.documents.create({
@@ -131,7 +138,11 @@ class DocumentService {
           owner_id: parseInt(userId),
           file_path: relativePath,
           file_size: fileSize,
-          file_type: 'text/plain'
+          file_type: 'text/plain',
+          file_name: fileName,
+          file_original_name: `${title}.txt`,
+          file_extension: '.txt',
+          file_upload_date: new Date()
         }
       });
     }
@@ -146,7 +157,11 @@ class DocumentService {
         owner_id: parseInt(userId),
         file_path: filePath,
         file_size: size,
-        file_type: fileType
+        file_type: fileType,
+        file_name: fileName,
+        file_original_name: fileOriginalName,
+        file_extension: fileExtension,
+        file_upload_date: fileUploadDate || new Date()
       }
     });
   }
@@ -242,20 +257,7 @@ class DocumentService {
           }
         }
 
-        // Créer une copie de sauvegarde
-        try {
-          const backupDir = path.join(__dirname, '..', '..', 'backups');
-          if (!fs.existsSync(backupDir)) {
-            fs.mkdirSync(backupDir, { recursive: true });
-          }
-
-          const backupPath = path.join(backupDir, `document_${id}_backup_${Date.now()}.txt`);
-          fs.writeFileSync(backupPath, data.content || '');
-          console.log(`DocumentService: Sauvegarde créée à ${backupPath}`);
-        } catch (backupError) {
-          console.error(`DocumentService: Erreur lors de la création de la sauvegarde:`, backupError);
-          // Ne pas échouer si la sauvegarde échoue
-        }
+        // La fonctionnalité de sauvegarde a été supprimée
 
         // Calculer la nouvelle taille du fichier
         const stats = fs.statSync(fullPath);
@@ -317,7 +319,7 @@ class DocumentService {
         const fileName = `${timestamp}.txt`;
 
         // Chemin complet du fichier
-        const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+        const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads', 'documents');
         const fullPath = path.join(uploadsDir, fileName);
 
         // S'assurer que le répertoire existe
@@ -339,7 +341,7 @@ class DocumentService {
         const fileSize = stats.size;
 
         // Chemin relatif pour la base de données
-        const relativePath = `/uploads/${fileName}`;
+        const relativePath = `/uploads/documents/${fileName}`;
         console.log(`DocumentService: Chemin relatif pour la base de données: ${relativePath}`);
 
         // Mettre à jour le document dans la base de données
@@ -416,6 +418,78 @@ class DocumentService {
     return await prisma.documents.delete({
       where: { id: parseInt(id) }
     });
+  }
+
+  /**
+   * Mettre à jour un document avec un nouveau fichier
+   * @param {number} id - ID du document
+   * @param {object} data - Données du document
+   * @returns {Promise<object>} Document mis à jour
+   */
+  async updateDocumentFile(id, data) {
+    const {
+      title, userId, filePath, fileSize, fileType,
+      fileName, fileOriginalName, fileExtension, fileUploadDate
+    } = data;
+
+    // Vérifier si le document existe
+    const document = await prisma.documents.findFirst({
+      where: {
+        id: parseInt(id),
+        is_deleted: false
+      }
+    });
+
+    if (!document) {
+      throw new Error('Document not found');
+    }
+
+    // Mettre à jour le document avec les nouvelles informations du fichier
+    const updatedDocument = await prisma.documents.update({
+      where: { id: parseInt(id) },
+      data: {
+        title,
+        updated_at: new Date(),
+        last_modified_by: parseInt(userId),
+        file_path: filePath,
+        file_size: fileSize,
+        file_type: fileType,
+        file_name: fileName,
+        file_original_name: fileOriginalName,
+        file_extension: fileExtension,
+        file_upload_date: fileUploadDate || new Date()
+      }
+    });
+
+    // Créer une nouvelle version du document
+    try {
+      const latestVersion = await prisma.document_versions.findFirst({
+        where: { document_id: parseInt(id) },
+        orderBy: { version_number: 'desc' },
+        select: { version_number: true }
+      });
+
+      const newVersionNumber = latestVersion ? latestVersion.version_number + 1 : 1;
+
+      await prisma.document_versions.create({
+        data: {
+          document_id: parseInt(id),
+          version_number: newVersionNumber,
+          title,
+          modified_by: userId,
+          file_path: filePath,
+          file_size: fileSize,
+          file_type: fileType,
+          change_summary: `Fichier mis à jour par l'utilisateur ${userId}`,
+          is_major_version: true
+        }
+      });
+    } catch (error) {
+      console.error('Erreur lors de la création de la version:', error);
+      // Ne pas échouer si la création de version échoue
+    }
+
+    return updatedDocument;
   }
 
   // Document sharing methods have been removed as part of the permissions system removal

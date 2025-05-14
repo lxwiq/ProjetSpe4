@@ -216,7 +216,7 @@ class RealtimeDocumentService {
       const fileName = `${timestamp}.txt`;
 
       // Chemin complet du fichier
-      const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+      const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads', 'documents');
       const fullPath = path.join(uploadsDir, fileName);
 
       // S'assurer que le répertoire existe
@@ -225,7 +225,7 @@ class RealtimeDocumentService {
       }
 
       // Chemin relatif pour la base de données
-      filePath = `/uploads/${fileName}`;
+      filePath = `/uploads/documents/${fileName}`;
 
       // Mettre à jour le document dans la base de données avec le nouveau chemin de fichier
       await prisma.documents.update({
@@ -394,7 +394,7 @@ class RealtimeDocumentService {
         const fileName = `${timestamp}.txt`;
 
         // Chemin complet du fichier
-        const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+        const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads', 'documents');
         const fullPath = path.join(uploadsDir, fileName);
 
         // S'assurer que le répertoire existe
@@ -403,7 +403,7 @@ class RealtimeDocumentService {
         }
 
         // Chemin relatif pour la base de données
-        filePath = `/uploads/${fileName}`;
+        filePath = `/uploads/documents/${fileName}`;
 
         // Mettre à jour le document dans la base de données avec le nouveau chemin de fichier
         await prisma.documents.update({
@@ -537,28 +537,7 @@ class RealtimeDocumentService {
     } catch (error) {
       console.error(`RealtimeDocumentService: Erreur lors de la sauvegarde du document ${documentId}:`, error);
 
-      // Tenter de sauvegarder une copie de secours du contenu
-      try {
-        if (this.activeDocuments.has(documentId)) {
-          const activeDoc = this.activeDocuments.get(documentId);
-          const fs = require('fs');
-          const path = require('path');
-
-          // Créer un répertoire de sauvegarde s'il n'existe pas
-          const backupDir = path.join(__dirname, '../../backups');
-          if (!fs.existsSync(backupDir)) {
-            fs.mkdirSync(backupDir, { recursive: true });
-          }
-
-          // Sauvegarder le contenu dans un fichier de secours
-          const backupPath = path.join(backupDir, `document_${documentId}_backup_${Date.now()}.txt`);
-          fs.writeFileSync(backupPath, activeDoc.content || '');
-
-          console.log(`RealtimeDocumentService: Sauvegarde de secours créée pour le document ${documentId} à ${backupPath}`);
-        }
-      } catch (backupError) {
-        console.error(`RealtimeDocumentService: Erreur lors de la création de la sauvegarde de secours:`, backupError);
-      }
+      // La fonctionnalité de sauvegarde a été supprimée
 
       // Relancer l'erreur originale
       throw error;

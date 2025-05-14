@@ -12,16 +12,18 @@ const path = require('path');
  */
 function initDirectories() {
   console.log('Initialisation des répertoires...');
-  
+
   // Chemin de base pour les uploads
   const baseDir = path.join(__dirname, '..', '..', 'src');
   const uploadsDir = path.join(baseDir, 'uploads');
   const profilePicsDir = path.join(uploadsDir, 'profile_pictures');
-  
+  const documentsDir = path.join(uploadsDir, 'documents');
+
   // Créer les répertoires s'ils n'existent pas
   ensureDirectoryExists(uploadsDir);
   ensureDirectoryExists(profilePicsDir);
-  
+  ensureDirectoryExists(documentsDir);
+
   console.log('Répertoires initialisés avec succès.');
 }
 
@@ -33,7 +35,7 @@ function ensureDirectoryExists(dirPath) {
   if (!fs.existsSync(dirPath)) {
     console.log(`Création du répertoire: ${dirPath}`);
     fs.mkdirSync(dirPath, { recursive: true });
-    
+
     // Définir les permissions appropriées (lecture/écriture pour tous)
     try {
       fs.chmodSync(dirPath, 0o777);

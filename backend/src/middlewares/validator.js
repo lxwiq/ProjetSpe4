@@ -80,6 +80,11 @@ function validateData(data, schema) {
       data[field] = parseInt(data[field], 10);
     }
 
+    // Convertir automatiquement en booléen si le type attendu est 'boolean' et que la valeur est une chaîne
+    if (rules.type === 'boolean' && typeof data[field] === 'string') {
+      data[field] = data[field].toLowerCase() === 'true';
+    }
+
     // Vérifier le type
     if (rules.type && !checkType(data[field], rules.type)) {
       errors.push({ field, message: `Le champ '${field}' doit être de type ${rules.type}` });

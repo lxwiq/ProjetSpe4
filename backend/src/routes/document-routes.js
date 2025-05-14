@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const DocumentController = require('../controllers/document-controller');
 const verifyToken = require('../middlewares/jwt');
-const upload = require('../middlewares/upload');
+const { upload, getRelativePath, getDocumentType } = require('../middlewares/upload');
 const { validate, schemas } = require('../middlewares/validator');
 const { asyncHandler } = require('../middlewares/error-handler');
 
@@ -210,6 +210,49 @@ router.put('/:id', verifyToken, validate(schemas.updateDocument), asyncHandler(D
 
 /**
  * @swagger
+ * /documents/{id}/file:
+ *   put:
+ *     summary: Mettre à jour un document avec un fichier
+ *     description: Met à jour un document existant en remplaçant son fichier
+ *     tags: [Documents]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du document
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Document mis à jour avec succès
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Document non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.put('/:id/file', verifyToken, upload.single('file'), asyncHandler(DocumentController.updateDocumentFile));
+
+/**
+ * @swagger
  * /documents/{id}:
  *   delete:
  *     summary: Supprimer un document
@@ -238,6 +281,42 @@ router.put('/:id', verifyToken, validate(schemas.updateDocument), asyncHandler(D
  *         description: Erreur serveur
  */
 router.delete('/:id', verifyToken, DocumentController.deleteDocument);
+
+/**
+ * @swagger
+ * /documents/download/{id}:
+ *   get:
+ *     summary: Télécharger un document
+ *     description: Télécharge le fichier associé à un document
+ *     tags: [Documents]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du document
+ *     responses:
+ *       200:
+ *         description: Fichier téléchargé avec succès
+ *         content:
+ *           application/octet-stream:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Document non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/download/:id', verifyToken, asyncHandler(DocumentController.downloadDocument));
 
 // Document sharing routes have been removed as part of the permissions system removal
 

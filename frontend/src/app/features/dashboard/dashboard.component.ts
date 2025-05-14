@@ -16,6 +16,7 @@ import { Notification } from '../../core/models/notification.model';
 
 import { DocumentCardComponent } from './components/document-card/document-card.component';
 import { CreateDocumentModalComponent } from './components/create-document-modal/create-document-modal.component';
+import { DocumentUploadModalComponent } from './components/document-upload-modal/document-upload-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -25,7 +26,8 @@ import { CreateDocumentModalComponent } from './components/create-document-modal
     RouterLink,
     RouterModule,
     DocumentCardComponent,
-    CreateDocumentModalComponent
+    CreateDocumentModalComponent,
+    DocumentUploadModalComponent
   ],
   templateUrl: './dashboard.component.html'
 })
@@ -48,6 +50,7 @@ export class DashboardComponent implements OnInit {
   isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
   showCreateModal = signal<boolean>(false);
+  showUploadModal = signal<boolean>(false);
 
   // Computed values
   documentCount = computed(() => this.documents().length);
@@ -195,13 +198,31 @@ export class DashboardComponent implements OnInit {
   }
 
   /**
+   * Open the upload document modal
+   */
+  openUploadDocumentModal(): void {
+    this.showUploadModal.set(true);
+  }
+
+  /**
    * Handle document creation
    */
   handleDocumentCreated(document: Document): void {
     this.showCreateModal.set(false);
     this.loadDocuments();
 
-    // Navigate to the new document
+    // Navigate to the new document (text documents go to editor)
+    this.router.navigate(['/documents/edit', document.id]);
+  }
+
+  /**
+   * Handle document upload
+   */
+  handleDocumentUploaded(document: Document): void {
+    this.showUploadModal.set(false);
+    this.loadDocuments();
+
+    // Navigate to the document viewer which will determine the appropriate view
     this.router.navigate(['/documents', document.id]);
   }
 
@@ -210,6 +231,13 @@ export class DashboardComponent implements OnInit {
    */
   closeCreateDocumentModal(): void {
     this.showCreateModal.set(false);
+  }
+
+  /**
+   * Close the upload document modal
+   */
+  closeUploadDocumentModal(): void {
+    this.showUploadModal.set(false);
   }
 
   /**

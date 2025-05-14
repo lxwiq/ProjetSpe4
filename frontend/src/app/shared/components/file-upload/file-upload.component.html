@@ -1,0 +1,121 @@
+<div class="file-upload-container">
+  <!-- Input file caché -->
+  <input
+    #fileInput
+    type="file"
+    [accept]="acceptedFileTypes"
+    [multiple]="multiple"
+    class="hidden"
+    (change)="onFileSelected($event)">
+
+  <!-- Zone de drop et bouton de sélection -->
+  @if (!selectedFiles().length) {
+    <div class="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      </svg>
+      <p class="mb-2 text-sm text-gray-600">
+        <span class="font-semibold">Cliquez pour sélectionner</span> ou glissez-déposez
+      </p>
+      <p class="text-xs text-gray-500">
+        @if (acceptedFileTypes !== '*') {
+          Types acceptés: {{ acceptedFileTypes }}
+        } @else {
+          Tous les types de fichiers sont acceptés
+        }
+      </p>
+      <button
+        type="button"
+        (click)="triggerFileInput()"
+        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+        Parcourir les fichiers
+      </button>
+    </div>
+  }
+
+  <!-- Prévisualisation des fichiers sélectionnés -->
+  @if (selectedFiles().length > 0) {
+    <div class="mt-4">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-semibold text-gray-800">Fichiers sélectionnés</h3>
+        <button
+          type="button"
+          (click)="reset()"
+          class="text-sm text-red-600 hover:text-red-800 transition-colors">
+          Tout supprimer
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        @for (file of selectedFiles(); track file.name; let i = $index) {
+          <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white">
+            <div class="flex items-center">
+              @if (showPreview && previews()[i]?.preview) {
+                @if (file.type.startsWith('image/')) {
+                  <img [src]="previews()[i].preview" alt="Prévisualisation" class="h-12 w-12 object-cover rounded mr-3">
+                } @else {
+                  <div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                }
+              } @else {
+                <div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              }
+
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 truncate">
+                  {{ file.name }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ formatFileSize(file.size) }} • {{ file.type || 'Type inconnu' }}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              (click)="removeFile(i)"
+              class="ml-2 text-gray-400 hover:text-red-600 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Barre de progression -->
+      @if (isUploading()) {
+        <div class="mt-4">
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div class="bg-blue-600 h-2.5 rounded-full" [style.width.%]="progress()"></div>
+          </div>
+          <p class="text-xs text-gray-600 mt-1 text-center">
+            Upload en cours... {{ progress() }}%
+          </p>
+        </div>
+      }
+
+      <!-- Messages d'erreur ou de succès -->
+      @if (uploadError()) {
+        <div class="mt-3 p-3 bg-red-100 text-red-700 rounded-md">
+          {{ uploadError() }}
+        </div>
+      }
+
+      @if (uploadSuccess()) {
+        <div class="mt-3 p-3 bg-green-100 text-green-700 rounded-md">
+          Upload réussi !
+        </div>
+      }
+
+      <!-- Le bouton d'upload a été supprimé pour éviter la duplication avec le bouton du formulaire parent -->
+    </div>
+  }
+</div>

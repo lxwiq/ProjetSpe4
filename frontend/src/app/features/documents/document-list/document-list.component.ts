@@ -174,6 +174,7 @@ export class DocumentListComponent implements OnInit {
     if (document.is_folder) {
       this.openFolder(document);
     } else {
+      // Utiliser le document-viewer qui déterminera le bon affichage en fonction du type
       this.router.navigate(['/documents', document.id]);
     }
   }
@@ -219,8 +220,8 @@ export class DocumentListComponent implements OnInit {
       next: (document) => {
         // Mettre à jour la liste des documents avant de naviguer
         this.loadDocuments();
-        // Naviguer vers l'éditeur de document
-        this.router.navigate(['/documents', document.id]);
+        // Naviguer vers l'éditeur de document (pour les nouveaux documents texte)
+        this.router.navigate(['/documents/edit', document.id]);
       },
       error: (err) => {
         console.error('Erreur lors de la création du document:', err);
