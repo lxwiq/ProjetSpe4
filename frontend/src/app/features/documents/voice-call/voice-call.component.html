@@ -1,0 +1,128 @@
+<div class="voice-call-container">
+  <!-- Appel disponible mais pas encore rejoint -->
+  @if (isCallAvailable() && !isInCall()) {
+    <div class="call-available">
+      <div class="flex items-center justify-between bg-blue-50 p-3 rounded-lg shadow-sm">
+        <div>
+          <h3 class="text-sm font-medium text-blue-800">Appel vocal disponible</h3>
+          <p class="text-xs text-blue-600">D'autres utilisateurs sont en appel sur ce document</p>
+        </div>
+        <button
+          (click)="joinCall()"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition-colors"
+        >
+          Rejoindre
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Appel actif -->
+  @if (isInCall()) {
+    <div class="active-call bg-gray-50 rounded-lg shadow-sm p-3">
+      <div class="call-header flex items-center justify-between mb-3">
+        <div class="flex items-center">
+          <div class="call-indicator flex items-center">
+            <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+            <span class="text-sm font-medium">Appel vocal</span>
+          </div>
+          <span class="text-xs text-gray-500 ml-2">
+            {{ participantCount() }} participant{{ participantCount() > 1 ? 's' : '' }}
+          </span>
+        </div>
+        <div class="call-controls flex space-x-2">
+          <button
+            (click)="toggleMute()"
+            class="p-2 rounded-full"
+            [class.bg-gray-200]="!isMuted()"
+            [class.bg-red-100]="isMuted()"
+            [title]="isMuted() ? 'Activer le micro' : 'Couper le micro'"
+          >
+            @if (isMuted()) {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
+                <path d="M3 3.5a.5.5 0 01.5-.5h13a.5.5 0 010 1h-13a.5.5 0 01-.5-.5z" />
+              </svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
+              </svg>
+            }
+          </button>
+          <button
+            (click)="leaveCall()"
+            class="p-2 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+            title="Quitter l'appel"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+              <path d="M16.707 3.293a1 1 0 010 1.414L15.414 6l1.293 1.293a1 1 0 01-1.414 1.414L14 7.414l-1.293 1.293a1 1 0 11-1.414-1.414L12.586 6l-1.293-1.293a1 1 0 011.414-1.414L14 4.586l1.293-1.293a1 1 0 011.414 0z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Liste des participants -->
+      <div class="participants-list">
+        <ul class="space-y-2">
+          @for (participant of participants(); track participant.user_id) {
+            @if (participant.is_active) {
+              <li class="flex items-center space-x-2 p-1.5 rounded-md" [class.bg-blue-50]="isSpeaking(participant.user_id)">
+                <!-- Avatar -->
+                @let user = getUserInfo(participant.user_id);
+                <div class="relative">
+                  @if (user?.profile_picture) {
+                    <img [src]="user?.profile_picture" alt="Avatar" class="h-8 w-8 rounded-full">
+                  } @else {
+                    <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                      {{ getUserInitial(participant.user_id) }}
+                    </div>
+                  }
+
+                  <!-- Indicateur de parole -->
+                  @if (isSpeaking(participant.user_id)) {
+                    <span class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+                  }
+
+                  <!-- Indicateur de micro coupé -->
+                  @if (isUserMuted(participant.user_id)) {
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3 3.5a.5.5 0 01.5-.5h13a.5.5 0 010 1h-13a.5.5 0 01-.5-.5z" />
+                      </svg>
+                    </span>
+                  }
+                </div>
+
+                <!-- Nom d'utilisateur -->
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">
+                    {{ getUserDisplayName(participant.user_id) }}
+                    @if (isCurrentUser(participant.user_id)) {
+                      <span class="text-xs text-gray-500 ml-1">(vous)</span>
+                    }
+                  </p>
+                </div>
+              </li>
+            }
+          }
+        </ul>
+      </div>
+    </div>
+  }
+
+  <!-- Bouton pour démarrer un appel (si pas d'appel actif) -->
+  @if (!isCallAvailable() && !isInCall() && activeUsers.length >= 2) {
+    <div class="start-call mt-3">
+      <button
+        (click)="startCall()"
+        class="flex items-center justify-center w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+        </svg>
+        Démarrer un appel vocal
+      </button>
+    </div>
+  }
+</div>
