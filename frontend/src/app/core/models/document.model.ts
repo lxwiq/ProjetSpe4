@@ -16,7 +16,7 @@ export interface Document {
   updated_at?: string;
   last_modified_by?: number;
   auto_save_interval?: number;
-  
+
   // Relations
   owner?: DocumentUser;
   last_modifier?: DocumentUser;
@@ -38,11 +38,14 @@ export interface DocumentUser {
  * Interface représentant un collaborateur sur un document
  */
 export interface DocumentCollaborator {
+  id: number;
   user_id: number;
   document_id: number;
   permission_level: DocumentPermissionLevel;
   is_active: boolean;
   invited_at?: string;
+  username?: string;
+  profile_picture?: string;
   user?: DocumentUser;
 }
 

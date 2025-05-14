@@ -15,16 +15,16 @@ import { environment } from '../../../environments/environment';
   imports: [RouterLink, CommonModule, AppLogoComponent],
   template: `
     <header class="bg-gray-800 text-white shadow-md">
-      <div class="max-w-7xl mx-auto px-4 py-3">
+      <div class="w-full px-4 py-3">
         <div class="flex justify-between items-center">
           <div class="flex items-center space-x-3">
-            <app-logo [size]="'32'" [text]="title" [showText]="false" class="md:hidden"></app-logo>
-            <app-logo [size]="'32'" [text]="title" [showText]="true" class="hidden md:flex"></app-logo>
+            <app-logo [size]="'32'" [text]="'DocCollab'" [showText]="false" class="md:hidden"></app-logo>
+            <app-logo [size]="'32'" [text]="'DocCollab'" [showText]="true" class="hidden md:flex"></app-logo>
           </div>
 
           <nav class="flex items-center space-x-6">
             @if (authService.isAuthenticated()) {
-              <div class="hidden md:flex space-x-6">
+              <div class="hidden md:flex space-x-8">
                 <a routerLink="/dashboard" class="text-gray-300 hover:text-white font-medium transition-colors">Tableau de bord</a>
                 <a routerLink="/documents" class="text-gray-300 hover:text-white font-medium transition-colors">Mes documents</a>
                 <a routerLink="/messages" class="text-gray-300 hover:text-white font-medium transition-colors">Messages</a>
@@ -39,13 +39,13 @@ import { environment } from '../../../environments/environment';
                 <!-- Icône de notifications avec compteur -->
                 <div class="relative dropdown-container">
                   <div class="flex items-center cursor-pointer p-1 hover:bg-gray-700 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
 
                     <!-- Compteur de notifications -->
                     @if (notificationService.unreadCount() > 0) {
-                      <span class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
                         {{ notificationService.unreadCount() > 9 ? '9+' : notificationService.unreadCount() }}
                       </span>
                     }
@@ -114,16 +114,16 @@ import { environment } from '../../../environments/environment';
                       <img
                         [src]="getProfileImageUrl()"
                         alt="Photo de profil"
-                        class="w-10 h-10 rounded-full object-cover border-2 border-blue-400"
+                        class="w-8 h-8 rounded-full object-cover border-2 border-indigo-400"
                         (error)="handleImageError($event)"
                       />
                     } @else {
-                      <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium border-2 border-blue-400">
+                      <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-medium border-2 border-indigo-400">
                         {{ getUserInitials() }}
                       </div>
                     }
-                    <span class="hidden md:inline font-medium">{{ getCurrentUser()?.username }}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
+                    <span class="hidden md:inline text-sm font-medium">{{ getCurrentUser()?.username }}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>
                   </div>

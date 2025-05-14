@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { tap, catchError, finalize, filter, take } from 'rxjs/operators';
 
@@ -22,7 +23,8 @@ export class TokenRefreshService {
 
   constructor(
     private http: HttpClient,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private router: Router
   ) {}
 
   /**
@@ -86,6 +88,15 @@ export class TokenRefreshService {
         tap((response: any) => {
           console.log('TokenRefreshService: Réponse du serveur:', response);
 
+          // Vérifier si le compte est désactivé (bloqué)
+          if (response.message === 'Compte désactivé' ||
+              (response.data && response.data.reason === 'account_blocked')) {
+            console.error('TokenRefreshService: Compte désactivé détecté');
+            this.clearTokens();
+            this.router.navigate(['/login']);
+            return;
+          }
+
           // Extraire les données de la structure imbriquée
           if (response.data && response.data.accessToken) {
             // Utiliser la préférence "Se souvenir de moi" stockée
@@ -106,7 +117,18 @@ export class TokenRefreshService {
         }),
         catchError(error => {
           console.error('TokenRefreshService: Erreur lors du rafraîchissement du token:', error);
-          this.clearTokens();
+
+          // Vérifier si l'erreur est due à un compte bloqué (code 403)
+          if (error.status === 403 && error.error &&
+              (error.error.message === 'Compte désactivé' ||
+               (error.error.data && error.error.data.reason === 'account_blocked'))) {
+            console.error('TokenRefreshService: Compte désactivé détecté dans l\'erreur');
+            this.clearTokens();
+            this.router.navigate(['/login']);
+          } else {
+            this.clearTokens();
+          }
+
           return throwError(() => error);
         }),
         finalize(() => {

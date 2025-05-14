@@ -1,129 +1,83 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { LoggingService } from '../../core/services/logging.service';
+import { UserManagementComponent } from './user-management/user-management.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, UserManagementComponent],
   template: `
-    <div class="admin-container">
-      <header class="admin-header">
-        <h1>Administration</h1>
+    <div class="min-h-screen bg-gray-100 p-6">
+      <header class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Administration</h1>
+        @if (authService.currentUser()) {
+          <p class="text-gray-600 mt-2">
+            Connecté en tant que <span class="font-medium">{{ authService.currentUser()?.username }}</span>
+          </p>
+        }
       </header>
 
-      <div class="admin-content">
-        <div class="admin-card">
-          <h2>Panneau d'administration</h2>
-          <p>Bienvenue dans le panneau d'administration. Cette page est accessible uniquement aux administrateurs.</p>
-
-          @if (authService.currentUser()) {
-            <div class="admin-info">
-              <p><strong>Administrateur connecté :</strong> {{ authService.currentUser()?.username }}</p>
-            </div>
-          }
-
-          <div class="admin-sections">
-            <div class="admin-section">
-              <h3>Gestion des utilisateurs</h3>
-              <p>Gérez les utilisateurs, leurs rôles et leurs permissions.</p>
-              <button class="admin-btn">Gérer les utilisateurs</button>
-            </div>
-
-            <div class="admin-section">
-              <h3>Statistiques</h3>
-              <p>Consultez les statistiques d'utilisation de l'application.</p>
-              <button class="admin-btn">Voir les statistiques</button>
-            </div>
-
-            <div class="admin-section">
-              <h3>Configuration</h3>
-              <p>Configurez les paramètres de l'application.</p>
-              <button class="admin-btn">Configurer</button>
-            </div>
+      <div class="grid grid-cols-1 gap-6">
+        <!-- Onglets d'administration -->
+        <div class="bg-white rounded-lg shadow-md p-4">
+          <div class="flex border-b border-gray-200">
+            <button
+              (click)="activeTab.set('users')"
+              class="py-2 px-4 font-medium text-sm focus:outline-none"
+              [class.text-indigo-600]="activeTab() === 'users'"
+              [class.border-indigo-600]="activeTab() === 'users'"
+              [class.border-b-2]="activeTab() === 'users'"
+              [class.text-gray-500]="activeTab() !== 'users'"
+            >
+              Gestion des utilisateurs
+            </button>
+            <button
+              (click)="activeTab.set('stats')"
+              class="py-2 px-4 font-medium text-sm focus:outline-none"
+              [class.text-indigo-600]="activeTab() === 'stats'"
+              [class.border-indigo-600]="activeTab() === 'stats'"
+              [class.border-b-2]="activeTab() === 'stats'"
+              [class.text-gray-500]="activeTab() !== 'stats'"
+            >
+              Statistiques
+            </button>
+            <button
+              (click)="activeTab.set('config')"
+              class="py-2 px-4 font-medium text-sm focus:outline-none"
+              [class.text-indigo-600]="activeTab() === 'config'"
+              [class.border-indigo-600]="activeTab() === 'config'"
+              [class.border-b-2]="activeTab() === 'config'"
+              [class.text-gray-500]="activeTab() !== 'config'"
+            >
+              Configuration
+            </button>
           </div>
         </div>
+
+        <!-- Contenu des onglets -->
+        @if (activeTab() === 'users') {
+          <app-user-management></app-user-management>
+        } @else if (activeTab() === 'stats') {
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Statistiques</h2>
+            <p class="text-gray-600">Les statistiques seront disponibles prochainement.</p>
+          </div>
+        } @else if (activeTab() === 'config') {
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Configuration</h2>
+            <p class="text-gray-600">Les options de configuration seront disponibles prochainement.</p>
+          </div>
+        }
       </div>
     </div>
-  `,
-  styles: `
-    .admin-container {
-      padding: 1rem 0;
-    }
-
-    .admin-header {
-      margin-bottom: 2rem;
-    }
-
-    .admin-header h1 {
-      color: #2c3e50;
-      font-size: 2rem;
-      margin: 0;
-    }
-
-    .admin-card {
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      padding: 2rem;
-    }
-
-    .admin-card h2 {
-      color: #2c3e50;
-      margin-top: 0;
-      margin-bottom: 1rem;
-    }
-
-    .admin-info {
-      background-color: #f8f9fa;
-      border-radius: 4px;
-      padding: 1rem;
-      margin: 1.5rem 0;
-    }
-
-    .admin-sections {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-
-    .admin-section {
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      padding: 1.5rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .admin-section:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .admin-section h3 {
-      color: #2c3e50;
-      margin-top: 0;
-    }
-
-    .admin-btn {
-      background-color: #3498db;
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background-color 0.2s;
-      margin-top: 1rem;
-    }
-
-    .admin-btn:hover {
-      background-color: #2980b9;
-    }
   `
 })
 export class AdminComponent {
+  // État de l'onglet actif
+  activeTab = signal<'users' | 'stats' | 'config'>('users');
+
   constructor(
     public authService: AuthService,
     private logger: LoggingService

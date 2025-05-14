@@ -3,9 +3,11 @@ export interface User {
   username: string;
   email: string;
   isAdmin?: boolean;
+  is_admin?: boolean;
   full_name?: string;
   two_factor_enabled?: boolean;
   profile_picture?: string;
+  is_active?: boolean;
 }
 
 export interface LoginRequest {

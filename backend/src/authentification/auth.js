@@ -84,6 +84,13 @@ router.post('/', validate(schemas.login), asyncHandler(async (req, res) => {
             });
         }
 
+        // Vérifier si le compte est désactivé (bloqué par un administrateur)
+        if (user.is_active === false) {
+            return res.status(403).json({
+                message: 'Votre compte a été désactivé. Veuillez contacter un administrateur.'
+            });
+        }
+
         // Vérifier le mot de passe
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
@@ -152,7 +159,8 @@ router.post('/', validate(schemas.login), asyncHandler(async (req, res) => {
                             username: user.username,
                             full_name: user.full_name,
                             profile_picture: user.profile_picture,
-                            isAdmin: user.is_admin || false
+                            isAdmin: user.is_admin || false,
+                            is_active: user.is_active
                         },
                         accessToken: accessToken, // Inclure le token d'accès dans la réponse
                         refreshToken: refreshToken, // Inclure le token de rafraîchissement dans la réponse
@@ -269,6 +277,17 @@ router.get('/check-session', verifyToken, asyncHandler(async (req, res) => {
         throw new ApiError(404, 'Utilisateur non trouvé', { authenticated: false });
     }
 
+    // Vérifier si le compte est désactivé (bloqué)
+    if (user.is_active === false) {
+        return res.status(403).json({
+            message: 'Compte désactivé',
+            data: {
+                authenticated: false,
+                reason: 'account_blocked'
+            }
+        });
+    }
+
     return res.status(200).json({
         message: 'Session valide',
         data: {
@@ -279,7 +298,8 @@ router.get('/check-session', verifyToken, asyncHandler(async (req, res) => {
                 username: user.username,
                 full_name: user.full_name,
                 profile_picture: user.profile_picture,
-                isAdmin: user.is_admin || false
+                isAdmin: user.is_admin || false,
+                is_active: user.is_active
             }
         }
     });

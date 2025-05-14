@@ -184,6 +184,13 @@ export class AuthService {
           // Extraire les données de la structure imbriquée
           const { user, requireTwoFactor, accessToken, refreshToken } = response.data;
 
+          // Vérifier si l'utilisateur est actif (non bloqué)
+          if (user && user.is_active === false) {
+            console.error('Tentative de connexion avec un compte bloqué:', user.username);
+            this.handleBlockedUser();
+            return;
+          }
+
           if (!requireTwoFactor && accessToken) {
             console.log('Stockage des tokens et mise à jour de l\'utilisateur');
 
@@ -209,6 +216,13 @@ export class AuthService {
         }),
         catchError(error => {
           console.error('Erreur lors de la connexion:', error);
+
+          // Vérifier si l'erreur est due à un compte bloqué
+          if (error.error && error.error.message && error.error.message.toLowerCase().includes('bloqué')) {
+            // Simplement laisser l'erreur se propager
+            console.error('Tentative de connexion avec un compte bloqué');
+          }
+
           return throwError(() => error);
         })
       );
@@ -276,7 +290,16 @@ export class AuthService {
                                 (response.message === 'Session valide' && user);
 
           if (isSessionValid && user) {
-            console.log('AuthService: Session valide, mise à jour de l\'utilisateur');
+            console.log('AuthService: Session valide, vérification du statut du compte');
+
+            // Vérifier si l'utilisateur est actif (non bloqué)
+            if (user.is_active === false) {
+              console.error('AuthService: Compte bloqué détecté lors de la vérification de session');
+              this.handleBlockedUser();
+              return false;
+            }
+
+            console.log('AuthService: Compte actif, mise à jour de l\'utilisateur');
             this.setCurrentUser(user);
             return true;
           } else {
@@ -327,11 +350,29 @@ export class AuthService {
       return;
     }
 
+    // Vérifier si l'utilisateur est actif (non bloqué)
+    if (user.is_active === false) {
+      console.error('Tentative de connexion avec un compte bloqué:', user.username);
+      this.handleBlockedUser();
+      return;
+    }
+
     // Mettre à jour l'état d'authentification
     this.isAuthenticated.set(true);
     this.currentUser.set(user);
 
     console.log('État d\'authentification mis à jour avec succès');
+  }
+
+  /**
+   * Gère le cas d'un utilisateur bloqué
+   */
+  private handleBlockedUser(): void {
+    // Nettoyer l'état d'authentification
+    this.clearAuthState();
+
+    // Rediriger vers la page de connexion
+    this.router.navigate(['/login']);
   }
 
   /**

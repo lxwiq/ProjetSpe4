@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const tokenService = require('../services/token-service');
+const prisma = require('../lib/prisma');
 const { ApiError, asyncHandler } = require('../middlewares/error-handler');
 const { validate, schemas } = require('../middlewares/validator');
 
@@ -55,6 +56,26 @@ router.post('/refresh', validate(schemas.refreshToken), asyncHandler(async (req,
   // Rafraîchir le token d'accès
   const { accessToken, payload } = tokenService.refreshAccessToken(refreshToken);
 
+  // Vérifier si l'utilisateur est toujours actif (non bloqué)
+  const user = await prisma.users.findUnique({
+    where: { id: payload.userId }
+  });
+
+  if (!user) {
+    throw new ApiError(404, 'Utilisateur non trouvé');
+  }
+
+  // Vérifier si le compte est désactivé (bloqué)
+  if (user.is_active === false) {
+    return res.status(403).json({
+      message: 'Compte désactivé',
+      data: {
+        authenticated: false,
+        reason: 'account_blocked'
+      }
+    });
+  }
+
   // Configurer le cookie HTTP-only avec le nouveau token
   res.cookie('jwt_token', accessToken, {
     httpOnly: true,
@@ -68,8 +89,13 @@ router.post('/refresh', validate(schemas.refreshToken), asyncHandler(async (req,
     data: {
       accessToken,
       user: {
-        id: payload.userId,
-        isAdmin: payload.isAdmin || false
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        full_name: user.full_name,
+        profile_picture: user.profile_picture,
+        isAdmin: user.is_admin || false,
+        is_active: user.is_active
       }
     }
   });
