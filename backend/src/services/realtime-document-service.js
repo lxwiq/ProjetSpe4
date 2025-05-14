@@ -162,60 +162,161 @@ class RealtimeDocumentService {
    * @returns {Promise<Object>} - Informations sur la sauvegarde
    */
   async saveDocument(documentId, userId) {
-    documentId = parseInt(documentId);
-    userId = parseInt(userId);
+    try {
+      console.log(`RealtimeDocumentService: Tentative de sauvegarde du document ${documentId} par l'utilisateur ${userId}`);
 
-    // Vérifier si l'utilisateur a accès au document
-    const hasAccess = await this.checkUserDocumentAccess(documentId, userId);
-    if (!hasAccess) {
-      throw new Error('Accès refusé au document');
-    }
+      documentId = parseInt(documentId);
+      userId = parseInt(userId);
 
-    // Vérifier si le document est en édition active
-    if (!this.activeDocuments.has(documentId)) {
-      throw new Error('Document non actif');
-    }
-
-    const activeDoc = this.activeDocuments.get(documentId);
-
-    // Mettre à jour le document dans la base de données
-    const updatedDocument = await prisma.documents.update({
-      where: { id: documentId },
-      data: {
-        content: activeDoc.content,
-        last_modified_by: userId,
-        updated_at: new Date()
+      // Vérifier si l'utilisateur a accès au document
+      const hasAccess = await this.checkUserDocumentAccess(documentId, userId);
+      if (!hasAccess) {
+        console.error(`RealtimeDocumentService: Accès refusé au document ${documentId} pour l'utilisateur ${userId}`);
+        throw new Error('Accès refusé au document');
       }
-    });
 
-    // Créer une nouvelle version du document
-    const latestVersion = await prisma.document_versions.findFirst({
-      where: { document_id: documentId },
-      orderBy: { version_number: 'desc' },
-      select: { version_number: true }
-    });
+      // Vérifier si le document est en édition active
+      if (!this.activeDocuments.has(documentId)) {
+        console.error(`RealtimeDocumentService: Document ${documentId} non actif`);
 
-    const newVersionNumber = latestVersion ? latestVersion.version_number + 1 : 1;
+        // Tenter de récupérer le document depuis la base de données
+        console.log(`RealtimeDocumentService: Tentative de récupération du document ${documentId} depuis la base de données`);
+        const document = await prisma.documents.findUnique({
+          where: { id: documentId }
+        });
 
-    await prisma.document_versions.create({
-      data: {
-        document_id: documentId,
-        version_number: newVersionNumber,
-        content: activeDoc.content,
-        modified_by: userId,
-        change_summary: `Modification automatique par ${userId}`
+        if (!document) {
+          console.error(`RealtimeDocumentService: Document ${documentId} non trouvé dans la base de données`);
+          throw new Error('Document non trouvé');
+        }
+
+        // Ajouter le document à la liste des documents actifs
+        console.log(`RealtimeDocumentService: Ajout du document ${documentId} à la liste des documents actifs`);
+        this.activeDocuments.set(documentId, {
+          content: document.content || '',
+          users: [userId],
+          lastSaved: new Date(),
+          title: document.title
+        });
       }
-    });
 
-    // Mettre à jour la date de dernière sauvegarde
-    activeDoc.lastSaved = new Date();
-    this.activeDocuments.set(documentId, activeDoc);
+      const activeDoc = this.activeDocuments.get(documentId);
+      console.log(`RealtimeDocumentService: Document ${documentId} récupéré, contenu de ${activeDoc.content.length} caractères`);
 
-    return {
-      documentId,
-      savedAt: activeDoc.lastSaved,
-      versionNumber: newVersionNumber
-    };
+      // Vérifier si le document a un contenu
+      if (!activeDoc.content && activeDoc.content !== '') {
+        console.warn(`RealtimeDocumentService: Document ${documentId} sans contenu, utilisation d'une chaîne vide`);
+        activeDoc.content = '';
+      }
+
+      // Vérifier si le document existe dans la base de données
+      const existingDocument = await prisma.documents.findUnique({
+        where: { id: documentId }
+      });
+
+      if (!existingDocument) {
+        console.error(`RealtimeDocumentService: Document ${documentId} non trouvé dans la base de données lors de la sauvegarde`);
+        throw new Error('Document non trouvé dans la base de données');
+      }
+
+      // Sauvegarder le contenu dans un fichier si nécessaire
+      if (existingDocument.file_path) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+
+          // Construire le chemin complet du fichier
+          const basePath = path.join(__dirname, '../../');
+          const filePath = path.join(basePath, existingDocument.file_path.replace(/^\//, ''));
+
+          console.log(`RealtimeDocumentService: Sauvegarde du contenu dans le fichier ${filePath}`);
+
+          // Créer le répertoire parent si nécessaire
+          const dirPath = path.dirname(filePath);
+          if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+          }
+
+          // Écrire le contenu dans le fichier
+          fs.writeFileSync(filePath, activeDoc.content || '');
+
+          console.log(`RealtimeDocumentService: Contenu sauvegardé dans le fichier ${filePath}`);
+        } catch (fileError) {
+          console.error(`RealtimeDocumentService: Erreur lors de la sauvegarde du fichier:`, fileError);
+          // Ne pas échouer complètement si la sauvegarde du fichier échoue
+        }
+      }
+
+      // Mettre à jour le document dans la base de données
+      console.log(`RealtimeDocumentService: Mise à jour du document ${documentId} dans la base de données`);
+      const updatedDocument = await prisma.documents.update({
+        where: { id: documentId },
+        data: {
+          content: null, // Ne pas stocker le contenu dans la base de données
+          last_modified_by: userId,
+          updated_at: new Date()
+        }
+      });
+
+      // Créer une nouvelle version du document
+      console.log(`RealtimeDocumentService: Création d'une nouvelle version pour le document ${documentId}`);
+      const latestVersion = await prisma.document_versions.findFirst({
+        where: { document_id: documentId },
+        orderBy: { version_number: 'desc' },
+        select: { version_number: true }
+      });
+
+      const newVersionNumber = latestVersion ? latestVersion.version_number + 1 : 1;
+
+      await prisma.document_versions.create({
+        data: {
+          document_id: documentId,
+          version_number: newVersionNumber,
+          content: activeDoc.content,
+          modified_by: userId,
+          change_summary: `Modification automatique par ${userId}`
+        }
+      });
+
+      // Mettre à jour la date de dernière sauvegarde
+      activeDoc.lastSaved = new Date();
+      this.activeDocuments.set(documentId, activeDoc);
+
+      console.log(`RealtimeDocumentService: Document ${documentId} sauvegardé avec succès, version ${newVersionNumber}`);
+      return {
+        documentId,
+        savedAt: activeDoc.lastSaved,
+        versionNumber: newVersionNumber
+      };
+    } catch (error) {
+      console.error(`RealtimeDocumentService: Erreur lors de la sauvegarde du document ${documentId}:`, error);
+
+      // Tenter de sauvegarder une copie de secours du contenu
+      try {
+        if (this.activeDocuments.has(documentId)) {
+          const activeDoc = this.activeDocuments.get(documentId);
+          const fs = require('fs');
+          const path = require('path');
+
+          // Créer un répertoire de sauvegarde s'il n'existe pas
+          const backupDir = path.join(__dirname, '../../backups');
+          if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+          }
+
+          // Sauvegarder le contenu dans un fichier de secours
+          const backupPath = path.join(backupDir, `document_${documentId}_backup_${Date.now()}.txt`);
+          fs.writeFileSync(backupPath, activeDoc.content || '');
+
+          console.log(`RealtimeDocumentService: Sauvegarde de secours créée pour le document ${documentId} à ${backupPath}`);
+        }
+      } catch (backupError) {
+        console.error(`RealtimeDocumentService: Erreur lors de la création de la sauvegarde de secours:`, backupError);
+      }
+
+      // Relancer l'erreur originale
+      throw error;
+    }
   }
 
   /**

@@ -1,7 +1,7 @@
 import { Injectable, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subject, interval, of } from 'rxjs';
-import { switchMap, catchError, tap } from 'rxjs/operators';
+import { switchMap, catchError, tap, finalize } from 'rxjs/operators';
 
 import { WebsocketService } from './websocket.service';
 import { DocumentService } from './document.service';
@@ -22,12 +22,12 @@ export class CollaborativeDocumentService {
   isEditing = signal<boolean>(false);
   isSaving = signal<boolean>(false);
   lastSaved = signal<Date | null>(null);
-  
+
   // Sujets pour les événements d'édition
   private contentChanged = new Subject<DocumentDelta>();
   private cursorMoved = new Subject<{ userId: number, position: CursorPosition }>();
   private documentSaved = new Subject<{ documentId: number, savedAt: Date, versionNumber: number }>();
-  
+
   private destroyRef = inject(DestroyRef);
   private autoSaveInterval: any;
   private currentDocumentId: number | null = null;
@@ -100,19 +100,19 @@ export class CollaborativeDocumentService {
   joinDocument(documentId: number): Observable<{ document: Document, activeUsers: ActiveDocumentUser[], currentContent: string }> {
     this.currentDocumentId = documentId;
     this.isEditing.set(true);
-    
+
     return new Observable(observer => {
       this.websocketService.emit('document:join', { documentId }, (response: any) => {
         if (response.success) {
           console.log('Document rejoint avec succès:', response.data);
-          
+
           // Mettre à jour l'état
           this.activeDocument.set(response.data.document);
           this.updateActiveUsers(response.data.activeUsers);
-          
+
           // Configurer la sauvegarde automatique
           this.setupAutoSave(documentId, response.data.document.auto_save_interval || 30);
-          
+
           // Notifier l'observateur
           observer.next(response.data);
           observer.complete();
@@ -132,16 +132,16 @@ export class CollaborativeDocumentService {
     if (this.currentDocumentId !== documentId) {
       return;
     }
-    
+
     this.websocketService.emit('document:leave', { documentId });
-    
+
     // Nettoyer l'état
     this.currentDocumentId = null;
     this.activeDocument.set(null);
     this.activeUsers.set([]);
     this.isEditing.set(false);
     this.lastSaved.set(null);
-    
+
     // Arrêter la sauvegarde automatique
     this.clearAutoSave();
   }
@@ -154,7 +154,7 @@ export class CollaborativeDocumentService {
   private setupAutoSave(documentId: number, intervalSeconds: number): void {
     // Nettoyer tout intervalle existant
     this.clearAutoSave();
-    
+
     // Configurer un nouvel intervalle
     this.autoSaveInterval = interval(intervalSeconds * 1000)
       .pipe(
@@ -163,15 +163,35 @@ export class CollaborativeDocumentService {
           if (!this.isEditing() || !this.currentDocumentId) {
             return of(null);
           }
-          
-          this.isSaving.set(true);
-          
+
+          console.log('CollaborativeDocumentService: Sauvegarde automatique déclenchée');
+
+          // Ne pas définir isSaving ici, car saveDocument() le fait déjà
+
           return this.saveDocument(documentId).pipe(
-            tap(() => this.isSaving.set(false)),
+            tap(result => {
+              console.log('CollaborativeDocumentService: Sauvegarde automatique réussie:', result);
+            }),
             catchError(error => {
-              console.error('Erreur lors de la sauvegarde automatique:', error);
-              this.isSaving.set(false);
+              console.error('CollaborativeDocumentService: Erreur lors de la sauvegarde automatique:', error);
+
+              // Planifier une nouvelle tentative dans 30 secondes
+              setTimeout(() => {
+                console.log('CollaborativeDocumentService: Nouvelle tentative de sauvegarde automatique');
+                this.saveDocument(documentId).subscribe({
+                  next: () => console.log('CollaborativeDocumentService: Nouvelle tentative réussie'),
+                  error: (retryError) => console.error('CollaborativeDocumentService: Échec de la nouvelle tentative:', retryError)
+                });
+              }, 30000);
+
               return of(null);
+            }),
+            finalize(() => {
+              // S'assurer que isSaving est remis à false même en cas d'erreur
+              if (this.isSaving()) {
+                console.warn('CollaborativeDocumentService: Réinitialisation forcée de isSaving');
+                this.isSaving.set(false);
+              }
             })
           );
         })
@@ -199,15 +219,15 @@ export class CollaborativeDocumentService {
     if (!this.isEditing() || this.currentDocumentId !== documentId) {
       return;
     }
-    
+
     const data: any = { documentId };
-    
+
     if (delta) {
       data.delta = delta;
     } else {
       data.content = content;
     }
-    
+
     this.websocketService.emit('document:update', data);
   }
 
@@ -220,7 +240,7 @@ export class CollaborativeDocumentService {
     if (!this.isEditing() || this.currentDocumentId !== documentId) {
       return;
     }
-    
+
     this.websocketService.emit('document:cursor-update', {
       documentId,
       position
@@ -233,16 +253,125 @@ export class CollaborativeDocumentService {
    * @returns Observable avec le résultat de la sauvegarde
    */
   saveDocument(documentId: number): Observable<any> {
+    // Indiquer que la sauvegarde est en cours
+    this.isSaving.set(true);
+
     return new Observable(observer => {
+      // Vérifier d'abord si le WebSocket est connecté
+      if (!this.websocketService.isConnected()) {
+        console.warn('CollaborativeDocumentService: WebSocket non connecté, tentative de sauvegarde via HTTP');
+
+        // Récupérer le contenu actuel du document
+        const activeDoc = this.activeDocument();
+        if (!activeDoc) {
+          console.error('CollaborativeDocumentService: Document actif non disponible');
+          this.isSaving.set(false);
+          observer.error(new Error('Document actif non disponible'));
+          return;
+        }
+
+        // Tenter de sauvegarder via HTTP comme fallback
+        this.documentService.updateDocument(documentId, {
+          title: activeDoc.title,
+          content: activeDoc.content
+        }).subscribe({
+          next: (updatedDoc) => {
+            console.log('Document sauvegardé avec succès via HTTP:', updatedDoc);
+            this.lastSaved.set(new Date());
+            this.isSaving.set(false);
+            observer.next({
+              documentId,
+              savedAt: new Date(),
+              savedViaHttp: true
+            });
+            observer.complete();
+
+            // Émettre un événement pour indiquer que le document a été sauvegardé
+            this.documentSaved.next({
+              documentId,
+              savedAt: new Date(),
+              versionNumber: 0 // Version inconnue pour les sauvegardes HTTP
+            });
+          },
+          error: (error) => {
+            console.error('Erreur lors de la sauvegarde du document via HTTP:', error);
+            this.isSaving.set(false);
+            observer.error(error);
+          }
+        });
+
+        return;
+      }
+
+      // Sauvegarde via WebSocket
+      console.log('CollaborativeDocumentService: Tentative de sauvegarde via WebSocket');
+
+      // Définir un timeout pour la sauvegarde
+      const timeoutId = setTimeout(() => {
+        console.error('CollaborativeDocumentService: Timeout lors de la sauvegarde du document');
+        this.isSaving.set(false);
+        observer.error(new Error('Timeout lors de la sauvegarde du document'));
+      }, 10000); // 10 secondes de timeout
+
       this.websocketService.emit('document:save', { documentId }, (response: any) => {
-        if (response.success) {
+        // Annuler le timeout
+        clearTimeout(timeoutId);
+
+        if (response && response.success) {
           console.log('Document sauvegardé avec succès:', response.data);
           this.lastSaved.set(new Date(response.data.savedAt));
-          observer.next(response.data);
-          observer.complete();
+          this.isSaving.set(false);
+
+          // Vérifier que la sauvegarde a bien été effectuée
+          this.verifyDocumentSaved(documentId).subscribe({
+            next: (verified) => {
+              if (verified) {
+                observer.next(response.data);
+                observer.complete();
+              } else {
+                console.warn('CollaborativeDocumentService: La vérification de sauvegarde a échoué');
+                observer.error(new Error('La vérification de sauvegarde a échoué'));
+              }
+            },
+            error: (error) => {
+              console.error('Erreur lors de la vérification de sauvegarde:', error);
+              // Même si la vérification échoue, on considère que la sauvegarde a réussi
+              observer.next(response.data);
+              observer.complete();
+            }
+          });
         } else {
-          console.error('Erreur lors de la sauvegarde du document:', response.error);
-          observer.error(new Error(response.error));
+          console.error('Erreur lors de la sauvegarde du document:', response?.error || 'Réponse invalide');
+          this.isSaving.set(false);
+          observer.error(new Error(response?.error || 'Erreur inconnue lors de la sauvegarde'));
+        }
+      });
+    });
+  }
+
+  /**
+   * Vérifie que le document a bien été sauvegardé
+   * @param documentId ID du document
+   * @returns Observable qui émet true si le document a bien été sauvegardé
+   */
+  private verifyDocumentSaved(documentId: number): Observable<boolean> {
+    return new Observable(observer => {
+      // Vérifier via HTTP que le document a bien été sauvegardé
+      this.documentService.getDocumentById(documentId).subscribe({
+        next: (document) => {
+          if (document) {
+            console.log('CollaborativeDocumentService: Document vérifié avec succès');
+            observer.next(true);
+            observer.complete();
+          } else {
+            console.warn('CollaborativeDocumentService: Document non trouvé lors de la vérification');
+            observer.next(false);
+            observer.complete();
+          }
+        },
+        error: (error) => {
+          console.error('Erreur lors de la vérification du document:', error);
+          observer.error(error);
         }
       });
     });

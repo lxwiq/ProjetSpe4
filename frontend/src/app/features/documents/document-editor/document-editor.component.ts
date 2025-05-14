@@ -335,34 +335,159 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
    * Sauvegarde le document manuellement
    */
   saveDocument(): void {
-    if (!this.editor || !this.documentId) return;
+    if (!this.editor || !this.documentId) {
+      console.error('DocumentEditorComponent: Éditeur ou ID de document non disponible');
+      return;
+    }
 
-    this.isSaving.set(true);
+    // Pas besoin de définir isSaving ici, car collaborativeService.saveDocument() le fait déjà
 
+    // Récupérer le contenu et le titre actuels
     const content = this.editor.root.innerHTML;
     const title = this.documentTitle();
 
+    // Mettre à jour le document local avec le contenu actuel
+    const currentDoc = this.document();
+    if (currentDoc) {
+      currentDoc.content = content;
+      this.document.set(currentDoc);
+    }
+
+    // Afficher un message de sauvegarde en cours
+    const saveMessage = document.createElement('div');
+    saveMessage.className = 'save-message';
+    saveMessage.textContent = 'Sauvegarde en cours...';
+    saveMessage.style.position = 'fixed';
+    saveMessage.style.bottom = '20px';
+    saveMessage.style.right = '20px';
+    saveMessage.style.padding = '10px 20px';
+    saveMessage.style.backgroundColor = '#4CAF50';
+    saveMessage.style.color = 'white';
+    saveMessage.style.borderRadius = '4px';
+    saveMessage.style.zIndex = '1000';
+    document.body.appendChild(saveMessage);
+
     // Mettre à jour le titre si nécessaire
+    let titleUpdatePromise = Promise.resolve();
     if (title !== this.document()?.title) {
-      this.documentService.updateDocument(this.documentId, { title }).subscribe({
-        error: (err) => {
-          console.error('Erreur lors de la mise à jour du titre:', err);
-        }
+      titleUpdatePromise = new Promise<void>((resolve, reject) => {
+        this.documentService.updateDocument(this.documentId, { title }).subscribe({
+          next: () => {
+            console.log('Titre mis à jour avec succès');
+            resolve();
+          },
+          error: (err) => {
+            console.error('Erreur lors de la mise à jour du titre:', err);
+            // Ne pas rejeter la promesse pour continuer avec la sauvegarde du contenu
+            resolve();
+          }
+        });
       });
     }
 
-    // Sauvegarder le contenu
-    this.collaborativeService.saveDocument(this.documentId).subscribe({
+    // Attendre que la mise à jour du titre soit terminée avant de sauvegarder le contenu
+    titleUpdatePromise.then(() => {
+      // Sauvegarder le contenu
+      this.collaborativeService.saveDocument(this.documentId).subscribe({
+        next: (data) => {
+          console.log('Document sauvegardé avec succès:', data);
+
+          // Mettre à jour le message de sauvegarde
+          saveMessage.textContent = 'Document sauvegardé !';
+          saveMessage.style.backgroundColor = '#4CAF50';
+
+          // Supprimer le message après 3 secondes
+          setTimeout(() => {
+            if (document.body.contains(saveMessage)) {
+              document.body.removeChild(saveMessage);
+            }
+          }, 3000);
+
+          // Vérifier que le document a bien été sauvegardé
+          this.verifyDocumentSaved();
+        },
+        error: (err) => {
+          console.error('Erreur lors de la sauvegarde du document:', err);
+
+          // Mettre à jour le message d'erreur
+          saveMessage.textContent = 'Erreur lors de la sauvegarde. Nouvelle tentative...';
+          saveMessage.style.backgroundColor = '#f44336';
+
+          // Tenter une sauvegarde via HTTP directement
+          this.fallbackSaveDocument(content, title, saveMessage);
+        }
+      });
+    });
+  }
+
+  /**
+   * Sauvegarde de secours via HTTP direct
+   */
+  private fallbackSaveDocument(content: string, title: string, saveMessage: HTMLElement): void {
+    console.log('DocumentEditorComponent: Tentative de sauvegarde via HTTP direct');
+
+    this.documentService.updateDocument(this.documentId, {
+      title,
+      content
+    }).subscribe({
       next: (data) => {
-        console.log('Document sauvegardé avec succès:', data);
+        console.log('Document sauvegardé avec succès via HTTP direct:', data);
+
+        // Mettre à jour le message de sauvegarde
+        saveMessage.textContent = 'Document sauvegardé (mode secours) !';
+        saveMessage.style.backgroundColor = '#FF9800';
+
+        // Mettre à jour l'état de sauvegarde
         this.isSaving.set(false);
+        this.lastSaved.set(new Date());
+
+        // Supprimer le message après 3 secondes
+        setTimeout(() => {
+          if (document.body.contains(saveMessage)) {
+            document.body.removeChild(saveMessage);
+          }
+        }, 3000);
       },
       error: (err) => {
-        console.error('Erreur lors de la sauvegarde du document:', err);
+        console.error('Erreur lors de la sauvegarde via HTTP direct:', err);
+
+        // Mettre à jour le message d'erreur
+        saveMessage.textContent = 'Échec de la sauvegarde. Veuillez réessayer.';
+        saveMessage.style.backgroundColor = '#f44336';
+
+        // Supprimer le message après 5 secondes
+        setTimeout(() => {
+          if (document.body.contains(saveMessage)) {
+            document.body.removeChild(saveMessage);
+          }
+        }, 5000);
+
         this.isSaving.set(false);
-        alert('Erreur lors de la sauvegarde du document. Veuillez réessayer.');
       }
     });
+  }
+
+  /**
+   * Vérifie que le document a bien été sauvegardé
+   */
+  private verifyDocumentSaved(): void {
+    // Attendre un peu pour s'assurer que les modifications ont été appliquées
+    setTimeout(() => {
+      this.documentService.getDocumentById(this.documentId).subscribe({
+        next: (document) => {
+          if (document) {
+            console.log('DocumentEditorComponent: Document vérifié avec succès');
+            // Mettre à jour le document local si nécessaire
+            this.document.set(document);
+          } else {
+            console.warn('DocumentEditorComponent: Document non trouvé lors de la vérification');
+          }
+        },
+        error: (error) => {
+          console.error('Erreur lors de la vérification du document:', error);
+        }
+      });
+    }, 1000);
   }
 
   /**

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { HttpClient, HttpParams, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError, of } from 'rxjs';
+import { catchError, map, switchMap, retry, delay } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import {
@@ -145,14 +145,79 @@ export class DocumentService {
    * @returns Observable avec le document mis à jour
    */
   updateDocument(documentId: number, documentData: UpdateDocumentRequest): Observable<Document> {
-    return this.http.put<DocumentResponse>(`${this.API_URL}/documents/${documentId}`, documentData, { withCredentials: true })
-      .pipe(
-        map(response => Array.isArray(response.data) ? response.data[0] : response.data as Document),
-        catchError(error => {
-          console.error(`Erreur lors de la mise à jour du document ${documentId}:`, error);
-          return throwError(() => error);
-        })
-      );
+    console.log(`DocumentService: Mise à jour du document ${documentId}`, documentData);
+
+    // Créer une copie des données pour éviter les modifications accidentelles
+    const payload = { ...documentData };
+
+    // Vérifier si le document existe avant de le mettre à jour
+    return this.getDocumentById(documentId).pipe(
+      switchMap(existingDocument => {
+        if (!existingDocument) {
+          console.error(`DocumentService: Document ${documentId} non trouvé`);
+          return throwError(() => new Error(`Document ${documentId} non trouvé`));
+        }
+
+        console.log(`DocumentService: Document ${documentId} trouvé, mise à jour...`);
+
+        // Effectuer la mise à jour
+        return this.http.put<DocumentResponse>(
+          `${this.API_URL}/documents/${documentId}`,
+          payload,
+          {
+            withCredentials: true
+          }
+        ).pipe(
+          map(response => {
+            console.log(`DocumentService: Document ${documentId} mis à jour avec succès`, response);
+
+            // Extraire le document de la réponse
+            const updatedDoc = Array.isArray(response.data) ? response.data[0] : response.data as Document;
+
+            // Vérifier que le document a bien été mis à jour
+            if (!updatedDoc) {
+              console.warn(`DocumentService: Réponse valide mais document non trouvé dans la réponse`);
+              // Retourner le document existant comme fallback
+              return existingDocument;
+            }
+
+            return updatedDoc;
+          }),
+          // Ajouter des tentatives en cas d'erreur réseau
+          retry({
+            count: 2,
+            delay: (error, retryCount) => {
+              // Ne pas réessayer pour les erreurs d'authentification ou les erreurs serveur
+              if (error instanceof HttpErrorResponse &&
+                  (error.status === 401 || error.status === 403 || error.status >= 500)) {
+                return throwError(() => error);
+              }
+
+              // Délai exponentiel pour les autres erreurs
+              const delayMs = retryCount * 2000; // 2s, 4s
+              console.log(`DocumentService: Tentative de réessai ${retryCount} dans ${delayMs}ms`);
+              return of(null).pipe(delay(delayMs));
+            }
+          }),
+          catchError(error => {
+            console.error(`DocumentService: Erreur lors de la mise à jour du document ${documentId}:`, error);
+
+            // Vérifier si c'est une erreur de timeout
+            if (error.name === 'TimeoutError') {
+              console.warn(`DocumentService: Timeout lors de la mise à jour du document ${documentId}`);
+              // Retourner le document existant comme fallback
+              return of(existingDocument);
+            }
+
+            return throwError(() => error);
+          })
+        );
+      }),
+      catchError(error => {
+        console.error(`DocumentService: Erreur lors de la vérification du document ${documentId}:`, error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**

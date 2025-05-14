@@ -122,8 +122,13 @@ class SocketManager {
 
         this.io.to(`document:${documentId}`).emit('document:user-joined', joinData);
 
+        // Convertir les BigInt en nombre avant de les renvoyer
+        const safeDocumentData = JSON.parse(JSON.stringify(documentData, (key, value) =>
+          typeof value === 'bigint' ? Number(value) : value
+        ));
+
         // Répondre avec les données du document
-        if (callback) callback({ success: true, data: documentData });
+        if (callback) callback({ success: true, data: safeDocumentData });
       } catch (error) {
         console.error('Error joining document:', error);
         if (callback) callback({ success: false, error: error.message });
@@ -186,8 +191,13 @@ class SocketManager {
             timestamp: updateData.lastModified
           });
 
+          // Convertir les BigInt en nombre avant de les renvoyer
+          const safeUpdateData = JSON.parse(JSON.stringify(updateData, (key, value) =>
+            typeof value === 'bigint' ? Number(value) : value
+          ));
+
           // Répondre avec les données de mise à jour
-          if (callback) callback({ success: true, data: updateData });
+          if (callback) callback({ success: true, data: safeUpdateData });
         } else {
           throw new Error('Ni delta ni contenu fourni pour la mise à jour');
         }
@@ -272,8 +282,13 @@ class SocketManager {
           versionNumber: saveData.versionNumber
         });
 
+        // Convertir les BigInt en nombre avant de les renvoyer
+        const safeSaveData = JSON.parse(JSON.stringify(saveData, (key, value) =>
+          typeof value === 'bigint' ? Number(value) : value
+        ));
+
         // Répondre avec les données de sauvegarde
-        if (callback) callback({ success: true, data: saveData });
+        if (callback) callback({ success: true, data: safeSaveData });
       } catch (error) {
         console.error('Error saving document:', error);
         if (callback) callback({ success: false, error: error.message });
@@ -321,8 +336,13 @@ class SocketManager {
           this.sendNotification(invitedUserId, notification);
         }
 
+        // Convertir les BigInt en nombre avant de les renvoyer
+        const safeInvitation = JSON.parse(JSON.stringify(invitation, (key, value) =>
+          typeof value === 'bigint' ? Number(value) : value
+        ));
+
         // Répondre avec les données d'invitation
-        if (callback) callback({ success: true, data: invitation });
+        if (callback) callback({ success: true, data: safeInvitation });
       } catch (error) {
         console.error('Error inviting user to document:', error);
         if (callback) callback({ success: false, error: error.message });

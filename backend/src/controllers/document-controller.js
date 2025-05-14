@@ -8,7 +8,13 @@ class DocumentController {
     try {
       const userId = req.userId; // Get the user ID from the request object (set by JWT middleware)
       const documents = await documentService.getAllDocuments(userId);
-      res.json(documents);
+
+      // Convertir les BigInt en nombre avant de les renvoyer
+      const safeDocuments = JSON.parse(JSON.stringify(documents, (key, value) =>
+        typeof value === 'bigint' ? Number(value) : value
+      ));
+
+      res.json(safeDocuments);
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: 'Erreur lors de la récupération des documents' });
@@ -20,7 +26,13 @@ class DocumentController {
       const documentId = req.params.id;
       const userId = req.userId;
       const document = await documentService.getDocumentById(documentId, userId);
-      res.json(document);
+
+      // Convertir les BigInt en nombre avant de les renvoyer
+      const safeDocument = JSON.parse(JSON.stringify(document, (key, value) =>
+        typeof value === 'bigint' ? Number(value) : value
+      ));
+
+      res.json(safeDocument);
     } catch (err) {
       console.error(err);
       if (err.message.includes('not found') || err.message.includes('permission')) {
@@ -67,9 +79,14 @@ class DocumentController {
         fileType,
       });
 
+      // Convertir les BigInt en nombre avant de les renvoyer
+      const safeDocument = JSON.parse(JSON.stringify(newDocument, (key, value) =>
+        typeof value === 'bigint' ? Number(value) : value
+      ));
+
       res.status(201).json({
         message: 'Document ajouté avec succès !',
-        data: newDocument
+        data: safeDocument
       });
     } catch (err) {
       console.error("Erreur lors de l'ajout du document:", err);
@@ -84,7 +101,13 @@ class DocumentController {
       const { title, content } = req.body;
 
       const updatedDocument = await documentService.updateDocument(documentId, { title, content }, userId);
-      res.json(updatedDocument);
+
+      // Convertir les BigInt en nombre avant de les renvoyer
+      const safeDocument = JSON.parse(JSON.stringify(updatedDocument, (key, value) =>
+        typeof value === 'bigint' ? Number(value) : value
+      ));
+
+      res.json(safeDocument);
     } catch (err) {
       console.error(err);
       if (err.message.includes('not found') || err.message.includes('permission')) {
