@@ -421,36 +421,67 @@ class SocketManager {
           select: { title: true }
         });
 
+        // Vérifier si le document existe
+        if (!document) {
+          throw new Error('Document non trouvé');
+        }
+
+        // Récupérer les utilisateurs actifs sur le document
+        let activeUsers = [];
+        try {
+          activeUsers = realtimeDocumentService.getActiveUsers(documentId) || [];
+          console.log(`Active users for document ${documentId}:`, activeUsers);
+        } catch (error) {
+          console.error(`Error getting active users for document ${documentId}:`, error);
+          activeUsers = [];
+        }
+
+        // S'assurer que activeUsers est un tableau
+        if (!Array.isArray(activeUsers)) {
+          console.error(`Active users is not an array for document ${documentId}:`, activeUsers);
+          activeUsers = [];
+        }
+
         // Informer les utilisateurs actifs sur le document qu'un appel a démarré
-        const activeUsers = realtimeDocumentService.getActiveUsers(documentId);
         for (const userId of activeUsers) {
           if (userId !== socket.userId) {
-            // Créer une notification pour l'appel
-            const notification = await notificationService.createCallNotification(
-              userId,
-              newCall.id,
-              socket.userId,
-              parseInt(documentId),
-              document.title
-            );
+            try {
+              // Créer une notification pour l'appel
+              const notification = await notificationService.createCallNotification(
+                userId,
+                newCall.id,
+                socket.userId,
+                parseInt(documentId),
+                document.title
+              );
 
-            // Si l'utilisateur est connecté, lui envoyer une notification en temps réel
-            if (this.userSockets.has(userId)) {
-              const userSocketId = this.userSockets.get(userId);
-              this.io.to(userSocketId).emit('call:started', {
-                callId: newCall.id,
-                documentId,
-                initiatedBy: socket.userId
-              });
+              // Si l'utilisateur est connecté, lui envoyer une notification en temps réel
+              if (this.userSockets.has(userId)) {
+                const userSocketId = this.userSockets.get(userId);
+                this.io.to(userSocketId).emit('call:started', {
+                  callId: newCall.id,
+                  documentId,
+                  initiatedBy: socket.userId
+                });
 
-              // Envoyer également la notification
-              this.sendNotification(userId, notification);
+                // Envoyer également la notification
+                this.sendNotification(userId, notification);
+              }
+            } catch (error) {
+              console.error(`Error notifying user ${userId} about call ${newCall.id}:`, error);
             }
           }
         }
 
         // Répondre avec les données de l'appel
-        if (callback) callback({ success: true, data: { callId: newCall.id } });
+        if (callback) callback({
+          success: true,
+          data: {
+            callId: newCall.id,
+            documentId: parseInt(documentId),
+            participants: [socket.userId]
+          }
+        });
       } catch (error) {
         console.error('Error starting call:', error);
         if (callback) callback({ success: false, error: error.message });
@@ -584,6 +615,46 @@ class SocketManager {
           userId: socket.userId,
           signal
         });
+      }
+    });
+
+    // Activité vocale
+    socket.on('call:voice-activity', async (data) => {
+      try {
+        const { callId, isSpeaking } = data;
+
+        // Vérifier si l'appel existe
+        const call = await prisma.calls.findUnique({
+          where: { id: parseInt(callId) }
+        });
+
+        if (!call) {
+          console.error(`Call ${callId} not found`);
+          return;
+        }
+
+        // Vérifier si l'utilisateur est un participant à l'appel
+        const isParticipant = await prisma.call_participants.findFirst({
+          where: {
+            call_id: parseInt(callId),
+            user_id: socket.userId,
+            is_active: true
+          }
+        });
+
+        if (!isParticipant) {
+          console.error(`User ${socket.userId} is not a participant in call ${callId}`);
+          return;
+        }
+
+        // Diffuser l'activité vocale à tous les participants de l'appel
+        socket.to(`call:${callId}`).emit('call:voice-activity', {
+          callId,
+          userId: socket.userId,
+          isSpeaking
+        });
+      } catch (error) {
+        console.error('Error handling voice activity:', error);
       }
     });
   }

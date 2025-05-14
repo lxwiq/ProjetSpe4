@@ -8,6 +8,7 @@ import { CollaborativeDocumentService } from '../../../core/services/collaborati
 import { AuthService } from '../../../core/services/auth.service';
 import { Document, ActiveDocumentUser, DocumentCollaborator } from '../../../core/models/document.model';
 import { DocumentCollaboratorsComponent } from '../document-collaborators/document-collaborators.component';
+import { VoiceCallComponent } from '../voice-call/voice-call.component';
 
 // Déclaration pour Quill
 declare var Quill: any;
@@ -15,7 +16,7 @@ declare var Quill: any;
 @Component({
   selector: 'app-document-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DocumentCollaboratorsComponent],
+  imports: [CommonModule, FormsModule, RouterLink, DocumentCollaboratorsComponent, VoiceCallComponent],
   templateUrl: './document-editor.component.html',
   styleUrls: ['./document-editor.component.css']
 })
@@ -29,6 +30,9 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
   isSaving = signal<boolean>(false);
   lastSaved = signal<Date | null>(null);
   documentTitle = signal<string>('');
+
+  // Liste des IDs des utilisateurs actifs
+  activeUserIds = signal<number[]>([]);
 
   // Éditeur Quill
   editor: any;
@@ -53,6 +57,12 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
       if (lastSaved) {
         this.lastSaved.set(lastSaved);
       }
+    });
+
+    // Mettre à jour la liste des IDs des utilisateurs actifs
+    effect(() => {
+      const activeUsers = this.collaborativeService.activeUsers();
+      this.activeUserIds.set(activeUsers.map(user => user.id));
     });
   }
 

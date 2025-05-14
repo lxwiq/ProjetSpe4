@@ -39,6 +39,33 @@ class UserController {
     }
   }
 
+  async getUsersByIds(req, res) {
+    try {
+      const { ids } = req.query;
+
+      if (!ids) {
+        return res.status(400).json({ message: 'Aucun ID d\'utilisateur fourni' });
+      }
+
+      // Convertir la chaîne d'IDs en tableau d'entiers
+      const userIds = ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+
+      if (userIds.length === 0) {
+        return res.status(400).json({ message: 'Aucun ID d\'utilisateur valide fourni' });
+      }
+
+      const users = await userService.getUsersByIds(userIds);
+
+      res.json({
+        message: 'Utilisateurs récupérés avec succès',
+        data: users
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Erreur lors de la récupération des utilisateurs' });
+    }
+  }
+
   async ModifyUsers(req, res) {
     try {
       const userId = req.userId; // Get user ID from JWT middleware

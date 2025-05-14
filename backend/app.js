@@ -23,6 +23,7 @@ const authRoutes = require('./src/authentification/auth');
 const adminRoutes = require('./src/routes/admin-routes');
 const twoFactorRoutes = require('./src/routes/2fa-routes');
 const tokenRoutes = require('./src/routes/token-routes');
+const callRoutes = require('./src/routes/call-routes');
 
 // Import WebSocket manager
 const SocketManager = require('./src/websockets/socket-manager');
@@ -68,6 +69,7 @@ app.use('/documents', verifyToken, documentRoutes);
 app.use('/collaborative-documents', verifyToken, collaborativeDocumentRoutes);
 app.use('/messaging', messagingRoutes); // verifyToken est déjà inclus dans les routes
 app.use('/notifications', notificationRoutes); // verifyToken est déjà inclus dans les routes
+app.use('/calls', verifyToken, callRoutes); // Routes pour les appels vocaux
 // Appliquer le rate limiter aux routes d'authentification
 app.use('/login', authLimiter, authRoutes);
 app.use('/auth', authLimiter, authRoutes);

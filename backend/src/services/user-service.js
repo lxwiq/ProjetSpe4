@@ -32,6 +32,29 @@ class UserService {
     });
   }
 
+  /**
+   * Récupère plusieurs utilisateurs par leurs IDs
+   * @param {number[]} ids - Tableau d'IDs d'utilisateurs
+   * @returns {Promise<Array>} - Liste des utilisateurs
+   */
+  async getUsersByIds(ids) {
+    return await prisma.users.findMany({
+      where: {
+        id: {
+          in: ids
+        },
+        is_active: true
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        full_name: true,
+        profile_picture: true
+      }
+    });
+  }
+
   async searchUsers(query) {
     return await prisma.users.findMany({
       where: {

@@ -35,6 +35,7 @@ export class WebsocketService {
   private callJoined = new Subject<any>();
   private callLeft = new Subject<any>();
   private callSignal = new Subject<any>();
+  private callVoiceActivity = new Subject<any>();
   private messageReceived = new Subject<any>();
 
   constructor(
@@ -357,6 +358,11 @@ export class WebsocketService {
       this.callSignal.next(data);
     });
 
+    this.socket.on('call:voice-activity', (data) => {
+      console.log('WebsocketService: Activité vocale détectée', data);
+      this.callVoiceActivity.next(data);
+    });
+
     // Événements de messagerie
     this.socket.on('message:received', (data) => {
       console.log('WebsocketService: Message reçu', data);
@@ -456,6 +462,10 @@ export class WebsocketService {
 
   onCallSignal(): Observable<any> {
     return this.callSignal.asObservable();
+  }
+
+  onCallVoiceActivity(): Observable<any> {
+    return this.callVoiceActivity.asObservable();
   }
 
   onMessageReceived(): Observable<any> {

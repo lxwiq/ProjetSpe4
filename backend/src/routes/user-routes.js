@@ -124,6 +124,31 @@ router.post('/profile/picture', verifyToken, upload.single('profile_picture'), v
 
 /**
  * @swagger
+ * /users/batch:
+ *   get:
+ *     summary: Récupérer plusieurs utilisateurs par leurs IDs
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: ids
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Liste d'IDs d'utilisateurs séparés par des virgules
+ *     responses:
+ *       200:
+ *         description: Liste des utilisateurs demandés
+ *       401:
+ *         description: Non authentifié
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/batch', verifyToken, userController.getUsersByIds);
+
+/**
+ * @swagger
  * /users/{id}:
  *   get:
  *     summary: Récupérer un utilisateur par son ID
