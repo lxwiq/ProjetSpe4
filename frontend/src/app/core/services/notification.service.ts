@@ -73,8 +73,11 @@ export class NotificationService {
     // Vérifier si la notification existe déjà
     const exists = currentNotifications.some(n => n.id === notification.id);
     if (!exists) {
+      // S'assurer que le contenu est correctement parsé
+      const processedNotification = this.ensureContentIsParsed(notification);
+
       // Ajouter la notification au début de la liste
-      this.notifications.set([notification, ...currentNotifications]);
+      this.notifications.set([processedNotification, ...currentNotifications]);
       this.updateUnreadCount();
     }
   }
@@ -92,13 +95,37 @@ export class NotificationService {
     const currentIds = new Set(currentNotifications.map(n => n.id));
 
     // Filtrer les notifications qui n'existent pas déjà
-    const newNotifications = notifications.filter(n => !currentIds.has(n.id));
+    const newNotifications = notifications
+      .filter(n => !currentIds.has(n.id))
+      .map(n => this.ensureContentIsParsed(n)); // S'assurer que le contenu est correctement parsé
 
     if (newNotifications.length > 0) {
       // Ajouter les nouvelles notifications au début de la liste
       this.notifications.set([...newNotifications, ...currentNotifications]);
       this.updateUnreadCount();
     }
+  }
+
+  /**
+   * S'assure que le contenu de la notification est un objet et non une chaîne JSON
+   * @param notification Notification à traiter
+   * @returns Notification avec le contenu parsé
+   */
+  private ensureContentIsParsed(notification: Notification): Notification {
+    if (typeof notification.content === 'string') {
+      try {
+        console.log('NotificationService: Parsing notification content from JSON string during add');
+        return {
+          ...notification,
+          content: JSON.parse(notification.content)
+        };
+      } catch (error) {
+        console.error('NotificationService: Erreur lors du parsing du contenu de la notification:', error);
+        // Retourner la notification telle quelle en cas d'erreur
+        return notification;
+      }
+    }
+    return notification;
   }
 
   /**
@@ -216,41 +243,105 @@ export class NotificationService {
     let content = '';
     let url = '';
 
+    // S'assurer que le contenu est un objet, pas une chaîne JSON
+    let parsedContent: any;
+    try {
+      // Si le contenu est une chaîne, essayer de le parser comme JSON
+      if (typeof notification.content === 'string') {
+        console.log('NotificationService: Parsing notification content from JSON string');
+        parsedContent = JSON.parse(notification.content);
+      } else {
+        // Sinon, utiliser le contenu tel quel
+        parsedContent = notification.content;
+      }
+    } catch (error) {
+      console.error('NotificationService: Erreur lors du parsing du contenu de la notification:', error);
+      parsedContent = {}; // Utiliser un objet vide en cas d'erreur
+    }
+
     switch (notification.type) {
       case 'new_message':
-        const messageContent = notification.content as any;
-        title = `Nouveau message de ${messageContent.senderName}`;
-        content = messageContent.preview;
-        url = `/messages/conversations/${messageContent.conversationId}`;
+        const messageContent = parsedContent;
+        title = `Nouveau message de ${messageContent.senderName || 'Utilisateur inconnu'}`;
+        content = messageContent.preview || 'Nouveau message';
+
+        // Vérifier que l'ID de la conversation est valide
+        const conversationId = messageContent.conversationId;
+        if (conversationId && !isNaN(conversationId) && conversationId > 0) {
+          url = `/messages/conversations/${conversationId}`;
+          console.log(`NotificationService: URL de message valide générée: ${url}`);
+        } else {
+          console.error(`NotificationService: ID de conversation invalide dans la notification: ${conversationId}`);
+          url = '/messages/conversations'; // Rediriger vers la liste des conversations en cas d'ID invalide
+        }
         break;
       case 'document_invite':
-        const inviteContent = notification.content as any;
+        const inviteContent = parsedContent;
         title = `Invitation à collaborer`;
-        content = `${inviteContent.inviterName} vous a invité à collaborer sur "${inviteContent.documentTitle}"`;
-        url = `/documents/${inviteContent.documentId}`;
+        content = `${inviteContent.inviterName || 'Un utilisateur'} vous a invité à collaborer sur "${inviteContent.documentTitle || 'un document'}"`;
+
+        // Vérifier que l'ID du document est valide
+        const documentId = inviteContent.documentId;
+        if (documentId && !isNaN(documentId) && documentId > 0) {
+          url = `/documents/${documentId}`;
+          console.log(`NotificationService: URL d'invitation valide générée: ${url}`);
+        } else {
+          console.error(`NotificationService: ID de document invalide dans la notification: ${documentId}`);
+          url = '/documents'; // Rediriger vers la liste des documents en cas d'ID invalide
+        }
         break;
+
       case 'document_update':
-        const updateContent = notification.content as any;
+        const updateContent = parsedContent;
         title = `Mise à jour de document`;
-        content = `${updateContent.updaterName} a ${this.getUpdateTypeText(updateContent.updateType)} "${updateContent.documentTitle}"`;
-        url = `/documents/${updateContent.documentId}`;
+        content = `${updateContent.updaterName || 'Un utilisateur'} a ${this.getUpdateTypeText(updateContent.updateType)} "${updateContent.documentTitle || 'un document'}"`;
+
+        // Vérifier que l'ID du document est valide
+        const updateDocId = updateContent.documentId;
+        if (updateDocId && !isNaN(updateDocId) && updateDocId > 0) {
+          url = `/documents/${updateDocId}`;
+          console.log(`NotificationService: URL de mise à jour valide générée: ${url}`);
+        } else {
+          console.error(`NotificationService: ID de document invalide dans la notification: ${updateDocId}`);
+          url = '/documents'; // Rediriger vers la liste des documents en cas d'ID invalide
+        }
         break;
       case 'conversation_invite':
-        const convInviteContent = notification.content as any;
+        const convInviteContent = parsedContent;
         title = `Invitation à une conversation`;
-        content = `Vous avez été ajouté à la conversation "${convInviteContent.conversationName}"`;
-        url = `/messages/conversations/${convInviteContent.conversationId}`;
+        content = `Vous avez été ajouté à la conversation "${convInviteContent.conversationName || 'sans nom'}"`;
+
+        // Vérifier que l'ID de la conversation est valide
+        const convId = convInviteContent.conversationId;
+        if (convId && !isNaN(convId) && convId > 0) {
+          url = `/messages/conversations/${convId}`;
+          console.log(`NotificationService: URL d'invitation à une conversation valide générée: ${url}`);
+        } else {
+          console.error(`NotificationService: ID de conversation invalide dans la notification: ${convId}`);
+          url = '/messages/conversations'; // Rediriger vers la liste des conversations en cas d'ID invalide
+        }
         break;
       case 'incoming_call':
-        const callContent = notification.content as any;
+        const callContent = parsedContent;
         title = `Appel entrant`;
-        content = `Appel concernant le document "${callContent.documentTitle}"`;
-        url = `/documents/${callContent.documentId}/call/${callContent.callId}`;
+        content = `Appel concernant le document "${callContent.documentTitle || 'sans titre'}"`;
+
+        // Vérifier que les IDs du document et de l'appel sont valides
+        const callDocId = callContent.documentId;
+        const callId = callContent.callId;
+
+        if (callDocId && !isNaN(callDocId) && callDocId > 0 && callId && !isNaN(callId) && callId > 0) {
+          url = `/documents/${callDocId}/call/${callId}`;
+          console.log(`NotificationService: URL d'appel valide générée: ${url}`);
+        } else {
+          console.error(`NotificationService: IDs invalides dans la notification d'appel: document=${callDocId}, call=${callId}`);
+          url = '/documents'; // Rediriger vers la liste des documents en cas d'ID invalide
+        }
         break;
       case 'system':
-        const systemContent = notification.content as any;
-        title = systemContent.title;
-        content = systemContent.message;
+        const systemContent = parsedContent;
+        title = systemContent.title || 'Notification système';
+        content = systemContent.message || 'Vous avez reçu une notification système';
         url = systemContent.actionUrl || '/dashboard';
         break;
       default:

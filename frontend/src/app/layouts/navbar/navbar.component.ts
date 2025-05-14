@@ -256,7 +256,23 @@ export class NavbarComponent implements OnInit, OnDestroy {
    */
   getNotificationUrl(notification: Notification): string {
     const formattedNotification = this.notificationService.getFormattedNotification(notification);
-    return formattedNotification.url;
+
+    // Vérifier que l'URL est valide et ne contient pas "undefined" ou "NaN"
+    const url = formattedNotification.url;
+    if (!url || url.includes('undefined') || url.includes('NaN')) {
+      console.error(`NavbarComponent: URL de notification invalide: ${url}`);
+
+      // Rediriger vers une page par défaut en fonction du type de notification
+      if (notification.type === 'document_invite' || notification.type === 'document_update') {
+        return '/documents';
+      } else if (notification.type === 'new_message' || notification.type === 'conversation_invite') {
+        return '/messages/conversations';
+      } else {
+        return '/dashboard';
+      }
+    }
+
+    return url;
   }
 
   /**

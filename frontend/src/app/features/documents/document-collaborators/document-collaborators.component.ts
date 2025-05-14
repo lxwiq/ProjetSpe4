@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 
 import { DocumentService } from '../../../core/services/document.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { UserService } from '../../../core/services/user.service';
 import { ActiveDocumentUser, DocumentCollaborator, DocumentPermissionLevel } from '../../../core/models/document.model';
+import { User } from '../../../core/models/user.model';
 
 @Component({
   selector: 'app-document-collaborators',
@@ -26,13 +28,65 @@ export class DocumentCollaboratorsComponent implements OnInit {
   inviteEmail = '';
   invitePermission: DocumentPermissionLevel = 'read';
 
+  // Liste des utilisateurs actifs pour l'invitation
+  availableUsers: User[] = [];
+  filteredUsers: User[] = [];
+  searchQuery = '';
+  selectedUserId: number | null = null;
+  isLoadingUsers = false;
+
   constructor(
     private documentService: DocumentService,
-    private authService: AuthService
+    private authService: AuthService,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
     this.loadCollaborators();
+    this.loadAvailableUsers();
+  }
+
+  /**
+   * Charge la liste des utilisateurs disponibles pour l'invitation
+   */
+  loadAvailableUsers(): void {
+    this.isLoadingUsers = true;
+
+    this.userService.getAllActiveUsers().subscribe({
+      next: (users) => {
+        // Filtrer pour exclure l'utilisateur courant
+        const currentUser = this.authService.currentUser();
+        if (currentUser) {
+          this.availableUsers = users.filter(user => user.id !== currentUser.id);
+        } else {
+          this.availableUsers = users;
+        }
+
+        this.filteredUsers = [...this.availableUsers];
+        this.isLoadingUsers = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des utilisateurs:', err);
+        this.isLoadingUsers = false;
+      }
+    });
+  }
+
+  /**
+   * Filtre les utilisateurs en fonction de la recherche
+   */
+  filterUsers(): void {
+    if (!this.searchQuery.trim()) {
+      this.filteredUsers = [...this.availableUsers];
+      return;
+    }
+
+    const query = this.searchQuery.toLowerCase().trim();
+    this.filteredUsers = this.availableUsers.filter(user =>
+      user.username.toLowerCase().includes(query) ||
+      (user.email && user.email.toLowerCase().includes(query)) ||
+      (user.full_name && user.full_name.toLowerCase().includes(query))
+    );
   }
 
   /**
@@ -61,16 +115,22 @@ export class DocumentCollaboratorsComponent implements OnInit {
    * Invite un utilisateur à collaborer
    */
   inviteCollaborator(): void {
-    if (!this.documentId || !this.inviteEmail) return;
+    if (!this.documentId || (!this.selectedUserId && !this.inviteEmail)) return;
 
     this.isLoading = true;
 
-    // Dans un cas réel, vous devriez d'abord rechercher l'utilisateur par email
-    // pour obtenir son ID, puis l'inviter
-    const mockUserId = 123; // Simulé pour l'exemple
+    // Si un utilisateur est sélectionné dans la liste, utiliser son ID
+    // Sinon, utiliser l'email pour rechercher l'utilisateur (non implémenté ici)
+    const invitedUserId = this.selectedUserId;
+
+    if (!invitedUserId) {
+      this.error = 'Veuillez sélectionner un utilisateur dans la liste.';
+      this.isLoading = false;
+      return;
+    }
 
     this.documentService.inviteCollaborator(this.documentId, {
-      invitedUserId: mockUserId,
+      invitedUserId: invitedUserId,
       permissionLevel: this.invitePermission
     }).subscribe({
       next: () => {
@@ -86,6 +146,20 @@ export class DocumentCollaboratorsComponent implements OnInit {
   }
 
   /**
+   * Sélectionne un utilisateur pour l'invitation
+   * @param userId ID de l'utilisateur
+   */
+  selectUser(userId: number): void {
+    this.selectedUserId = userId;
+
+    // Trouver l'utilisateur sélectionné pour afficher son email
+    const selectedUser = this.availableUsers.find(user => user.id === userId);
+    if (selectedUser && selectedUser.email) {
+      this.inviteEmail = selectedUser.email;
+    }
+  }
+
+  /**
    * Réinitialise le formulaire d'invitation
    */
   resetInviteForm(): void {
@@ -93,6 +167,9 @@ export class DocumentCollaboratorsComponent implements OnInit {
     this.invitePermission = 'read';
     this.showInviteForm = false;
     this.isLoading = false;
+    this.selectedUserId = null;
+    this.searchQuery = '';
+    this.filteredUsers = [...this.availableUsers];
   }
 
   /**

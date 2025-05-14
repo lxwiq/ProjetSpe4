@@ -59,12 +59,21 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
-      if (id) {
+
+      // Vérifier que l'ID est valide et peut être converti en nombre
+      if (id && !isNaN(+id) && +id > 0) {
         this.documentId = +id;
+        console.log(`DocumentEditorComponent: ID de document valide: ${this.documentId}`);
         this.loadDocument();
       } else {
-        this.error.set('ID de document non valide');
+        console.error(`DocumentEditorComponent: ID de document invalide: ${id}`);
+        this.error.set(`ID de document non valide: ${id}`);
         this.isLoading.set(false);
+
+        // Rediriger vers la liste des documents après un court délai
+        setTimeout(() => {
+          this.router.navigate(['/documents']);
+        }, 3000);
       }
     });
   }
@@ -173,25 +182,46 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
    * Charge le document depuis le service
    */
   loadDocument(): void {
+    // Vérifier que l'ID du document est valide
+    if (!this.documentId || isNaN(this.documentId) || this.documentId <= 0) {
+      console.error(`DocumentEditorComponent: Tentative de chargement avec un ID invalide: ${this.documentId}`);
+      this.error.set(`ID de document invalide: ${this.documentId}`);
+      this.isLoading.set(false);
+
+      // Rediriger vers la liste des documents après un court délai
+      setTimeout(() => {
+        this.router.navigate(['/documents']);
+      }, 3000);
+      return;
+    }
+
     this.isLoading.set(true);
     this.error.set(null);
+
+    console.log(`DocumentEditorComponent: Chargement du document ${this.documentId}`);
 
     this.documentService.getDocumentById(this.documentId).subscribe({
       next: (document) => {
         if (!document) {
-          console.error('Document non trouvé ou undefined');
+          console.error(`DocumentEditorComponent: Document ${this.documentId} non trouvé ou undefined`);
           this.error.set('Document non trouvé. Veuillez réessayer plus tard.');
           this.isLoading.set(false);
+
+          // Rediriger vers la liste des documents après un court délai
+          setTimeout(() => {
+            this.router.navigate(['/documents']);
+          }, 3000);
           return;
         }
 
+        console.log(`DocumentEditorComponent: Document ${this.documentId} chargé avec succès:`, document);
         this.document.set(document);
 
         // Vérifier si le document a une propriété title avant de l'utiliser
         if (document.title !== undefined) {
           this.documentTitle.set(document.title);
         } else {
-          console.warn('Le document n\'a pas de titre défini');
+          console.warn(`DocumentEditorComponent: Le document ${this.documentId} n'a pas de titre défini`);
           this.documentTitle.set('Document sans titre');
         }
 
@@ -199,9 +229,14 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
         this.joinCollaborativeDocument();
       },
       error: (err) => {
-        console.error('Erreur lors du chargement du document:', err);
+        console.error(`DocumentEditorComponent: Erreur lors du chargement du document ${this.documentId}:`, err);
         this.error.set('Impossible de charger le document. Veuillez réessayer plus tard.');
         this.isLoading.set(false);
+
+        // Rediriger vers la liste des documents après un court délai
+        setTimeout(() => {
+          this.router.navigate(['/documents']);
+        }, 3000);
       }
     });
   }
@@ -210,19 +245,27 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
    * Rejoint le document collaboratif
    */
   private joinCollaborativeDocument(): void {
-    if (!this.documentId) {
-      console.error('ID de document non valide pour rejoindre le document collaboratif');
-      this.error.set('ID de document non valide');
+    // Vérifier que l'ID du document est valide
+    if (!this.documentId || isNaN(this.documentId) || this.documentId <= 0) {
+      console.error(`DocumentEditorComponent: Tentative de rejoindre avec un ID invalide: ${this.documentId}`);
+      this.error.set(`ID de document non valide pour l'édition collaborative: ${this.documentId}`);
       this.isLoading.set(false);
+
+      // Rediriger vers la liste des documents après un court délai
+      setTimeout(() => {
+        this.router.navigate(['/documents']);
+      }, 3000);
       return;
     }
 
+    console.log(`DocumentEditorComponent: Tentative de rejoindre le document collaboratif ${this.documentId}`);
+
     this.collaborativeService.joinDocument(this.documentId).subscribe({
       next: (data) => {
-        console.log('Document collaboratif rejoint:', data);
+        console.log(`DocumentEditorComponent: Document collaboratif ${this.documentId} rejoint:`, data);
 
         if (!data) {
-          console.error('Données de document collaboratif non valides');
+          console.error(`DocumentEditorComponent: Données de document collaboratif non valides pour ${this.documentId}`);
           this.error.set('Erreur lors de la connexion au document collaboratif');
           this.isLoading.set(false);
           return;
@@ -238,9 +281,12 @@ export class DocumentEditorComponent implements OnInit, OnDestroy, AfterViewInit
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error('Erreur lors de la connexion au document collaboratif:', err);
+        console.error(`DocumentEditorComponent: Erreur lors de la connexion au document collaboratif ${this.documentId}:`, err);
         this.error.set('Impossible de rejoindre l\'édition collaborative. Veuillez réessayer plus tard.');
         this.isLoading.set(false);
+
+        // Ne pas rediriger ici, car le document a déjà été chargé avec succès
+        // L'utilisateur pourra toujours voir et éditer le document, même sans la collaboration
       }
     });
   }
