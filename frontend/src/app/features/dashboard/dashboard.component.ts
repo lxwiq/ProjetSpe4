@@ -32,7 +32,7 @@ import { DocumentUploadModalComponent } from './components/document-upload-modal
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
-  // Inject services
+  // Injection des services
   private router = inject(Router);
   private authService = inject(AuthService);
   private documentService = inject(DocumentService);
@@ -41,7 +41,7 @@ export class DashboardComponent implements OnInit {
   private websocketService = inject(WebsocketService);
   private logger = inject(LoggingService);
 
-  // State signals
+  // Signaux d'état
   user = signal<User | null>(null);
   documents = signal<Document[]>([]);
   recentDocuments = signal<Document[]>([]);
@@ -52,26 +52,26 @@ export class DashboardComponent implements OnInit {
   showCreateModal = signal<boolean>(false);
   showUploadModal = signal<boolean>(false);
 
-  // Computed values
+  // Valeurs calculées
   documentCount = computed(() => this.documents().length);
   folderCount = computed(() => this.documents().filter(doc => doc.is_folder).length);
-  // Collaborative document count removed as part of the permissions system removal
+  // Compteur de documents collaboratifs supprimé dans le cadre de la suppression du système de permissions
   collaborativeDocumentCount = computed(() => 0);
   unreadNotificationCount = computed(() =>
     this.notifications().filter(notification => !notification.is_read).length
   );
 
   constructor() {
-    // Initialize user from auth service
+    // Initialiser l'utilisateur à partir du service d'authentification
     this.user.set(this.authService.currentUser());
 
-    // Log component initialization
+    // Journaliser l'initialisation du composant
     this.logger.info('Dashboard component initialized', {
       component: 'DashboardComponent',
       user: this.user()?.id
     });
 
-    // Effect to handle authentication changes
+    // Effet pour gérer les changements d'authentification
     effect(() => {
       const isAuthenticated = this.authService.isAuthenticated();
       if (!isAuthenticated) {
@@ -81,7 +81,7 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // If user is not available, check auth status
+    // Si l'utilisateur n'est pas disponible, vérifier l'état d'authentification
     if (!this.user()) {
       this.authService.checkAuthStatus().subscribe({
         next: (isAuthenticated) => {
@@ -102,11 +102,11 @@ export class DashboardComponent implements OnInit {
         }
       });
     } else {
-      // Load dashboard data if user is already available
+      // Charger les données du tableau de bord si l'utilisateur est déjà disponible
       this.loadDashboardData();
     }
 
-    // Subscribe to WebSocket connection status
+    // S'abonner au statut de connexion WebSocket
     this.websocketService.onConnectionStatus()
       .pipe(takeUntilDestroyed())
       .subscribe(connected => {
@@ -124,13 +124,13 @@ export class DashboardComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
 
-    // Load documents
+    // Charger les documents
     this.loadDocuments();
 
-    // Load notifications
+    // Charger les notifications
     this.loadNotifications();
 
-    // Load active collaborative documents
+    // Charger les documents collaboratifs actifs
     this.loadActiveDocuments();
   }
 
@@ -142,7 +142,7 @@ export class DashboardComponent implements OnInit {
       next: (documents) => {
         this.documents.set(documents);
 
-        // Set recent documents (last 5)
+        // Définir les documents récents (5 derniers)
         const sorted = [...documents].sort((a, b) => {
           const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
           const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
@@ -172,10 +172,10 @@ export class DashboardComponent implements OnInit {
    * Load user's notifications
    */
   private loadNotifications(): void {
-    // Use the notifications from the notification service
+    // Utiliser les notifications du service de notification
     this.notifications.set(this.notificationService.notifications());
 
-    // Subscribe to notification changes
+    // S'abonner aux changements de notifications
     effect(() => {
       this.notifications.set(this.notificationService.notifications());
     });
@@ -185,9 +185,9 @@ export class DashboardComponent implements OnInit {
    * Load active collaborative documents
    */
   private loadActiveDocuments(): void {
-    // This would typically come from a service that tracks active documents
-    // For now, we'll use a placeholder implementation
-    // In a real implementation, this would be populated from WebSocket events
+    // Cela viendrait normalement d'un service qui suit les documents actifs
+    // Pour l'instant, nous utilisons une implémentation temporaire
+    // Dans une implémentation réelle, cela serait alimenté par des événements WebSocket
   }
 
   /**
@@ -211,7 +211,7 @@ export class DashboardComponent implements OnInit {
     this.showCreateModal.set(false);
     this.loadDocuments();
 
-    // Navigate to the new document (text documents go to editor)
+    // Naviguer vers le nouveau document (les documents texte vont à l'éditeur)
     this.router.navigate(['/documents/edit', document.id]);
   }
 
@@ -222,7 +222,7 @@ export class DashboardComponent implements OnInit {
     this.showUploadModal.set(false);
     this.loadDocuments();
 
-    // Navigate to the document viewer which will determine the appropriate view
+    // Naviguer vers la visionneuse de document qui déterminera la vue appropriée
     this.router.navigate(['/documents', document.id]);
   }
 
