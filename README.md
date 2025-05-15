@@ -100,25 +100,63 @@ backend/
 ### Communication HTTP
 
 1. Le frontend envoie des requêtes HTTP au backend via les services Angular
-2. Les intercepteurs HTTP ajoutent les tokens d'authentification
+2. Les intercepteurs HTTP ajoutent les tokens d'authentification (JWT)
 3. Le backend traite les requêtes via les routes et contrôleurs
 4. Les services backend accèdent à la base de données via Prisma
-5. Les réponses sont renvoyées au frontend sous forme de JSON
+5. Les réponses sont renvoyées au frontend sous forme de JSON standardisé
 
-### Communication en temps réel
+### Édition collaborative en temps réel
 
-1. Le frontend se connecte au backend via Socket.IO
-2. L'authentification est vérifiée via les tokens JWT
-3. Les événements sont émis et reçus de manière bidirectionnelle
-4. Les modifications de documents sont diffusées à tous les utilisateurs connectés
-5. Les curseurs et sélections sont synchronisés en temps réel
+1. **Rejoindre un document**
+   - Le client envoie un événement `document:join` avec l'ID du document
+   - Le serveur vérifie les permissions de l'utilisateur
+   - L'utilisateur est ajouté à la salle Socket.IO correspondante
+   - Le serveur envoie le contenu actuel du document et la liste des utilisateurs actifs
+
+2. **Mise à jour du document**
+   - Le client envoie un événement `document:update` avec les modifications
+   - Le serveur met à jour le contenu en mémoire via `RealtimeDocumentService`
+   - Le serveur diffuse les modifications à tous les autres utilisateurs dans la salle
+   - Les curseurs et sélections sont synchronisés via des événements dédiés
+
+3. **Sauvegarde du document**
+   - Le client déclenche une sauvegarde (manuelle ou automatique)
+   - Le serveur écrit le contenu dans le fichier physique
+   - Le serveur crée une nouvelle version du document dans la base de données
+   - Le serveur notifie tous les utilisateurs que le document a été sauvegardé
 
 ### Appels audio
 
-1. La signalisation est gérée via Socket.IO
-2. Les connexions peer-to-peer sont établies via WebRTC
-3. Les flux audio sont transmis directement entre les clients
-4. Le backend maintient l'état des appels et gère les participants
+1. **Démarrer un appel**
+   - L'utilisateur A démarre un appel via l'événement `call:start`
+   - Le serveur crée un enregistrement d'appel dans la base de données
+   - Le serveur notifie les autres utilisateurs du document
+
+2. **Rejoindre un appel**
+   - L'utilisateur B rejoint l'appel via l'événement `call:join`
+   - Le serveur ajoute l'utilisateur comme participant à l'appel
+   - Le serveur notifie tous les participants qu'un nouvel utilisateur a rejoint
+
+3. **Établissement de la connexion WebRTC**
+   - Les utilisateurs échangent des offres SDP et des candidats ICE via Socket.IO
+   - Une fois connectés, les flux audio circulent directement entre les clients (P2P)
+   - Le backend ne fait que la signalisation, pas le transfert des flux audio
+
+4. **Terminer un appel**
+   - Un utilisateur quitte l'appel via l'événement `call:leave`
+   - Le serveur met à jour l'état de l'appel et notifie les autres participants
+
+### Système de notifications
+
+1. **Création d'une notification**
+   - Une action déclenche la création d'une notification (invitation, message, etc.)
+   - La notification est enregistrée dans la base de données
+   - Si le destinataire est connecté, la notification est envoyée en temps réel
+
+2. **Réception et gestion**
+   - Le client reçoit la notification via l'événement `notification:received`
+   - L'utilisateur peut marquer la notification comme lue
+   - Le statut est mis à jour dans la base de données
 
 ## Fonctionnalités principales
 
@@ -157,10 +195,10 @@ backend/
 
 ### Avec Docker (recommandé)
 
-1. Clonez le dépôt :
+1. Décompressez l'archive du projet :
    ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+   unzip projet-collaboration-documentaire.zip
+   cd projet-collaboration-documentaire
    ```
 
 2. Lancez les conteneurs avec Docker Compose :
@@ -261,7 +299,11 @@ Une collection Postman est disponible dans `backend/postman/` pour tester les AP
 
 ## Documentation
 
-- Documentation API : Disponible via Swagger UI à `http://localhost:3000/api-docs`
-- Documentation des routes API : Voir `frontend/API.md`
-- Architecture du backend : Voir `backend/docs/ARCHITECTURE.md`
-- Flux de données : Voir `backend/docs/DATA_FLOWS.md`
+- **Documentation API** : Disponible via Swagger UI à `http://localhost:3000/api-docs`
+- **Architecture du backend** : Voir [`backend/docs/ARCHITECTURE.md`](backend/docs/ARCHITECTURE.md) pour plus de détails sur l'architecture
+- **Flux de données détaillés** : Voir [`backend/docs/DATA_FLOWS.md`](backend/docs/DATA_FLOWS.md) pour des diagrammes et explications approfondies
+
+Ce README centralisé fournit une vue d'ensemble du projet. Pour des informations plus spécifiques, consultez les fichiers README dédiés :
+- [`frontend/README.md`](frontend/README.md) : Documentation complète du frontend Angular
+- [`backend/README.md`](backend/README.md) : Détails sur le backend
+- [`README-docker.md`](README-docker.md) : Instructions détaillées pour le déploiement avec Docker
