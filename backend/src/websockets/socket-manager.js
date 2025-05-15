@@ -10,7 +10,7 @@ class SocketManager {
   constructor(server) {
     this.io = socketIo(server, {
       cors: {
-        origin: 'http://localhost:4200',
+        origin: ['http://localhost', 'http://localhost:4200', 'http://localhost:4201', 'http://localhost:4202', 'http://localhost:4203'],
         methods: ['GET', 'POST'],
         credentials: true
       }

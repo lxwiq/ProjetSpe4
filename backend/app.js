@@ -50,7 +50,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: ['http://localhost:4200', 'http://localhost:4201', 'http://localhost:4202', 'http://localhost:4203'], // URLs de votre frontend Angular
+  origin: ['http://localhost', 'http://localhost:4200', 'http://localhost:4201', 'http://localhost:4202', 'http://localhost:4203'], // URLs de votre frontend Angular
   credentials: true // Permet l'envoi de cookies
 }));
 app.use(express.json());
