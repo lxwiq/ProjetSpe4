@@ -368,8 +368,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     // Vérifier que l'URL est valide et ne contient pas "undefined" ou "NaN"
     const url = formattedNotification.url;
     if (!url || url.includes('undefined') || url.includes('NaN')) {
-      console.error(`NavbarComponent: URL de notification invalide: ${url}`);
-
       // Rediriger vers une page par défaut en fonction du type de notification
       if (notification.type === 'document_invite' || notification.type === 'document_update') {
         return '/documents';
@@ -469,22 +467,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
    */
   getProfileImageUrl(): string {
     const user = this.getCurrentUser();
-    console.log('Navbar - Profile picture path:', user?.profile_picture);
 
     if (!user?.profile_picture) {
-      console.log('Navbar - No profile picture found');
       return '';
     }
 
     // Si l'URL est déjà complète (commence par http:// ou https://)
     if (user.profile_picture.startsWith('http://') || user.profile_picture.startsWith('https://')) {
-      console.log('Navbar - Using absolute URL:', user.profile_picture);
       return `${user.profile_picture}?t=${this.imageTimestamp}`;
     }
 
     // Sinon, préfixer avec l'URL de base de l'API et ajouter un timestamp pour éviter la mise en cache
     const fullUrl = `${environment.apiUrl}${user.profile_picture}?t=${this.imageTimestamp}`;
-    console.log('Navbar - Using constructed URL:', fullUrl);
     return fullUrl;
   }
 
@@ -512,15 +506,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
    * @param event Événement d'erreur
    */
   handleImageError(event: Event): void {
-    console.error('Erreur de chargement de l\'image de profil dans la navbar:', event);
     const imgElement = event.target as HTMLImageElement;
-    console.log('URL de l\'image qui n\'a pas pu être chargée:', imgElement.src);
 
     // Forcer l'affichage de l'avatar par défaut en supprimant l'image de profil de l'utilisateur actuel
     const user = this.getCurrentUser();
     if (user) {
       // Temporairement pour l'affichage uniquement, ne modifie pas les données réelles
-      console.log('Affichage de l\'avatar par défaut à la place');
       imgElement.style.display = 'none';
       // On pourrait créer dynamiquement un élément div avec les initiales, mais pour simplifier,
       // on va juste masquer l'image pour que l'avatar par défaut s'affiche au prochain rendu

@@ -58,25 +58,51 @@ export class CallService {
     this.websocketService.onCallStarted()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(data => {
-        console.log('CallService: Nouvel appel démarré', data);
+        console.log('[APPEL VOCAL] Notification reçue: nouvel appel démarré', {
+          callId: data.callId,
+          documentId: data.documentId,
+          initiatedBy: data.initiatedBy
+        });
+
         // Si l'utilisateur est déjà dans un appel, ignorer
         if (this.isInCall()) {
-          console.log('CallService: Déjà dans un appel, ignorer le nouvel appel');
+          console.log('[APPEL VOCAL] Déjà dans un appel, notification ignorée');
           return;
         }
 
         // Vérifier si l'appel concerne le document actif
         const currentDocumentId = this.getCurrentDocumentId();
-        if (currentDocumentId && data.documentId === currentDocumentId) {
-          console.log('CallService: Appel pour le document actif, proposer de rejoindre');
+        if (currentDocumentId && parseInt(data.documentId) === currentDocumentId) {
+          console.log('[APPEL VOCAL] Appel disponible pour le document actif', {
+            documentId: currentDocumentId,
+            callId: data.callId
+          });
+
           // Notifier l'interface utilisateur qu'un appel est disponible
-          this.activeCall.set({
-            id: data.callId,
-            document_id: data.documentId,
+          const call: Call = {
+            id: parseInt(data.callId),
+            document_id: parseInt(data.documentId),
             initiated_by: data.initiatedBy,
             started_at: new Date().toISOString(),
             call_type: 'audio',
             status: 'active'
+          };
+
+          // Mettre à jour l'état de l'appel actif
+          this.activeCall.set(call);
+
+          // Ajouter l'initiateur comme participant
+          this.addParticipant(data.initiatedBy, parseInt(data.callId));
+
+          console.log('[APPEL VOCAL] État de l\'appel mis à jour', {
+            callId: call.id,
+            documentId: call.document_id,
+            participants: this.participants().map(p => p.user_id)
+          });
+        } else {
+          console.log('[APPEL VOCAL] Appel ignoré (document différent)', {
+            callDocumentId: data.documentId,
+            currentDocumentId
           });
         }
       });
@@ -148,25 +174,30 @@ export class CallService {
   startCall(documentId: number): Observable<Call> {
     return new Observable(observer => {
       if (!documentId || isNaN(documentId)) {
-        console.error('CallService: ID de document invalide', documentId);
+        console.log('[APPEL VOCAL] Erreur: ID de document invalide', { documentId });
         observer.error(new Error('ID de document invalide'));
         return;
       }
 
-      console.log(`CallService: Démarrage d'un appel pour le document ${documentId}`);
+      console.log(`[APPEL VOCAL] Démarrage d'un appel pour le document ${documentId}`);
 
       // Demander l'accès au microphone
       this.requestAudioAccess().then(stream => {
         this.localStream = stream;
+        console.log('[APPEL VOCAL] Accès au microphone accordé');
 
         // Émettre l'événement pour démarrer l'appel
         this.websocketService.emit('call:start', { documentId }, (response: any) => {
           if (response && response.success) {
-            console.log('CallService: Appel démarré avec succès', response.data);
+            console.log('[APPEL VOCAL] Appel démarré avec succès', {
+              callId: response.data.callId,
+              documentId: response.data.documentId,
+              participants: response.data.participants
+            });
 
             // Vérifier que les données de l'appel sont valides
             if (!response.data || !response.data.callId) {
-              console.error('CallService: Données d\'appel invalides', response.data);
+              console.log('[APPEL VOCAL] Erreur: Données d\'appel invalides', { response: response.data });
               this.cleanupAudioResources();
               observer.error(new Error('Données d\'appel invalides'));
               return;
@@ -189,22 +220,27 @@ export class CallService {
             const currentUser = this.authService.currentUser();
             if (currentUser) {
               this.addParticipant(currentUser.id, call.id);
+              console.log('[APPEL VOCAL] Utilisateur ajouté comme participant', {
+                userId: currentUser.id,
+                callId: call.id
+              });
             }
 
             // Configurer la détection d'activité vocale
             this.setupVoiceActivityDetection();
+            console.log('[APPEL VOCAL] Détection d\'activité vocale configurée');
 
             observer.next(call);
             observer.complete();
           } else {
             const errorMessage = response?.error || 'Erreur inconnue';
-            console.error('CallService: Erreur lors du démarrage de l\'appel', errorMessage);
+            console.log('[APPEL VOCAL] Erreur lors du démarrage de l\'appel', { error: errorMessage });
             this.cleanupAudioResources();
             observer.error(new Error(errorMessage));
           }
         });
       }).catch(error => {
-        console.error('CallService: Erreur lors de l\'accès au microphone', error);
+        console.log('[APPEL VOCAL] Erreur lors de l\'accès au microphone', { error: error.message });
         observer.error(new Error('Impossible d\'accéder au microphone. Veuillez vérifier les permissions.'));
       });
     });
@@ -218,16 +254,16 @@ export class CallService {
   joinCall(callId: number): Observable<Call> {
     return new Observable(observer => {
       if (!callId || isNaN(callId)) {
-        console.error('CallService: ID d\'appel invalide', callId);
+        console.log('[APPEL VOCAL] Erreur: ID d\'appel invalide', { callId });
         observer.error(new Error('ID d\'appel invalide'));
         return;
       }
 
-      console.log(`CallService: Rejoindre l'appel ${callId}`);
+      console.log(`[APPEL VOCAL] Tentative de rejoindre l'appel ${callId}`);
 
       // Vérifier si nous avons déjà un appel actif
       if (!this.activeCall()) {
-        console.error('CallService: Aucun appel actif à rejoindre');
+        console.log('[APPEL VOCAL] Erreur: Aucun appel actif à rejoindre');
         observer.error(new Error('Aucun appel actif à rejoindre'));
         return;
       }
@@ -235,16 +271,20 @@ export class CallService {
       // Demander l'accès au microphone
       this.requestAudioAccess().then(stream => {
         this.localStream = stream;
+        console.log('[APPEL VOCAL] Accès au microphone accordé pour rejoindre l\'appel');
 
         // Émettre l'événement pour rejoindre l'appel
         this.websocketService.emit('call:join', { callId }, (response: any) => {
           if (response && response.success) {
-            console.log('CallService: Appel rejoint avec succès', response.data);
+            console.log('[APPEL VOCAL] Appel rejoint avec succès', {
+              callId: response.data.callId,
+              participants: response.data.participants
+            });
 
             // Mettre à jour l'état
             const call = this.activeCall();
             if (!call) {
-              console.error('CallService: Appel non disponible après avoir rejoint');
+              console.log('[APPEL VOCAL] Erreur: Appel non disponible après avoir rejoint');
               this.cleanupAudioResources();
               observer.error(new Error('Appel non disponible'));
               return;
@@ -257,14 +297,19 @@ export class CallService {
             const currentUserId = this.authService.currentUser()?.id;
 
             if (participants && Array.isArray(participants)) {
-              console.log('CallService: Connexion avec les participants existants', participants);
+              console.log('[APPEL VOCAL] Connexion avec les participants existants', {
+                participants,
+                count: participants.length
+              });
               participants.forEach(userId => {
                 if (userId !== currentUserId) {
                   this.createPeerConnection(userId, false);
                 }
               });
             } else {
-              console.log('CallService: Aucun participant existant ou format invalide', response.data);
+              console.log('[APPEL VOCAL] Aucun participant existant ou format invalide', {
+                responseData: response.data
+              });
             }
 
             // Ajouter l'utilisateur actuel comme participant s'il n'est pas déjà présent
@@ -279,13 +324,13 @@ export class CallService {
             observer.complete();
           } else {
             const errorMessage = response?.error || 'Erreur inconnue';
-            console.error('CallService: Erreur lors de la connexion à l\'appel', errorMessage);
+            console.log('[APPEL VOCAL] Erreur lors de la connexion à l\'appel', { error: errorMessage });
             this.cleanupAudioResources();
             observer.error(new Error(errorMessage));
           }
         });
       }).catch(error => {
-        console.error('CallService: Erreur lors de l\'accès au microphone', error);
+        console.log('[APPEL VOCAL] Erreur lors de l\'accès au microphone', { error: error.message });
         observer.error(new Error('Impossible d\'accéder au microphone. Veuillez vérifier les permissions.'));
       });
     });
@@ -304,12 +349,15 @@ export class CallService {
     return new Observable(observer => {
       this.websocketService.emit('call:leave', { callId: call.id }, (response: any) => {
         if (response.success) {
-          console.log('CallService: Appel quitté avec succès');
+          console.log('[APPEL VOCAL] Appel quitté avec succès', { callId: call.id });
           this.handleCallEnded();
           observer.next(true);
           observer.complete();
         } else {
-          console.error('CallService: Erreur lors de la déconnexion de l\'appel', response.error);
+          console.log('[APPEL VOCAL] Erreur lors de la déconnexion de l\'appel', {
+            callId: call.id,
+            error: response.error
+          });
           observer.error(new Error(response.error));
         }
       });
@@ -329,7 +377,74 @@ export class CallService {
       });
 
       this.isMuted.set(shouldMute);
-      console.log(`CallService: Microphone ${shouldMute ? 'désactivé' : 'activé'}`);
+      console.log(`[APPEL VOCAL] Microphone ${shouldMute ? 'désactivé' : 'activé'}`);
+    }
+  }
+
+  /**
+   * Change le périphérique d'entrée audio
+   * @param deviceId ID du périphérique
+   * @returns Promise qui se résout lorsque le périphérique est changé
+   */
+  async changeInputDevice(deviceId: string): Promise<void> {
+    if (!deviceId) {
+      console.error('CallService: ID de périphérique invalide');
+      throw new Error('ID de périphérique invalide');
+    }
+
+    if (!this.isInCall()) {
+      console.warn('CallService: Pas dans un appel, impossible de changer de périphérique');
+      return;
+    }
+
+    try {
+      console.log(`CallService: Changement de périphérique d'entrée audio vers ${deviceId}`);
+
+      // Récupérer l'état du microphone actuel
+      const wasMuted = this.isMuted();
+
+      // Arrêter les pistes actuelles
+      if (this.localStream) {
+        this.localStream.getTracks().forEach(track => track.stop());
+      }
+
+      // Demander l'accès au nouveau périphérique
+      const constraints: MediaStreamConstraints = {
+        audio: { deviceId: { exact: deviceId } },
+        video: false
+      };
+
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.localStream = newStream;
+
+      // Appliquer l'état du microphone
+      if (wasMuted) {
+        this.toggleMute(true);
+      }
+
+      // Mettre à jour les connexions existantes
+      this.peerConnections.forEach((peerConnection, userId) => {
+        // Supprimer les anciennes pistes
+        const senders = peerConnection.getSenders();
+        senders.forEach(sender => {
+          if (sender.track && sender.track.kind === 'audio') {
+            peerConnection.removeTrack(sender);
+          }
+        });
+
+        // Ajouter les nouvelles pistes
+        newStream.getAudioTracks().forEach(track => {
+          peerConnection.addTrack(track, newStream);
+        });
+      });
+
+      // Mettre à jour la détection d'activité vocale
+      this.setupVoiceActivityDetection();
+
+      console.log('CallService: Périphérique d\'entrée audio changé avec succès');
+    } catch (error) {
+      console.error('CallService: Erreur lors du changement de périphérique d\'entrée audio', error);
+      throw error;
     }
   }
 
@@ -593,7 +708,10 @@ export class CallService {
     const currentParticipants = this.participants();
 
     // Vérifier si le participant existe déjà
-    if (!currentParticipants.some(p => p.user_id === userId)) {
+    const existingParticipantIndex = currentParticipants.findIndex(p => p.user_id === userId);
+
+    if (existingParticipantIndex === -1) {
+      // Nouveau participant
       const newParticipant: CallParticipant = {
         user_id: userId,
         call_id: callId,
@@ -606,8 +724,21 @@ export class CallService {
       this.participants.set([...currentParticipants, newParticipant]);
       this.callJoined.next(newParticipant);
       console.log(`CallService: Participant ${userId} ajouté à l'appel ${callId}`);
+    } else if (!currentParticipants[existingParticipantIndex].is_active) {
+      // Participant existant mais inactif - le réactiver
+      const updatedParticipants = [...currentParticipants];
+      updatedParticipants[existingParticipantIndex] = {
+        ...updatedParticipants[existingParticipantIndex],
+        is_active: true,
+        joined_at: new Date().toISOString(),
+        left_at: undefined
+      };
+
+      this.participants.set(updatedParticipants);
+      this.callJoined.next(updatedParticipants[existingParticipantIndex]);
+      console.log(`CallService: Participant ${userId} réactivé dans l'appel ${callId}`);
     } else {
-      console.log(`CallService: Participant ${userId} déjà présent dans l'appel ${callId}`);
+      console.log(`CallService: Participant ${userId} déjà actif dans l'appel ${callId}`);
     }
   }
 

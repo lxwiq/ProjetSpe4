@@ -11,7 +11,17 @@ export class CursorManager {
   constructor(editor: any, currentUserId: number) {
     this.editor = editor;
     this.currentUserId = currentUserId;
-    this.container = this.editor.container.querySelector('.ql-editor');
+
+    // Vérifier si editor et editor.container sont définis avant d'utiliser querySelector
+    if (editor && editor.querySelector) {
+      this.container = editor.querySelector('.ql-editor');
+    } else if (editor && editor.container && editor.container.querySelector) {
+      this.container = editor.container.querySelector('.ql-editor');
+    } else {
+      console.error('CursorManager: Impossible de trouver le conteneur de l\'éditeur');
+      // Créer un conteneur par défaut pour éviter les erreurs
+      this.container = document.createElement('div');
+    }
   }
 
   /**
@@ -22,8 +32,20 @@ export class CursorManager {
    * @param color Couleur du curseur (optionnelle)
    */
   updateCursor(userId: number, username: string, position: { index: number, length: number }, color?: string): void {
+    console.log(`Mise à jour du curseur pour l'utilisateur ${userId} (${username})`, position);
+
+    // Vérification stricte pour éviter les curseurs dupliqués
     // Ne pas afficher le curseur de l'utilisateur courant
     if (userId === this.currentUserId) {
+      console.log(`Curseur ignoré pour l'utilisateur courant ${userId}`);
+      // S'assurer qu'il n'y a pas de curseur pour l'utilisateur courant
+      this.removeCursor(userId);
+      return;
+    }
+
+    // Vérifier que la position est valide
+    if (position === null || position === undefined || position.index === undefined) {
+      console.warn(`Position de curseur invalide pour l'utilisateur ${userId}`, position);
       return;
     }
 
@@ -34,31 +56,32 @@ export class CursorManager {
 
     // Créer ou mettre à jour le curseur
     let cursorInfo = this.cursors.get(userId);
-    
+
     if (!cursorInfo) {
       // Créer les éléments du curseur
       const cursorElement = document.createElement('div');
       cursorElement.className = 'ql-cursor';
-      
+      cursorElement.setAttribute('data-user-id', userId.toString());
+
       const caretElement = document.createElement('div');
       caretElement.className = 'ql-cursor-caret';
       caretElement.style.backgroundColor = color;
-      
+
       const flagElement = document.createElement('div');
       flagElement.className = 'ql-cursor-flag';
       flagElement.style.backgroundColor = color;
       flagElement.textContent = username;
-      
+
       const selectionElement = document.createElement('div');
       selectionElement.className = 'ql-cursor-selection';
       selectionElement.style.backgroundColor = color;
-      
+
       cursorElement.appendChild(caretElement);
       cursorElement.appendChild(flagElement);
       cursorElement.appendChild(selectionElement);
-      
+
       this.container.appendChild(cursorElement);
-      
+
       cursorInfo = {
         userId,
         username,
@@ -69,17 +92,17 @@ export class CursorManager {
         selection: selectionElement,
         position
       };
-      
+
       this.cursors.set(userId, cursorInfo);
     } else {
       // Mettre à jour les informations du curseur
       cursorInfo.position = position;
       cursorInfo.username = username;
-      
+
       // Mettre à jour le texte du drapeau
       cursorInfo.flag.textContent = username;
     }
-    
+
     // Mettre à jour la position du curseur
     this.updateCursorPosition(cursorInfo);
   }
@@ -90,29 +113,42 @@ export class CursorManager {
    */
   private updateCursorPosition(cursorInfo: CursorInfo): void {
     const { position, element, caret, flag, selection } = cursorInfo;
-    
+
     try {
-      // Obtenir les coordonnées du curseur
-      const startRange = this.editor.getSelection(position.index, 0);
-      if (!startRange || !startRange.index) {
+      // Vérifier que l'éditeur est disponible
+      if (!this.editor || typeof this.editor.getSelection !== 'function' || typeof this.editor.getBounds !== 'function') {
+        console.warn('Éditeur non disponible pour la mise à jour de la position du curseur');
         return;
       }
-      
+
+      // Obtenir les coordonnées du curseur
+      const startRange = this.editor.getSelection(position.index, 0);
+      if (!startRange || startRange.index === undefined) {
+        console.warn('Impossible d\'obtenir la sélection pour la position', position.index);
+        return;
+      }
+
       const bounds = this.editor.getBounds(position.index);
-      
+      if (!bounds) {
+        console.warn('Impossible d\'obtenir les limites pour la position', position.index);
+        return;
+      }
+
+      console.log(`Position du curseur pour l'utilisateur ${cursorInfo.userId}:`, bounds);
+
       // Positionner le curseur
       caret.style.height = bounds.height + 'px';
       caret.style.top = bounds.top + 'px';
       caret.style.left = bounds.left + 'px';
-      
+
       // Positionner le drapeau
       flag.style.top = (bounds.top - 14) + 'px';
       flag.style.left = bounds.left + 'px';
-      
+
       // Afficher la sélection si nécessaire
       if (position.length > 0) {
         const endBounds = this.editor.getBounds(position.index + position.length);
-        
+
         // Gérer la sélection sur une seule ligne
         if (endBounds.top === bounds.top) {
           selection.style.top = bounds.top + 'px';
@@ -128,10 +164,10 @@ export class CursorManager {
       } else {
         selection.style.display = 'none';
       }
-      
+
       // Afficher le curseur
       element.style.display = 'block';
-      
+
       // Ajouter une animation pour faire clignoter le curseur
       caret.style.animation = 'cursor-blink 1s infinite';
     } catch (error) {
@@ -145,13 +181,13 @@ export class CursorManager {
    */
   removeCursor(userId: number): void {
     const cursorInfo = this.cursors.get(userId);
-    
+
     if (cursorInfo) {
       // Supprimer l'élément du DOM
       if (cursorInfo.element && cursorInfo.element.parentNode) {
         cursorInfo.element.parentNode.removeChild(cursorInfo.element);
       }
-      
+
       // Supprimer de la map
       this.cursors.delete(userId);
     }
@@ -166,7 +202,7 @@ export class CursorManager {
         cursorInfo.element.parentNode.removeChild(cursorInfo.element);
       }
     });
-    
+
     this.cursors.clear();
   }
 
@@ -189,7 +225,7 @@ export class CursorManager {
       '#FF33F5', // Magenta
       '#33FFB8'  // Turquoise
     ];
-    
+
     // Utiliser l'ID de l'utilisateur pour choisir une couleur
     return colors[userId % colors.length];
   }

@@ -9,13 +9,13 @@ router.get('/document/:documentId/active', verifyToken, async (req, res) => {
   try {
     const { documentId } = req.params;
     const userId = req.userId;
-    
+
     // Vérifier si l'utilisateur a accès au document
     const hasAccess = await checkUserDocumentAccess(documentId, userId);
     if (!hasAccess) {
       return res.status(403).json({ message: 'Accès refusé au document' });
     }
-    
+
     // Récupérer les appels actifs
     const activeCalls = await prisma.calls.findMany({
       where: {
@@ -48,13 +48,13 @@ router.get('/document/:documentId/active', verifyToken, async (req, res) => {
         }
       }
     });
-    
+
     res.json({
       message: 'Appels actifs récupérés avec succès',
       data: activeCalls
     });
   } catch (error) {
-    console.error(error);
+    console.error('[APPEL VOCAL] Erreur lors de la récupération des appels actifs:', error);
     res.status(500).json({ message: 'Erreur lors de la récupération des appels actifs' });
   }
 });
@@ -64,7 +64,7 @@ router.get('/:callId', verifyToken, async (req, res) => {
   try {
     const { callId } = req.params;
     const userId = req.userId;
-    
+
     // Récupérer l'appel
     const call = await prisma.calls.findUnique({
       where: { id: parseInt(callId) },
@@ -95,23 +95,23 @@ router.get('/:callId', verifyToken, async (req, res) => {
         }
       }
     });
-    
+
     if (!call) {
       return res.status(404).json({ message: 'Appel non trouvé' });
     }
-    
+
     // Vérifier si l'utilisateur a accès au document
     const hasAccess = await checkUserDocumentAccess(call.document_id, userId);
     if (!hasAccess) {
       return res.status(403).json({ message: 'Accès refusé au document' });
     }
-    
+
     res.json({
       message: 'Appel récupéré avec succès',
       data: call
     });
   } catch (error) {
-    console.error(error);
+    console.error('[APPEL VOCAL] Erreur lors de la récupération de l\'appel:', error);
     res.status(500).json({ message: 'Erreur lors de la récupération de l\'appel' });
   }
 });
@@ -121,7 +121,7 @@ router.put('/:callId/end', verifyToken, async (req, res) => {
   try {
     const { callId } = req.params;
     const userId = req.userId;
-    
+
     // Récupérer l'appel
     const call = await prisma.calls.findUnique({
       where: { id: parseInt(callId) },
@@ -129,17 +129,17 @@ router.put('/:callId/end', verifyToken, async (req, res) => {
         documents: true
       }
     });
-    
+
     if (!call) {
       return res.status(404).json({ message: 'Appel non trouvé' });
     }
-    
+
     // Vérifier si l'utilisateur a accès au document
     const hasAccess = await checkUserDocumentAccess(call.document_id, userId);
     if (!hasAccess) {
       return res.status(403).json({ message: 'Accès refusé au document' });
     }
-    
+
     // Mettre à jour l'appel
     const updatedCall = await prisma.calls.update({
       where: { id: parseInt(callId) },
@@ -148,7 +148,7 @@ router.put('/:callId/end', verifyToken, async (req, res) => {
         ended_at: new Date()
       }
     });
-    
+
     // Mettre à jour tous les participants
     await prisma.call_participants.updateMany({
       where: {
@@ -160,13 +160,13 @@ router.put('/:callId/end', verifyToken, async (req, res) => {
         left_at: new Date()
       }
     });
-    
+
     res.json({
       message: 'Appel terminé avec succès',
       data: updatedCall
     });
   } catch (error) {
-    console.error(error);
+    console.error('[APPEL VOCAL] Erreur lors de la terminaison de l\'appel:', error);
     res.status(500).json({ message: 'Erreur lors de la terminaison de l\'appel' });
   }
 });
@@ -196,10 +196,10 @@ async function checkUserDocumentAccess(documentId, userId) {
         is_deleted: false
       }
     });
-    
+
     return !!document;
   } catch (error) {
-    console.error('Erreur lors de la vérification de l\'accès au document:', error);
+    console.error('[APPEL VOCAL] Erreur lors de la vérification de l\'accès au document:', error);
     return false;
   }
 }

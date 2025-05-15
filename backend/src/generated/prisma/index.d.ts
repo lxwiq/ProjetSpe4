@@ -24,11 +24,6 @@ export type call_participants = $Result.DefaultSelection<Prisma.$call_participan
  */
 export type calls = $Result.DefaultSelection<Prisma.$callsPayload>
 /**
- * Model document_invitations
- * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
- */
-export type document_invitations = $Result.DefaultSelection<Prisma.$document_invitationsPayload>
-/**
  * Model document_versions
  * 
  */
@@ -208,16 +203,6 @@ export class PrismaClient<
     * ```
     */
   get calls(): Prisma.callsDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.document_invitations`: Exposes CRUD operations for the **document_invitations** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Document_invitations
-    * const document_invitations = await prisma.document_invitations.findMany()
-    * ```
-    */
-  get document_invitations(): Prisma.document_invitationsDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.document_versions`: Exposes CRUD operations for the **document_versions** model.
@@ -730,7 +715,6 @@ export namespace Prisma {
   export const ModelName: {
     call_participants: 'call_participants',
     calls: 'calls',
-    document_invitations: 'document_invitations',
     document_versions: 'document_versions',
     documents: 'documents',
     users: 'users',
@@ -756,7 +740,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "call_participants" | "calls" | "document_invitations" | "document_versions" | "documents" | "users" | "conversations" | "conversation_participants" | "messages" | "notifications"
+      modelProps: "call_participants" | "calls" | "document_versions" | "documents" | "users" | "conversations" | "conversation_participants" | "messages" | "notifications"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -905,80 +889,6 @@ export namespace Prisma {
           count: {
             args: Prisma.callsCountArgs<ExtArgs>
             result: $Utils.Optional<CallsCountAggregateOutputType> | number
-          }
-        }
-      }
-      document_invitations: {
-        payload: Prisma.$document_invitationsPayload<ExtArgs>
-        fields: Prisma.document_invitationsFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.document_invitationsFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.document_invitationsFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>
-          }
-          findFirst: {
-            args: Prisma.document_invitationsFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.document_invitationsFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>
-          }
-          findMany: {
-            args: Prisma.document_invitationsFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>[]
-          }
-          create: {
-            args: Prisma.document_invitationsCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>
-          }
-          createMany: {
-            args: Prisma.document_invitationsCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.document_invitationsCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>[]
-          }
-          delete: {
-            args: Prisma.document_invitationsDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>
-          }
-          update: {
-            args: Prisma.document_invitationsUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>
-          }
-          deleteMany: {
-            args: Prisma.document_invitationsDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.document_invitationsUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateManyAndReturn: {
-            args: Prisma.document_invitationsUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>[]
-          }
-          upsert: {
-            args: Prisma.document_invitationsUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$document_invitationsPayload>
-          }
-          aggregate: {
-            args: Prisma.Document_invitationsAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateDocument_invitations>
-          }
-          groupBy: {
-            args: Prisma.document_invitationsGroupByArgs<ExtArgs>
-            result: $Utils.Optional<Document_invitationsGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.document_invitationsCountArgs<ExtArgs>
-            result: $Utils.Optional<Document_invitationsCountAggregateOutputType> | number
           }
         }
       }
@@ -1586,7 +1496,6 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     call_participants?: call_participantsOmit
     calls?: callsOmit
-    document_invitations?: document_invitationsOmit
     document_versions?: document_versionsOmit
     documents?: documentsOmit
     users?: usersOmit
@@ -1720,14 +1629,12 @@ export namespace Prisma {
 
   export type DocumentsCountOutputType = {
     calls: number
-    document_invitations: number
     document_versions: number
     other_documents: number
   }
 
   export type DocumentsCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     calls?: boolean | DocumentsCountOutputTypeCountCallsArgs
-    document_invitations?: boolean | DocumentsCountOutputTypeCountDocument_invitationsArgs
     document_versions?: boolean | DocumentsCountOutputTypeCountDocument_versionsArgs
     other_documents?: boolean | DocumentsCountOutputTypeCountOther_documentsArgs
   }
@@ -1753,13 +1660,6 @@ export namespace Prisma {
   /**
    * DocumentsCountOutputType without action
    */
-  export type DocumentsCountOutputTypeCountDocument_invitationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: document_invitationsWhereInput
-  }
-
-  /**
-   * DocumentsCountOutputType without action
-   */
   export type DocumentsCountOutputTypeCountDocument_versionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: document_versionsWhereInput
   }
@@ -1779,8 +1679,6 @@ export namespace Prisma {
   export type UsersCountOutputType = {
     call_participants: number
     calls: number
-    document_invitations_document_invitations_invited_byTousers: number
-    document_invitations_document_invitations_user_idTousers: number
     document_versions: number
     documents_documents_last_modified_byTousers: number
     documents_documents_owner_idTousers: number
@@ -1794,8 +1692,6 @@ export namespace Prisma {
   export type UsersCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     call_participants?: boolean | UsersCountOutputTypeCountCall_participantsArgs
     calls?: boolean | UsersCountOutputTypeCountCallsArgs
-    document_invitations_document_invitations_invited_byTousers?: boolean | UsersCountOutputTypeCountDocument_invitations_document_invitations_invited_byTousersArgs
-    document_invitations_document_invitations_user_idTousers?: boolean | UsersCountOutputTypeCountDocument_invitations_document_invitations_user_idTousersArgs
     document_versions?: boolean | UsersCountOutputTypeCountDocument_versionsArgs
     documents_documents_last_modified_byTousers?: boolean | UsersCountOutputTypeCountDocuments_documents_last_modified_byTousersArgs
     documents_documents_owner_idTousers?: boolean | UsersCountOutputTypeCountDocuments_documents_owner_idTousersArgs
@@ -1829,20 +1725,6 @@ export namespace Prisma {
    */
   export type UsersCountOutputTypeCountCallsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: callsWhereInput
-  }
-
-  /**
-   * UsersCountOutputType without action
-   */
-  export type UsersCountOutputTypeCountDocument_invitations_document_invitations_invited_byTousersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: document_invitationsWhereInput
-  }
-
-  /**
-   * UsersCountOutputType without action
-   */
-  export type UsersCountOutputTypeCountDocument_invitations_document_invitations_user_idTousersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: document_invitationsWhereInput
   }
 
   /**
@@ -4232,1184 +4114,6 @@ export namespace Prisma {
 
 
   /**
-   * Model document_invitations
-   */
-
-  export type AggregateDocument_invitations = {
-    _count: Document_invitationsCountAggregateOutputType | null
-    _avg: Document_invitationsAvgAggregateOutputType | null
-    _sum: Document_invitationsSumAggregateOutputType | null
-    _min: Document_invitationsMinAggregateOutputType | null
-    _max: Document_invitationsMaxAggregateOutputType | null
-  }
-
-  export type Document_invitationsAvgAggregateOutputType = {
-    id: number | null
-    document_id: number | null
-    user_id: number | null
-    invited_by: number | null
-  }
-
-  export type Document_invitationsSumAggregateOutputType = {
-    id: number | null
-    document_id: number | null
-    user_id: number | null
-    invited_by: number | null
-  }
-
-  export type Document_invitationsMinAggregateOutputType = {
-    id: number | null
-    document_id: number | null
-    user_id: number | null
-    permission_level: string | null
-    invited_by: number | null
-    invitation_date: Date | null
-    accepted_date: Date | null
-    is_active: boolean | null
-  }
-
-  export type Document_invitationsMaxAggregateOutputType = {
-    id: number | null
-    document_id: number | null
-    user_id: number | null
-    permission_level: string | null
-    invited_by: number | null
-    invitation_date: Date | null
-    accepted_date: Date | null
-    is_active: boolean | null
-  }
-
-  export type Document_invitationsCountAggregateOutputType = {
-    id: number
-    document_id: number
-    user_id: number
-    permission_level: number
-    invited_by: number
-    invitation_date: number
-    accepted_date: number
-    is_active: number
-    _all: number
-  }
-
-
-  export type Document_invitationsAvgAggregateInputType = {
-    id?: true
-    document_id?: true
-    user_id?: true
-    invited_by?: true
-  }
-
-  export type Document_invitationsSumAggregateInputType = {
-    id?: true
-    document_id?: true
-    user_id?: true
-    invited_by?: true
-  }
-
-  export type Document_invitationsMinAggregateInputType = {
-    id?: true
-    document_id?: true
-    user_id?: true
-    permission_level?: true
-    invited_by?: true
-    invitation_date?: true
-    accepted_date?: true
-    is_active?: true
-  }
-
-  export type Document_invitationsMaxAggregateInputType = {
-    id?: true
-    document_id?: true
-    user_id?: true
-    permission_level?: true
-    invited_by?: true
-    invitation_date?: true
-    accepted_date?: true
-    is_active?: true
-  }
-
-  export type Document_invitationsCountAggregateInputType = {
-    id?: true
-    document_id?: true
-    user_id?: true
-    permission_level?: true
-    invited_by?: true
-    invitation_date?: true
-    accepted_date?: true
-    is_active?: true
-    _all?: true
-  }
-
-  export type Document_invitationsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which document_invitations to aggregate.
-     */
-    where?: document_invitationsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of document_invitations to fetch.
-     */
-    orderBy?: document_invitationsOrderByWithRelationInput | document_invitationsOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: document_invitationsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` document_invitations from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` document_invitations.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned document_invitations
-    **/
-    _count?: true | Document_invitationsCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to average
-    **/
-    _avg?: Document_invitationsAvgAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to sum
-    **/
-    _sum?: Document_invitationsSumAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: Document_invitationsMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: Document_invitationsMaxAggregateInputType
-  }
-
-  export type GetDocument_invitationsAggregateType<T extends Document_invitationsAggregateArgs> = {
-        [P in keyof T & keyof AggregateDocument_invitations]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateDocument_invitations[P]>
-      : GetScalarType<T[P], AggregateDocument_invitations[P]>
-  }
-
-
-
-
-  export type document_invitationsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: document_invitationsWhereInput
-    orderBy?: document_invitationsOrderByWithAggregationInput | document_invitationsOrderByWithAggregationInput[]
-    by: Document_invitationsScalarFieldEnum[] | Document_invitationsScalarFieldEnum
-    having?: document_invitationsScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: Document_invitationsCountAggregateInputType | true
-    _avg?: Document_invitationsAvgAggregateInputType
-    _sum?: Document_invitationsSumAggregateInputType
-    _min?: Document_invitationsMinAggregateInputType
-    _max?: Document_invitationsMaxAggregateInputType
-  }
-
-  export type Document_invitationsGroupByOutputType = {
-    id: number
-    document_id: number
-    user_id: number
-    permission_level: string
-    invited_by: number | null
-    invitation_date: Date | null
-    accepted_date: Date | null
-    is_active: boolean | null
-    _count: Document_invitationsCountAggregateOutputType | null
-    _avg: Document_invitationsAvgAggregateOutputType | null
-    _sum: Document_invitationsSumAggregateOutputType | null
-    _min: Document_invitationsMinAggregateOutputType | null
-    _max: Document_invitationsMaxAggregateOutputType | null
-  }
-
-  type GetDocument_invitationsGroupByPayload<T extends document_invitationsGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<Document_invitationsGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof Document_invitationsGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], Document_invitationsGroupByOutputType[P]>
-            : GetScalarType<T[P], Document_invitationsGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type document_invitationsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    document_id?: boolean
-    user_id?: boolean
-    permission_level?: boolean
-    invited_by?: boolean
-    invitation_date?: boolean
-    accepted_date?: boolean
-    is_active?: boolean
-    documents?: boolean | documentsDefaultArgs<ExtArgs>
-    users_document_invitations_invited_byTousers?: boolean | document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs>
-    users_document_invitations_user_idTousers?: boolean | usersDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["document_invitations"]>
-
-  export type document_invitationsSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    document_id?: boolean
-    user_id?: boolean
-    permission_level?: boolean
-    invited_by?: boolean
-    invitation_date?: boolean
-    accepted_date?: boolean
-    is_active?: boolean
-    documents?: boolean | documentsDefaultArgs<ExtArgs>
-    users_document_invitations_invited_byTousers?: boolean | document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs>
-    users_document_invitations_user_idTousers?: boolean | usersDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["document_invitations"]>
-
-  export type document_invitationsSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    document_id?: boolean
-    user_id?: boolean
-    permission_level?: boolean
-    invited_by?: boolean
-    invitation_date?: boolean
-    accepted_date?: boolean
-    is_active?: boolean
-    documents?: boolean | documentsDefaultArgs<ExtArgs>
-    users_document_invitations_invited_byTousers?: boolean | document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs>
-    users_document_invitations_user_idTousers?: boolean | usersDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["document_invitations"]>
-
-  export type document_invitationsSelectScalar = {
-    id?: boolean
-    document_id?: boolean
-    user_id?: boolean
-    permission_level?: boolean
-    invited_by?: boolean
-    invitation_date?: boolean
-    accepted_date?: boolean
-    is_active?: boolean
-  }
-
-  export type document_invitationsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "document_id" | "user_id" | "permission_level" | "invited_by" | "invitation_date" | "accepted_date" | "is_active", ExtArgs["result"]["document_invitations"]>
-  export type document_invitationsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    documents?: boolean | documentsDefaultArgs<ExtArgs>
-    users_document_invitations_invited_byTousers?: boolean | document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs>
-    users_document_invitations_user_idTousers?: boolean | usersDefaultArgs<ExtArgs>
-  }
-  export type document_invitationsIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    documents?: boolean | documentsDefaultArgs<ExtArgs>
-    users_document_invitations_invited_byTousers?: boolean | document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs>
-    users_document_invitations_user_idTousers?: boolean | usersDefaultArgs<ExtArgs>
-  }
-  export type document_invitationsIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    documents?: boolean | documentsDefaultArgs<ExtArgs>
-    users_document_invitations_invited_byTousers?: boolean | document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs>
-    users_document_invitations_user_idTousers?: boolean | usersDefaultArgs<ExtArgs>
-  }
-
-  export type $document_invitationsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "document_invitations"
-    objects: {
-      documents: Prisma.$documentsPayload<ExtArgs>
-      users_document_invitations_invited_byTousers: Prisma.$usersPayload<ExtArgs> | null
-      users_document_invitations_user_idTousers: Prisma.$usersPayload<ExtArgs>
-    }
-    scalars: $Extensions.GetPayloadResult<{
-      id: number
-      document_id: number
-      user_id: number
-      permission_level: string
-      invited_by: number | null
-      invitation_date: Date | null
-      accepted_date: Date | null
-      is_active: boolean | null
-    }, ExtArgs["result"]["document_invitations"]>
-    composites: {}
-  }
-
-  type document_invitationsGetPayload<S extends boolean | null | undefined | document_invitationsDefaultArgs> = $Result.GetResult<Prisma.$document_invitationsPayload, S>
-
-  type document_invitationsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<document_invitationsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: Document_invitationsCountAggregateInputType | true
-    }
-
-  export interface document_invitationsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['document_invitations'], meta: { name: 'document_invitations' } }
-    /**
-     * Find zero or one Document_invitations that matches the filter.
-     * @param {document_invitationsFindUniqueArgs} args - Arguments to find a Document_invitations
-     * @example
-     * // Get one Document_invitations
-     * const document_invitations = await prisma.document_invitations.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends document_invitationsFindUniqueArgs>(args: SelectSubset<T, document_invitationsFindUniqueArgs<ExtArgs>>): Prisma__document_invitationsClient<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one Document_invitations that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {document_invitationsFindUniqueOrThrowArgs} args - Arguments to find a Document_invitations
-     * @example
-     * // Get one Document_invitations
-     * const document_invitations = await prisma.document_invitations.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends document_invitationsFindUniqueOrThrowArgs>(args: SelectSubset<T, document_invitationsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__document_invitationsClient<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first Document_invitations that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {document_invitationsFindFirstArgs} args - Arguments to find a Document_invitations
-     * @example
-     * // Get one Document_invitations
-     * const document_invitations = await prisma.document_invitations.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends document_invitationsFindFirstArgs>(args?: SelectSubset<T, document_invitationsFindFirstArgs<ExtArgs>>): Prisma__document_invitationsClient<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first Document_invitations that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {document_invitationsFindFirstOrThrowArgs} args - Arguments to find a Document_invitations
-     * @example
-     * // Get one Document_invitations
-     * const document_invitations = await prisma.document_invitations.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends document_invitationsFindFirstOrThrowArgs>(args?: SelectSubset<T, document_invitationsFindFirstOrThrowArgs<ExtArgs>>): Prisma__document_invitationsClient<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more Document_invitations that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {document_invitationsFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all Document_invitations
-     * const document_invitations = await prisma.document_invitations.findMany()
-     * 
-     * // Get first 10 Document_invitations
-     * const document_invitations = await prisma.document_invitations.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const document_invitationsWithIdOnly = await prisma.document_invitations.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends document_invitationsFindManyArgs>(args?: SelectSubset<T, document_invitationsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a Document_invitations.
-     * @param {document_invitationsCreateArgs} args - Arguments to create a Document_invitations.
-     * @example
-     * // Create one Document_invitations
-     * const Document_invitations = await prisma.document_invitations.create({
-     *   data: {
-     *     // ... data to create a Document_invitations
-     *   }
-     * })
-     * 
-     */
-    create<T extends document_invitationsCreateArgs>(args: SelectSubset<T, document_invitationsCreateArgs<ExtArgs>>): Prisma__document_invitationsClient<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many Document_invitations.
-     * @param {document_invitationsCreateManyArgs} args - Arguments to create many Document_invitations.
-     * @example
-     * // Create many Document_invitations
-     * const document_invitations = await prisma.document_invitations.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends document_invitationsCreateManyArgs>(args?: SelectSubset<T, document_invitationsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many Document_invitations and returns the data saved in the database.
-     * @param {document_invitationsCreateManyAndReturnArgs} args - Arguments to create many Document_invitations.
-     * @example
-     * // Create many Document_invitations
-     * const document_invitations = await prisma.document_invitations.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many Document_invitations and only return the `id`
-     * const document_invitationsWithIdOnly = await prisma.document_invitations.createManyAndReturn({
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends document_invitationsCreateManyAndReturnArgs>(args?: SelectSubset<T, document_invitationsCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Delete a Document_invitations.
-     * @param {document_invitationsDeleteArgs} args - Arguments to delete one Document_invitations.
-     * @example
-     * // Delete one Document_invitations
-     * const Document_invitations = await prisma.document_invitations.delete({
-     *   where: {
-     *     // ... filter to delete one Document_invitations
-     *   }
-     * })
-     * 
-     */
-    delete<T extends document_invitationsDeleteArgs>(args: SelectSubset<T, document_invitationsDeleteArgs<ExtArgs>>): Prisma__document_invitationsClient<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one Document_invitations.
-     * @param {document_invitationsUpdateArgs} args - Arguments to update one Document_invitations.
-     * @example
-     * // Update one Document_invitations
-     * const document_invitations = await prisma.document_invitations.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends document_invitationsUpdateArgs>(args: SelectSubset<T, document_invitationsUpdateArgs<ExtArgs>>): Prisma__document_invitationsClient<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more Document_invitations.
-     * @param {document_invitationsDeleteManyArgs} args - Arguments to filter Document_invitations to delete.
-     * @example
-     * // Delete a few Document_invitations
-     * const { count } = await prisma.document_invitations.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends document_invitationsDeleteManyArgs>(args?: SelectSubset<T, document_invitationsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more Document_invitations.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {document_invitationsUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many Document_invitations
-     * const document_invitations = await prisma.document_invitations.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends document_invitationsUpdateManyArgs>(args: SelectSubset<T, document_invitationsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more Document_invitations and returns the data updated in the database.
-     * @param {document_invitationsUpdateManyAndReturnArgs} args - Arguments to update many Document_invitations.
-     * @example
-     * // Update many Document_invitations
-     * const document_invitations = await prisma.document_invitations.updateManyAndReturn({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Update zero or more Document_invitations and only return the `id`
-     * const document_invitationsWithIdOnly = await prisma.document_invitations.updateManyAndReturn({
-     *   select: { id: true },
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    updateManyAndReturn<T extends document_invitationsUpdateManyAndReturnArgs>(args: SelectSubset<T, document_invitationsUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Create or update one Document_invitations.
-     * @param {document_invitationsUpsertArgs} args - Arguments to update or create a Document_invitations.
-     * @example
-     * // Update or create a Document_invitations
-     * const document_invitations = await prisma.document_invitations.upsert({
-     *   create: {
-     *     // ... data to create a Document_invitations
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the Document_invitations we want to update
-     *   }
-     * })
-     */
-    upsert<T extends document_invitationsUpsertArgs>(args: SelectSubset<T, document_invitationsUpsertArgs<ExtArgs>>): Prisma__document_invitationsClient<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of Document_invitations.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {document_invitationsCountArgs} args - Arguments to filter Document_invitations to count.
-     * @example
-     * // Count the number of Document_invitations
-     * const count = await prisma.document_invitations.count({
-     *   where: {
-     *     // ... the filter for the Document_invitations we want to count
-     *   }
-     * })
-    **/
-    count<T extends document_invitationsCountArgs>(
-      args?: Subset<T, document_invitationsCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], Document_invitationsCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a Document_invitations.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Document_invitationsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends Document_invitationsAggregateArgs>(args: Subset<T, Document_invitationsAggregateArgs>): Prisma.PrismaPromise<GetDocument_invitationsAggregateType<T>>
-
-    /**
-     * Group by Document_invitations.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {document_invitationsGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends document_invitationsGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: document_invitationsGroupByArgs['orderBy'] }
-        : { orderBy?: document_invitationsGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, document_invitationsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDocument_invitationsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the document_invitations model
-   */
-  readonly fields: document_invitationsFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for document_invitations.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__document_invitationsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    documents<T extends documentsDefaultArgs<ExtArgs> = {}>(args?: Subset<T, documentsDefaultArgs<ExtArgs>>): Prisma__documentsClient<$Result.GetResult<Prisma.$documentsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    users_document_invitations_invited_byTousers<T extends document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs> = {}>(args?: Subset<T, document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs>>): Prisma__usersClient<$Result.GetResult<Prisma.$usersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    users_document_invitations_user_idTousers<T extends usersDefaultArgs<ExtArgs> = {}>(args?: Subset<T, usersDefaultArgs<ExtArgs>>): Prisma__usersClient<$Result.GetResult<Prisma.$usersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the document_invitations model
-   */
-  interface document_invitationsFieldRefs {
-    readonly id: FieldRef<"document_invitations", 'Int'>
-    readonly document_id: FieldRef<"document_invitations", 'Int'>
-    readonly user_id: FieldRef<"document_invitations", 'Int'>
-    readonly permission_level: FieldRef<"document_invitations", 'String'>
-    readonly invited_by: FieldRef<"document_invitations", 'Int'>
-    readonly invitation_date: FieldRef<"document_invitations", 'DateTime'>
-    readonly accepted_date: FieldRef<"document_invitations", 'DateTime'>
-    readonly is_active: FieldRef<"document_invitations", 'Boolean'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * document_invitations findUnique
-   */
-  export type document_invitationsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * Filter, which document_invitations to fetch.
-     */
-    where: document_invitationsWhereUniqueInput
-  }
-
-  /**
-   * document_invitations findUniqueOrThrow
-   */
-  export type document_invitationsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * Filter, which document_invitations to fetch.
-     */
-    where: document_invitationsWhereUniqueInput
-  }
-
-  /**
-   * document_invitations findFirst
-   */
-  export type document_invitationsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * Filter, which document_invitations to fetch.
-     */
-    where?: document_invitationsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of document_invitations to fetch.
-     */
-    orderBy?: document_invitationsOrderByWithRelationInput | document_invitationsOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for document_invitations.
-     */
-    cursor?: document_invitationsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` document_invitations from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` document_invitations.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of document_invitations.
-     */
-    distinct?: Document_invitationsScalarFieldEnum | Document_invitationsScalarFieldEnum[]
-  }
-
-  /**
-   * document_invitations findFirstOrThrow
-   */
-  export type document_invitationsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * Filter, which document_invitations to fetch.
-     */
-    where?: document_invitationsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of document_invitations to fetch.
-     */
-    orderBy?: document_invitationsOrderByWithRelationInput | document_invitationsOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for document_invitations.
-     */
-    cursor?: document_invitationsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` document_invitations from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` document_invitations.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of document_invitations.
-     */
-    distinct?: Document_invitationsScalarFieldEnum | Document_invitationsScalarFieldEnum[]
-  }
-
-  /**
-   * document_invitations findMany
-   */
-  export type document_invitationsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * Filter, which document_invitations to fetch.
-     */
-    where?: document_invitationsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of document_invitations to fetch.
-     */
-    orderBy?: document_invitationsOrderByWithRelationInput | document_invitationsOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing document_invitations.
-     */
-    cursor?: document_invitationsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` document_invitations from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` document_invitations.
-     */
-    skip?: number
-    distinct?: Document_invitationsScalarFieldEnum | Document_invitationsScalarFieldEnum[]
-  }
-
-  /**
-   * document_invitations create
-   */
-  export type document_invitationsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * The data needed to create a document_invitations.
-     */
-    data: XOR<document_invitationsCreateInput, document_invitationsUncheckedCreateInput>
-  }
-
-  /**
-   * document_invitations createMany
-   */
-  export type document_invitationsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many document_invitations.
-     */
-    data: document_invitationsCreateManyInput | document_invitationsCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * document_invitations createManyAndReturn
-   */
-  export type document_invitationsCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelectCreateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * The data used to create many document_invitations.
-     */
-    data: document_invitationsCreateManyInput | document_invitationsCreateManyInput[]
-    skipDuplicates?: boolean
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsIncludeCreateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * document_invitations update
-   */
-  export type document_invitationsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * The data needed to update a document_invitations.
-     */
-    data: XOR<document_invitationsUpdateInput, document_invitationsUncheckedUpdateInput>
-    /**
-     * Choose, which document_invitations to update.
-     */
-    where: document_invitationsWhereUniqueInput
-  }
-
-  /**
-   * document_invitations updateMany
-   */
-  export type document_invitationsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update document_invitations.
-     */
-    data: XOR<document_invitationsUpdateManyMutationInput, document_invitationsUncheckedUpdateManyInput>
-    /**
-     * Filter which document_invitations to update
-     */
-    where?: document_invitationsWhereInput
-    /**
-     * Limit how many document_invitations to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * document_invitations updateManyAndReturn
-   */
-  export type document_invitationsUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelectUpdateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * The data used to update document_invitations.
-     */
-    data: XOR<document_invitationsUpdateManyMutationInput, document_invitationsUncheckedUpdateManyInput>
-    /**
-     * Filter which document_invitations to update
-     */
-    where?: document_invitationsWhereInput
-    /**
-     * Limit how many document_invitations to update.
-     */
-    limit?: number
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsIncludeUpdateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * document_invitations upsert
-   */
-  export type document_invitationsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * The filter to search for the document_invitations to update in case it exists.
-     */
-    where: document_invitationsWhereUniqueInput
-    /**
-     * In case the document_invitations found by the `where` argument doesn't exist, create a new document_invitations with this data.
-     */
-    create: XOR<document_invitationsCreateInput, document_invitationsUncheckedCreateInput>
-    /**
-     * In case the document_invitations was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<document_invitationsUpdateInput, document_invitationsUncheckedUpdateInput>
-  }
-
-  /**
-   * document_invitations delete
-   */
-  export type document_invitationsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    /**
-     * Filter which document_invitations to delete.
-     */
-    where: document_invitationsWhereUniqueInput
-  }
-
-  /**
-   * document_invitations deleteMany
-   */
-  export type document_invitationsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which document_invitations to delete
-     */
-    where?: document_invitationsWhereInput
-    /**
-     * Limit how many document_invitations to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * document_invitations.users_document_invitations_invited_byTousers
-   */
-  export type document_invitations$users_document_invitations_invited_byTousersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the users
-     */
-    select?: usersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the users
-     */
-    omit?: usersOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: usersInclude<ExtArgs> | null
-    where?: usersWhereInput
-  }
-
-  /**
-   * document_invitations without action
-   */
-  export type document_invitationsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-  }
-
-
-  /**
    * Model document_versions
    */
 
@@ -6991,7 +5695,6 @@ export namespace Prisma {
     tags?: boolean
     metadata?: boolean
     calls?: boolean | documents$callsArgs<ExtArgs>
-    document_invitations?: boolean | documents$document_invitationsArgs<ExtArgs>
     document_versions?: boolean | documents$document_versionsArgs<ExtArgs>
     users_documents_last_modified_byTousers?: boolean | documents$users_documents_last_modified_byTousersArgs<ExtArgs>
     users_documents_owner_idTousers?: boolean | usersDefaultArgs<ExtArgs>
@@ -7093,7 +5796,6 @@ export namespace Prisma {
   export type documentsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "content" | "file_path" | "file_name" | "file_original_name" | "file_type" | "file_size" | "file_extension" | "file_upload_date" | "owner_id" | "parent_folder_id" | "is_folder" | "is_deleted" | "is_public" | "is_template" | "created_at" | "updated_at" | "last_modified_by" | "last_accessed_at" | "auto_save_interval" | "allow_comments" | "tags" | "metadata", ExtArgs["result"]["documents"]>
   export type documentsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     calls?: boolean | documents$callsArgs<ExtArgs>
-    document_invitations?: boolean | documents$document_invitationsArgs<ExtArgs>
     document_versions?: boolean | documents$document_versionsArgs<ExtArgs>
     users_documents_last_modified_byTousers?: boolean | documents$users_documents_last_modified_byTousersArgs<ExtArgs>
     users_documents_owner_idTousers?: boolean | usersDefaultArgs<ExtArgs>
@@ -7116,7 +5818,6 @@ export namespace Prisma {
     name: "documents"
     objects: {
       calls: Prisma.$callsPayload<ExtArgs>[]
-      document_invitations: Prisma.$document_invitationsPayload<ExtArgs>[]
       document_versions: Prisma.$document_versionsPayload<ExtArgs>[]
       users_documents_last_modified_byTousers: Prisma.$usersPayload<ExtArgs> | null
       users_documents_owner_idTousers: Prisma.$usersPayload<ExtArgs>
@@ -7544,7 +6245,6 @@ export namespace Prisma {
   export interface Prisma__documentsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     calls<T extends documents$callsArgs<ExtArgs> = {}>(args?: Subset<T, documents$callsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$callsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    document_invitations<T extends documents$document_invitationsArgs<ExtArgs> = {}>(args?: Subset<T, documents$document_invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     document_versions<T extends documents$document_versionsArgs<ExtArgs> = {}>(args?: Subset<T, documents$document_versionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$document_versionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     users_documents_last_modified_byTousers<T extends documents$users_documents_last_modified_byTousersArgs<ExtArgs> = {}>(args?: Subset<T, documents$users_documents_last_modified_byTousersArgs<ExtArgs>>): Prisma__usersClient<$Result.GetResult<Prisma.$usersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     users_documents_owner_idTousers<T extends usersDefaultArgs<ExtArgs> = {}>(args?: Subset<T, usersDefaultArgs<ExtArgs>>): Prisma__usersClient<$Result.GetResult<Prisma.$usersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
@@ -8024,30 +6724,6 @@ export namespace Prisma {
   }
 
   /**
-   * documents.document_invitations
-   */
-  export type documents$document_invitationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    where?: document_invitationsWhereInput
-    orderBy?: document_invitationsOrderByWithRelationInput | document_invitationsOrderByWithRelationInput[]
-    cursor?: document_invitationsWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Document_invitationsScalarFieldEnum | Document_invitationsScalarFieldEnum[]
-  }
-
-  /**
    * documents.document_versions
    */
   export type documents$document_versionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8436,8 +7112,6 @@ export namespace Prisma {
     locked_until?: boolean
     call_participants?: boolean | users$call_participantsArgs<ExtArgs>
     calls?: boolean | users$callsArgs<ExtArgs>
-    document_invitations_document_invitations_invited_byTousers?: boolean | users$document_invitations_document_invitations_invited_byTousersArgs<ExtArgs>
-    document_invitations_document_invitations_user_idTousers?: boolean | users$document_invitations_document_invitations_user_idTousersArgs<ExtArgs>
     document_versions?: boolean | users$document_versionsArgs<ExtArgs>
     documents_documents_last_modified_byTousers?: boolean | users$documents_documents_last_modified_byTousersArgs<ExtArgs>
     documents_documents_owner_idTousers?: boolean | users$documents_documents_owner_idTousersArgs<ExtArgs>
@@ -8507,8 +7181,6 @@ export namespace Prisma {
   export type usersInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     call_participants?: boolean | users$call_participantsArgs<ExtArgs>
     calls?: boolean | users$callsArgs<ExtArgs>
-    document_invitations_document_invitations_invited_byTousers?: boolean | users$document_invitations_document_invitations_invited_byTousersArgs<ExtArgs>
-    document_invitations_document_invitations_user_idTousers?: boolean | users$document_invitations_document_invitations_user_idTousersArgs<ExtArgs>
     document_versions?: boolean | users$document_versionsArgs<ExtArgs>
     documents_documents_last_modified_byTousers?: boolean | users$documents_documents_last_modified_byTousersArgs<ExtArgs>
     documents_documents_owner_idTousers?: boolean | users$documents_documents_owner_idTousersArgs<ExtArgs>
@@ -8527,8 +7199,6 @@ export namespace Prisma {
     objects: {
       call_participants: Prisma.$call_participantsPayload<ExtArgs>[]
       calls: Prisma.$callsPayload<ExtArgs>[]
-      document_invitations_document_invitations_invited_byTousers: Prisma.$document_invitationsPayload<ExtArgs>[]
-      document_invitations_document_invitations_user_idTousers: Prisma.$document_invitationsPayload<ExtArgs>[]
       document_versions: Prisma.$document_versionsPayload<ExtArgs>[]
       documents_documents_last_modified_byTousers: Prisma.$documentsPayload<ExtArgs>[]
       documents_documents_owner_idTousers: Prisma.$documentsPayload<ExtArgs>[]
@@ -8950,8 +7620,6 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     call_participants<T extends users$call_participantsArgs<ExtArgs> = {}>(args?: Subset<T, users$call_participantsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$call_participantsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     calls<T extends users$callsArgs<ExtArgs> = {}>(args?: Subset<T, users$callsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$callsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    document_invitations_document_invitations_invited_byTousers<T extends users$document_invitations_document_invitations_invited_byTousersArgs<ExtArgs> = {}>(args?: Subset<T, users$document_invitations_document_invitations_invited_byTousersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    document_invitations_document_invitations_user_idTousers<T extends users$document_invitations_document_invitations_user_idTousersArgs<ExtArgs> = {}>(args?: Subset<T, users$document_invitations_document_invitations_user_idTousersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$document_invitationsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     document_versions<T extends users$document_versionsArgs<ExtArgs> = {}>(args?: Subset<T, users$document_versionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$document_versionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     documents_documents_last_modified_byTousers<T extends users$documents_documents_last_modified_byTousersArgs<ExtArgs> = {}>(args?: Subset<T, users$documents_documents_last_modified_byTousersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$documentsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     documents_documents_owner_idTousers<T extends users$documents_documents_owner_idTousersArgs<ExtArgs> = {}>(args?: Subset<T, users$documents_documents_owner_idTousersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$documentsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -9437,54 +8105,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: CallsScalarFieldEnum | CallsScalarFieldEnum[]
-  }
-
-  /**
-   * users.document_invitations_document_invitations_invited_byTousers
-   */
-  export type users$document_invitations_document_invitations_invited_byTousersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    where?: document_invitationsWhereInput
-    orderBy?: document_invitationsOrderByWithRelationInput | document_invitationsOrderByWithRelationInput[]
-    cursor?: document_invitationsWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Document_invitationsScalarFieldEnum | Document_invitationsScalarFieldEnum[]
-  }
-
-  /**
-   * users.document_invitations_document_invitations_user_idTousers
-   */
-  export type users$document_invitations_document_invitations_user_idTousersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the document_invitations
-     */
-    select?: document_invitationsSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the document_invitations
-     */
-    omit?: document_invitationsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: document_invitationsInclude<ExtArgs> | null
-    where?: document_invitationsWhereInput
-    orderBy?: document_invitationsOrderByWithRelationInput | document_invitationsOrderByWithRelationInput[]
-    cursor?: document_invitationsWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Document_invitationsScalarFieldEnum | Document_invitationsScalarFieldEnum[]
   }
 
   /**
@@ -14325,20 +12945,6 @@ export namespace Prisma {
   export type CallsScalarFieldEnum = (typeof CallsScalarFieldEnum)[keyof typeof CallsScalarFieldEnum]
 
 
-  export const Document_invitationsScalarFieldEnum: {
-    id: 'id',
-    document_id: 'document_id',
-    user_id: 'user_id',
-    permission_level: 'permission_level',
-    invited_by: 'invited_by',
-    invitation_date: 'invitation_date',
-    accepted_date: 'accepted_date',
-    is_active: 'is_active'
-  };
-
-  export type Document_invitationsScalarFieldEnum = (typeof Document_invitationsScalarFieldEnum)[keyof typeof Document_invitationsScalarFieldEnum]
-
-
   export const Document_versionsScalarFieldEnum: {
     id: 'id',
     document_id: 'document_id',
@@ -14627,7 +13233,7 @@ export namespace Prisma {
 
   export type call_participantsWhereUniqueInput = Prisma.AtLeast<{
     id?: number
-    call_id_user_id?: call_participantsCall_idUser_idCompoundUniqueInput
+    call_id_user_id?: call_participantsCall_id_user_idCompoundUniqueInput
     AND?: call_participantsWhereInput | call_participantsWhereInput[]
     OR?: call_participantsWhereInput[]
     NOT?: call_participantsWhereInput | call_participantsWhereInput[]
@@ -14737,85 +13343,6 @@ export namespace Prisma {
     ended_at?: DateTimeNullableWithAggregatesFilter<"calls"> | Date | string | null
     call_type?: StringWithAggregatesFilter<"calls"> | string
     status?: StringNullableWithAggregatesFilter<"calls"> | string | null
-  }
-
-  export type document_invitationsWhereInput = {
-    AND?: document_invitationsWhereInput | document_invitationsWhereInput[]
-    OR?: document_invitationsWhereInput[]
-    NOT?: document_invitationsWhereInput | document_invitationsWhereInput[]
-    id?: IntFilter<"document_invitations"> | number
-    document_id?: IntFilter<"document_invitations"> | number
-    user_id?: IntFilter<"document_invitations"> | number
-    permission_level?: StringFilter<"document_invitations"> | string
-    invited_by?: IntNullableFilter<"document_invitations"> | number | null
-    invitation_date?: DateTimeNullableFilter<"document_invitations"> | Date | string | null
-    accepted_date?: DateTimeNullableFilter<"document_invitations"> | Date | string | null
-    is_active?: BoolNullableFilter<"document_invitations"> | boolean | null
-    documents?: XOR<DocumentsScalarRelationFilter, documentsWhereInput>
-    users_document_invitations_invited_byTousers?: XOR<UsersNullableScalarRelationFilter, usersWhereInput> | null
-    users_document_invitations_user_idTousers?: XOR<UsersScalarRelationFilter, usersWhereInput>
-  }
-
-  export type document_invitationsOrderByWithRelationInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    user_id?: SortOrder
-    permission_level?: SortOrder
-    invited_by?: SortOrderInput | SortOrder
-    invitation_date?: SortOrderInput | SortOrder
-    accepted_date?: SortOrderInput | SortOrder
-    is_active?: SortOrderInput | SortOrder
-    documents?: documentsOrderByWithRelationInput
-    users_document_invitations_invited_byTousers?: usersOrderByWithRelationInput
-    users_document_invitations_user_idTousers?: usersOrderByWithRelationInput
-  }
-
-  export type document_invitationsWhereUniqueInput = Prisma.AtLeast<{
-    id?: number
-    document_id_user_id?: document_invitationsDocument_idUser_idCompoundUniqueInput
-    AND?: document_invitationsWhereInput | document_invitationsWhereInput[]
-    OR?: document_invitationsWhereInput[]
-    NOT?: document_invitationsWhereInput | document_invitationsWhereInput[]
-    document_id?: IntFilter<"document_invitations"> | number
-    user_id?: IntFilter<"document_invitations"> | number
-    permission_level?: StringFilter<"document_invitations"> | string
-    invited_by?: IntNullableFilter<"document_invitations"> | number | null
-    invitation_date?: DateTimeNullableFilter<"document_invitations"> | Date | string | null
-    accepted_date?: DateTimeNullableFilter<"document_invitations"> | Date | string | null
-    is_active?: BoolNullableFilter<"document_invitations"> | boolean | null
-    documents?: XOR<DocumentsScalarRelationFilter, documentsWhereInput>
-    users_document_invitations_invited_byTousers?: XOR<UsersNullableScalarRelationFilter, usersWhereInput> | null
-    users_document_invitations_user_idTousers?: XOR<UsersScalarRelationFilter, usersWhereInput>
-  }, "id" | "document_id_user_id">
-
-  export type document_invitationsOrderByWithAggregationInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    user_id?: SortOrder
-    permission_level?: SortOrder
-    invited_by?: SortOrderInput | SortOrder
-    invitation_date?: SortOrderInput | SortOrder
-    accepted_date?: SortOrderInput | SortOrder
-    is_active?: SortOrderInput | SortOrder
-    _count?: document_invitationsCountOrderByAggregateInput
-    _avg?: document_invitationsAvgOrderByAggregateInput
-    _max?: document_invitationsMaxOrderByAggregateInput
-    _min?: document_invitationsMinOrderByAggregateInput
-    _sum?: document_invitationsSumOrderByAggregateInput
-  }
-
-  export type document_invitationsScalarWhereWithAggregatesInput = {
-    AND?: document_invitationsScalarWhereWithAggregatesInput | document_invitationsScalarWhereWithAggregatesInput[]
-    OR?: document_invitationsScalarWhereWithAggregatesInput[]
-    NOT?: document_invitationsScalarWhereWithAggregatesInput | document_invitationsScalarWhereWithAggregatesInput[]
-    id?: IntWithAggregatesFilter<"document_invitations"> | number
-    document_id?: IntWithAggregatesFilter<"document_invitations"> | number
-    user_id?: IntWithAggregatesFilter<"document_invitations"> | number
-    permission_level?: StringWithAggregatesFilter<"document_invitations"> | string
-    invited_by?: IntNullableWithAggregatesFilter<"document_invitations"> | number | null
-    invitation_date?: DateTimeNullableWithAggregatesFilter<"document_invitations"> | Date | string | null
-    accepted_date?: DateTimeNullableWithAggregatesFilter<"document_invitations"> | Date | string | null
-    is_active?: BoolNullableWithAggregatesFilter<"document_invitations"> | boolean | null
   }
 
   export type document_versionsWhereInput = {
@@ -14944,7 +13471,6 @@ export namespace Prisma {
     tags?: StringNullableFilter<"documents"> | string | null
     metadata?: JsonNullableFilter<"documents">
     calls?: CallsListRelationFilter
-    document_invitations?: Document_invitationsListRelationFilter
     document_versions?: Document_versionsListRelationFilter
     users_documents_last_modified_byTousers?: XOR<UsersNullableScalarRelationFilter, usersWhereInput> | null
     users_documents_owner_idTousers?: XOR<UsersScalarRelationFilter, usersWhereInput>
@@ -14979,7 +13505,6 @@ export namespace Prisma {
     tags?: SortOrderInput | SortOrder
     metadata?: SortOrderInput | SortOrder
     calls?: callsOrderByRelationAggregateInput
-    document_invitations?: document_invitationsOrderByRelationAggregateInput
     document_versions?: document_versionsOrderByRelationAggregateInput
     users_documents_last_modified_byTousers?: usersOrderByWithRelationInput
     users_documents_owner_idTousers?: usersOrderByWithRelationInput
@@ -15017,7 +13542,6 @@ export namespace Prisma {
     tags?: StringNullableFilter<"documents"> | string | null
     metadata?: JsonNullableFilter<"documents">
     calls?: CallsListRelationFilter
-    document_invitations?: Document_invitationsListRelationFilter
     document_versions?: Document_versionsListRelationFilter
     users_documents_last_modified_byTousers?: XOR<UsersNullableScalarRelationFilter, usersWhereInput> | null
     users_documents_owner_idTousers?: XOR<UsersScalarRelationFilter, usersWhereInput>
@@ -15110,8 +13634,6 @@ export namespace Prisma {
     locked_until?: DateTimeNullableFilter<"users"> | Date | string | null
     call_participants?: Call_participantsListRelationFilter
     calls?: CallsListRelationFilter
-    document_invitations_document_invitations_invited_byTousers?: Document_invitationsListRelationFilter
-    document_invitations_document_invitations_user_idTousers?: Document_invitationsListRelationFilter
     document_versions?: Document_versionsListRelationFilter
     documents_documents_last_modified_byTousers?: DocumentsListRelationFilter
     documents_documents_owner_idTousers?: DocumentsListRelationFilter
@@ -15140,8 +13662,6 @@ export namespace Prisma {
     locked_until?: SortOrderInput | SortOrder
     call_participants?: call_participantsOrderByRelationAggregateInput
     calls?: callsOrderByRelationAggregateInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsOrderByRelationAggregateInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsOrderByRelationAggregateInput
     document_versions?: document_versionsOrderByRelationAggregateInput
     documents_documents_last_modified_byTousers?: documentsOrderByRelationAggregateInput
     documents_documents_owner_idTousers?: documentsOrderByRelationAggregateInput
@@ -15173,8 +13693,6 @@ export namespace Prisma {
     locked_until?: DateTimeNullableFilter<"users"> | Date | string | null
     call_participants?: Call_participantsListRelationFilter
     calls?: CallsListRelationFilter
-    document_invitations_document_invitations_invited_byTousers?: Document_invitationsListRelationFilter
-    document_invitations_document_invitations_user_idTousers?: Document_invitationsListRelationFilter
     document_versions?: Document_versionsListRelationFilter
     documents_documents_last_modified_byTousers?: DocumentsListRelationFilter
     documents_documents_owner_idTousers?: DocumentsListRelationFilter
@@ -15635,77 +14153,6 @@ export namespace Prisma {
     status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type document_invitationsCreateInput = {
-    permission_level: string
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-    documents: documentsCreateNestedOneWithoutDocument_invitationsInput
-    users_document_invitations_invited_byTousers?: usersCreateNestedOneWithoutDocument_invitations_document_invitations_invited_byTousersInput
-    users_document_invitations_user_idTousers: usersCreateNestedOneWithoutDocument_invitations_document_invitations_user_idTousersInput
-  }
-
-  export type document_invitationsUncheckedCreateInput = {
-    id?: number
-    document_id: number
-    user_id: number
-    permission_level: string
-    invited_by?: number | null
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-  }
-
-  export type document_invitationsUpdateInput = {
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    documents?: documentsUpdateOneRequiredWithoutDocument_invitationsNestedInput
-    users_document_invitations_invited_byTousers?: usersUpdateOneWithoutDocument_invitations_document_invitations_invited_byTousersNestedInput
-    users_document_invitations_user_idTousers?: usersUpdateOneRequiredWithoutDocument_invitations_document_invitations_user_idTousersNestedInput
-  }
-
-  export type document_invitationsUncheckedUpdateInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    document_id?: IntFieldUpdateOperationsInput | number
-    user_id?: IntFieldUpdateOperationsInput | number
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invited_by?: NullableIntFieldUpdateOperationsInput | number | null
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
-  export type document_invitationsCreateManyInput = {
-    id?: number
-    document_id: number
-    user_id: number
-    permission_level: string
-    invited_by?: number | null
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-  }
-
-  export type document_invitationsUpdateManyMutationInput = {
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
-  export type document_invitationsUncheckedUpdateManyInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    document_id?: IntFieldUpdateOperationsInput | number
-    user_id?: IntFieldUpdateOperationsInput | number
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invited_by?: NullableIntFieldUpdateOperationsInput | number | null
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
   export type document_versionsCreateInput = {
     version_number: number
     title?: string | null
@@ -15829,7 +14276,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
     users_documents_owner_idTousers: usersCreateNestedOneWithoutDocuments_documents_owner_idTousersInput
@@ -15864,7 +14310,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
   }
@@ -15892,7 +14337,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
     users_documents_owner_idTousers?: usersUpdateOneRequiredWithoutDocuments_documents_owner_idTousersNestedInput
@@ -15927,7 +14371,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
   }
@@ -16029,8 +14472,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -16059,8 +14500,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -16088,8 +14527,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -16118,8 +14555,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -16487,7 +14922,7 @@ export namespace Prisma {
     nulls?: NullsOrder
   }
 
-  export type call_participantsCall_idUser_idCompoundUniqueInput = {
+  export type call_participantsCall_id_user_idCompoundUniqueInput = {
     call_id: number
     user_id: number
   }
@@ -16692,90 +15127,6 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
-  export type IntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type UsersNullableScalarRelationFilter = {
-    is?: usersWhereInput | null
-    isNot?: usersWhereInput | null
-  }
-
-  export type document_invitationsDocument_idUser_idCompoundUniqueInput = {
-    document_id: number
-    user_id: number
-  }
-
-  export type document_invitationsCountOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    user_id?: SortOrder
-    permission_level?: SortOrder
-    invited_by?: SortOrder
-    invitation_date?: SortOrder
-    accepted_date?: SortOrder
-    is_active?: SortOrder
-  }
-
-  export type document_invitationsAvgOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    user_id?: SortOrder
-    invited_by?: SortOrder
-  }
-
-  export type document_invitationsMaxOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    user_id?: SortOrder
-    permission_level?: SortOrder
-    invited_by?: SortOrder
-    invitation_date?: SortOrder
-    accepted_date?: SortOrder
-    is_active?: SortOrder
-  }
-
-  export type document_invitationsMinOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    user_id?: SortOrder
-    permission_level?: SortOrder
-    invited_by?: SortOrder
-    invitation_date?: SortOrder
-    accepted_date?: SortOrder
-    is_active?: SortOrder
-  }
-
-  export type document_invitationsSumOrderByAggregateInput = {
-    id?: SortOrder
-    document_id?: SortOrder
-    user_id?: SortOrder
-    invited_by?: SortOrder
-  }
-
-  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedIntNullableFilter<$PrismaModel>
-    _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
   export type BigIntNullableFilter<$PrismaModel = never> = {
     equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
     in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
@@ -16906,6 +15257,17 @@ export namespace Prisma {
     _min?: NestedBoolFilter<$PrismaModel>
     _max?: NestedBoolFilter<$PrismaModel>
   }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
   export type JsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
@@ -16936,16 +15298,15 @@ export namespace Prisma {
     none?: callsWhereInput
   }
 
-  export type Document_invitationsListRelationFilter = {
-    every?: document_invitationsWhereInput
-    some?: document_invitationsWhereInput
-    none?: document_invitationsWhereInput
-  }
-
   export type Document_versionsListRelationFilter = {
     every?: document_versionsWhereInput
     some?: document_versionsWhereInput
     none?: document_versionsWhereInput
+  }
+
+  export type UsersNullableScalarRelationFilter = {
+    is?: usersWhereInput | null
+    isNot?: usersWhereInput | null
   }
 
   export type DocumentsNullableScalarRelationFilter = {
@@ -16960,10 +15321,6 @@ export namespace Prisma {
   }
 
   export type callsOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type document_invitationsOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -17073,6 +15430,22 @@ export namespace Prisma {
     parent_folder_id?: SortOrder
     last_modified_by?: SortOrder
     auto_save_interval?: SortOrder
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
   export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -17500,58 +15873,6 @@ export namespace Prisma {
     deleteMany?: call_participantsScalarWhereInput | call_participantsScalarWhereInput[]
   }
 
-  export type documentsCreateNestedOneWithoutDocument_invitationsInput = {
-    create?: XOR<documentsCreateWithoutDocument_invitationsInput, documentsUncheckedCreateWithoutDocument_invitationsInput>
-    connectOrCreate?: documentsCreateOrConnectWithoutDocument_invitationsInput
-    connect?: documentsWhereUniqueInput
-  }
-
-  export type usersCreateNestedOneWithoutDocument_invitations_document_invitations_invited_byTousersInput = {
-    create?: XOR<usersCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput, usersUncheckedCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput>
-    connectOrCreate?: usersCreateOrConnectWithoutDocument_invitations_document_invitations_invited_byTousersInput
-    connect?: usersWhereUniqueInput
-  }
-
-  export type usersCreateNestedOneWithoutDocument_invitations_document_invitations_user_idTousersInput = {
-    create?: XOR<usersCreateWithoutDocument_invitations_document_invitations_user_idTousersInput, usersUncheckedCreateWithoutDocument_invitations_document_invitations_user_idTousersInput>
-    connectOrCreate?: usersCreateOrConnectWithoutDocument_invitations_document_invitations_user_idTousersInput
-    connect?: usersWhereUniqueInput
-  }
-
-  export type documentsUpdateOneRequiredWithoutDocument_invitationsNestedInput = {
-    create?: XOR<documentsCreateWithoutDocument_invitationsInput, documentsUncheckedCreateWithoutDocument_invitationsInput>
-    connectOrCreate?: documentsCreateOrConnectWithoutDocument_invitationsInput
-    upsert?: documentsUpsertWithoutDocument_invitationsInput
-    connect?: documentsWhereUniqueInput
-    update?: XOR<XOR<documentsUpdateToOneWithWhereWithoutDocument_invitationsInput, documentsUpdateWithoutDocument_invitationsInput>, documentsUncheckedUpdateWithoutDocument_invitationsInput>
-  }
-
-  export type usersUpdateOneWithoutDocument_invitations_document_invitations_invited_byTousersNestedInput = {
-    create?: XOR<usersCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput, usersUncheckedCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput>
-    connectOrCreate?: usersCreateOrConnectWithoutDocument_invitations_document_invitations_invited_byTousersInput
-    upsert?: usersUpsertWithoutDocument_invitations_document_invitations_invited_byTousersInput
-    disconnect?: usersWhereInput | boolean
-    delete?: usersWhereInput | boolean
-    connect?: usersWhereUniqueInput
-    update?: XOR<XOR<usersUpdateToOneWithWhereWithoutDocument_invitations_document_invitations_invited_byTousersInput, usersUpdateWithoutDocument_invitations_document_invitations_invited_byTousersInput>, usersUncheckedUpdateWithoutDocument_invitations_document_invitations_invited_byTousersInput>
-  }
-
-  export type usersUpdateOneRequiredWithoutDocument_invitations_document_invitations_user_idTousersNestedInput = {
-    create?: XOR<usersCreateWithoutDocument_invitations_document_invitations_user_idTousersInput, usersUncheckedCreateWithoutDocument_invitations_document_invitations_user_idTousersInput>
-    connectOrCreate?: usersCreateOrConnectWithoutDocument_invitations_document_invitations_user_idTousersInput
-    upsert?: usersUpsertWithoutDocument_invitations_document_invitations_user_idTousersInput
-    connect?: usersWhereUniqueInput
-    update?: XOR<XOR<usersUpdateToOneWithWhereWithoutDocument_invitations_document_invitations_user_idTousersInput, usersUpdateWithoutDocument_invitations_document_invitations_user_idTousersInput>, usersUncheckedUpdateWithoutDocument_invitations_document_invitations_user_idTousersInput>
-  }
-
-  export type NullableIntFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
-  }
-
   export type documentsCreateNestedOneWithoutDocument_versionsInput = {
     create?: XOR<documentsCreateWithoutDocument_versionsInput, documentsUncheckedCreateWithoutDocument_versionsInput>
     connectOrCreate?: documentsCreateOrConnectWithoutDocument_versionsInput
@@ -17603,13 +15924,6 @@ export namespace Prisma {
     connect?: callsWhereUniqueInput | callsWhereUniqueInput[]
   }
 
-  export type document_invitationsCreateNestedManyWithoutDocumentsInput = {
-    create?: XOR<document_invitationsCreateWithoutDocumentsInput, document_invitationsUncheckedCreateWithoutDocumentsInput> | document_invitationsCreateWithoutDocumentsInput[] | document_invitationsUncheckedCreateWithoutDocumentsInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutDocumentsInput | document_invitationsCreateOrConnectWithoutDocumentsInput[]
-    createMany?: document_invitationsCreateManyDocumentsInputEnvelope
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-  }
-
   export type document_versionsCreateNestedManyWithoutDocumentsInput = {
     create?: XOR<document_versionsCreateWithoutDocumentsInput, document_versionsUncheckedCreateWithoutDocumentsInput> | document_versionsCreateWithoutDocumentsInput[] | document_versionsUncheckedCreateWithoutDocumentsInput[]
     connectOrCreate?: document_versionsCreateOrConnectWithoutDocumentsInput | document_versionsCreateOrConnectWithoutDocumentsInput[]
@@ -17649,13 +15963,6 @@ export namespace Prisma {
     connect?: callsWhereUniqueInput | callsWhereUniqueInput[]
   }
 
-  export type document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput = {
-    create?: XOR<document_invitationsCreateWithoutDocumentsInput, document_invitationsUncheckedCreateWithoutDocumentsInput> | document_invitationsCreateWithoutDocumentsInput[] | document_invitationsUncheckedCreateWithoutDocumentsInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutDocumentsInput | document_invitationsCreateOrConnectWithoutDocumentsInput[]
-    createMany?: document_invitationsCreateManyDocumentsInputEnvelope
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-  }
-
   export type document_versionsUncheckedCreateNestedManyWithoutDocumentsInput = {
     create?: XOR<document_versionsCreateWithoutDocumentsInput, document_versionsUncheckedCreateWithoutDocumentsInput> | document_versionsCreateWithoutDocumentsInput[] | document_versionsUncheckedCreateWithoutDocumentsInput[]
     connectOrCreate?: document_versionsCreateOrConnectWithoutDocumentsInput | document_versionsCreateOrConnectWithoutDocumentsInput[]
@@ -17682,20 +15989,6 @@ export namespace Prisma {
     update?: callsUpdateWithWhereUniqueWithoutDocumentsInput | callsUpdateWithWhereUniqueWithoutDocumentsInput[]
     updateMany?: callsUpdateManyWithWhereWithoutDocumentsInput | callsUpdateManyWithWhereWithoutDocumentsInput[]
     deleteMany?: callsScalarWhereInput | callsScalarWhereInput[]
-  }
-
-  export type document_invitationsUpdateManyWithoutDocumentsNestedInput = {
-    create?: XOR<document_invitationsCreateWithoutDocumentsInput, document_invitationsUncheckedCreateWithoutDocumentsInput> | document_invitationsCreateWithoutDocumentsInput[] | document_invitationsUncheckedCreateWithoutDocumentsInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutDocumentsInput | document_invitationsCreateOrConnectWithoutDocumentsInput[]
-    upsert?: document_invitationsUpsertWithWhereUniqueWithoutDocumentsInput | document_invitationsUpsertWithWhereUniqueWithoutDocumentsInput[]
-    createMany?: document_invitationsCreateManyDocumentsInputEnvelope
-    set?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    disconnect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    delete?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    update?: document_invitationsUpdateWithWhereUniqueWithoutDocumentsInput | document_invitationsUpdateWithWhereUniqueWithoutDocumentsInput[]
-    updateMany?: document_invitationsUpdateManyWithWhereWithoutDocumentsInput | document_invitationsUpdateManyWithWhereWithoutDocumentsInput[]
-    deleteMany?: document_invitationsScalarWhereInput | document_invitationsScalarWhereInput[]
   }
 
   export type document_versionsUpdateManyWithoutDocumentsNestedInput = {
@@ -17754,6 +16047,14 @@ export namespace Prisma {
     deleteMany?: documentsScalarWhereInput | documentsScalarWhereInput[]
   }
 
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
   export type callsUncheckedUpdateManyWithoutDocumentsNestedInput = {
     create?: XOR<callsCreateWithoutDocumentsInput, callsUncheckedCreateWithoutDocumentsInput> | callsCreateWithoutDocumentsInput[] | callsUncheckedCreateWithoutDocumentsInput[]
     connectOrCreate?: callsCreateOrConnectWithoutDocumentsInput | callsCreateOrConnectWithoutDocumentsInput[]
@@ -17766,20 +16067,6 @@ export namespace Prisma {
     update?: callsUpdateWithWhereUniqueWithoutDocumentsInput | callsUpdateWithWhereUniqueWithoutDocumentsInput[]
     updateMany?: callsUpdateManyWithWhereWithoutDocumentsInput | callsUpdateManyWithWhereWithoutDocumentsInput[]
     deleteMany?: callsScalarWhereInput | callsScalarWhereInput[]
-  }
-
-  export type document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput = {
-    create?: XOR<document_invitationsCreateWithoutDocumentsInput, document_invitationsUncheckedCreateWithoutDocumentsInput> | document_invitationsCreateWithoutDocumentsInput[] | document_invitationsUncheckedCreateWithoutDocumentsInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutDocumentsInput | document_invitationsCreateOrConnectWithoutDocumentsInput[]
-    upsert?: document_invitationsUpsertWithWhereUniqueWithoutDocumentsInput | document_invitationsUpsertWithWhereUniqueWithoutDocumentsInput[]
-    createMany?: document_invitationsCreateManyDocumentsInputEnvelope
-    set?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    disconnect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    delete?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    update?: document_invitationsUpdateWithWhereUniqueWithoutDocumentsInput | document_invitationsUpdateWithWhereUniqueWithoutDocumentsInput[]
-    updateMany?: document_invitationsUpdateManyWithWhereWithoutDocumentsInput | document_invitationsUpdateManyWithWhereWithoutDocumentsInput[]
-    deleteMany?: document_invitationsScalarWhereInput | document_invitationsScalarWhereInput[]
   }
 
   export type document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput = {
@@ -17822,20 +16109,6 @@ export namespace Prisma {
     connectOrCreate?: callsCreateOrConnectWithoutUsersInput | callsCreateOrConnectWithoutUsersInput[]
     createMany?: callsCreateManyUsersInputEnvelope
     connect?: callsWhereUniqueInput | callsWhereUniqueInput[]
-  }
-
-  export type document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput = {
-    create?: XOR<document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput> | document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput[] | document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput[]
-    createMany?: document_invitationsCreateManyUsers_document_invitations_invited_byTousersInputEnvelope
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-  }
-
-  export type document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput = {
-    create?: XOR<document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput> | document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput[] | document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput | document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput[]
-    createMany?: document_invitationsCreateManyUsers_document_invitations_user_idTousersInputEnvelope
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
   }
 
   export type document_versionsCreateNestedManyWithoutUsersInput = {
@@ -17906,20 +16179,6 @@ export namespace Prisma {
     connectOrCreate?: callsCreateOrConnectWithoutUsersInput | callsCreateOrConnectWithoutUsersInput[]
     createMany?: callsCreateManyUsersInputEnvelope
     connect?: callsWhereUniqueInput | callsWhereUniqueInput[]
-  }
-
-  export type document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput = {
-    create?: XOR<document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput> | document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput[] | document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput[]
-    createMany?: document_invitationsCreateManyUsers_document_invitations_invited_byTousersInputEnvelope
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-  }
-
-  export type document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput = {
-    create?: XOR<document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput> | document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput[] | document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput | document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput[]
-    createMany?: document_invitationsCreateManyUsers_document_invitations_user_idTousersInputEnvelope
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
   }
 
   export type document_versionsUncheckedCreateNestedManyWithoutUsersInput = {
@@ -18004,34 +16263,6 @@ export namespace Prisma {
     update?: callsUpdateWithWhereUniqueWithoutUsersInput | callsUpdateWithWhereUniqueWithoutUsersInput[]
     updateMany?: callsUpdateManyWithWhereWithoutUsersInput | callsUpdateManyWithWhereWithoutUsersInput[]
     deleteMany?: callsScalarWhereInput | callsScalarWhereInput[]
-  }
-
-  export type document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput = {
-    create?: XOR<document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput> | document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput[] | document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput[]
-    upsert?: document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput[]
-    createMany?: document_invitationsCreateManyUsers_document_invitations_invited_byTousersInputEnvelope
-    set?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    disconnect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    delete?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    update?: document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput[]
-    updateMany?: document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_invited_byTousersInput[]
-    deleteMany?: document_invitationsScalarWhereInput | document_invitationsScalarWhereInput[]
-  }
-
-  export type document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput = {
-    create?: XOR<document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput> | document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput[] | document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput | document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput[]
-    upsert?: document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput | document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput[]
-    createMany?: document_invitationsCreateManyUsers_document_invitations_user_idTousersInputEnvelope
-    set?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    disconnect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    delete?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    update?: document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput | document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput[]
-    updateMany?: document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_user_idTousersInput | document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_user_idTousersInput[]
-    deleteMany?: document_invitationsScalarWhereInput | document_invitationsScalarWhereInput[]
   }
 
   export type document_versionsUpdateManyWithoutUsersNestedInput = {
@@ -18172,34 +16403,6 @@ export namespace Prisma {
     update?: callsUpdateWithWhereUniqueWithoutUsersInput | callsUpdateWithWhereUniqueWithoutUsersInput[]
     updateMany?: callsUpdateManyWithWhereWithoutUsersInput | callsUpdateManyWithWhereWithoutUsersInput[]
     deleteMany?: callsScalarWhereInput | callsScalarWhereInput[]
-  }
-
-  export type document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput = {
-    create?: XOR<document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput> | document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput[] | document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput[]
-    upsert?: document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput[]
-    createMany?: document_invitationsCreateManyUsers_document_invitations_invited_byTousersInputEnvelope
-    set?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    disconnect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    delete?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    update?: document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput[]
-    updateMany?: document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_invited_byTousersInput | document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_invited_byTousersInput[]
-    deleteMany?: document_invitationsScalarWhereInput | document_invitationsScalarWhereInput[]
-  }
-
-  export type document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput = {
-    create?: XOR<document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput> | document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput[] | document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput[]
-    connectOrCreate?: document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput | document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput[]
-    upsert?: document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput | document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput[]
-    createMany?: document_invitationsCreateManyUsers_document_invitations_user_idTousersInputEnvelope
-    set?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    disconnect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    delete?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    connect?: document_invitationsWhereUniqueInput | document_invitationsWhereUniqueInput[]
-    update?: document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput | document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput[]
-    updateMany?: document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_user_idTousersInput | document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_user_idTousersInput[]
-    deleteMany?: document_invitationsScalarWhereInput | document_invitationsScalarWhereInput[]
   }
 
   export type document_versionsUncheckedUpdateManyWithoutUsersNestedInput = {
@@ -18647,33 +16850,6 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
-  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedIntNullableFilter<$PrismaModel>
-    _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
-  export type NestedFloatNullableFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
-  }
-
   export type NestedBigIntNullableFilter<$PrismaModel = never> = {
     equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
     in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
@@ -18717,6 +16893,17 @@ export namespace Prisma {
     _max?: NestedBigIntNullableFilter<$PrismaModel>
   }
 
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -18737,6 +16924,22 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedBoolFilter<$PrismaModel>
     _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
   export type NestedJsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -18802,8 +17005,6 @@ export namespace Prisma {
     login_attempts?: number | null
     locked_until?: Date | string | null
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -18831,8 +17032,6 @@ export namespace Prisma {
     login_attempts?: number | null
     locked_until?: Date | string | null
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -18905,8 +17104,6 @@ export namespace Prisma {
     login_attempts?: NullableIntFieldUpdateOperationsInput | number | null
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -18934,8 +17131,6 @@ export namespace Prisma {
     login_attempts?: NullableIntFieldUpdateOperationsInput | number | null
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -18993,7 +17188,6 @@ export namespace Prisma {
     allow_comments?: boolean
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
-    document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
     users_documents_owner_idTousers: usersCreateNestedOneWithoutDocuments_documents_owner_idTousersInput
@@ -19027,7 +17221,6 @@ export namespace Prisma {
     allow_comments?: boolean
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
-    document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
   }
@@ -19053,8 +17246,6 @@ export namespace Prisma {
     login_attempts?: number | null
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -19082,8 +17273,6 @@ export namespace Prisma {
     login_attempts?: number | null
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -19160,7 +17349,6 @@ export namespace Prisma {
     allow_comments?: BoolFieldUpdateOperationsInput | boolean
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
-    document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
     users_documents_owner_idTousers?: usersUpdateOneRequiredWithoutDocuments_documents_owner_idTousersNestedInput
@@ -19194,7 +17382,6 @@ export namespace Prisma {
     allow_comments?: BoolFieldUpdateOperationsInput | boolean
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
-    document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
   }
@@ -19226,8 +17413,6 @@ export namespace Prisma {
     login_attempts?: NullableIntFieldUpdateOperationsInput | number | null
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -19255,406 +17440,6 @@ export namespace Prisma {
     login_attempts?: NullableIntFieldUpdateOperationsInput | number | null
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
-    document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
-    documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
-    documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
-    conversations_created?: conversationsUncheckedUpdateManyWithoutUsersNestedInput
-    conversation_participants?: conversation_participantsUncheckedUpdateManyWithoutUsersNestedInput
-    messages_sent?: messagesUncheckedUpdateManyWithoutUsersNestedInput
-    notifications_notifications_user_idTousers?: notificationsUncheckedUpdateManyWithoutUsers_notifications_user_idTousersNestedInput
-    notifications_notifications_sender_idTousers?: notificationsUncheckedUpdateManyWithoutUsers_notifications_sender_idTousersNestedInput
-  }
-
-  export type documentsCreateWithoutDocument_invitationsInput = {
-    title: string
-    description?: string | null
-    content?: string | null
-    file_path?: string | null
-    file_name?: string | null
-    file_original_name?: string | null
-    file_type?: string | null
-    file_size?: bigint | number | null
-    file_extension?: string | null
-    file_upload_date?: Date | string | null
-    is_folder?: boolean
-    is_deleted?: boolean
-    is_public?: boolean
-    is_template?: boolean
-    created_at?: Date | string
-    updated_at?: Date | string
-    last_accessed_at?: Date | string | null
-    auto_save_interval?: number
-    allow_comments?: boolean
-    tags?: string | null
-    metadata?: NullableJsonNullValueInput | InputJsonValue
-    calls?: callsCreateNestedManyWithoutDocumentsInput
-    document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
-    users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
-    users_documents_owner_idTousers: usersCreateNestedOneWithoutDocuments_documents_owner_idTousersInput
-    documents?: documentsCreateNestedOneWithoutOther_documentsInput
-    other_documents?: documentsCreateNestedManyWithoutDocumentsInput
-  }
-
-  export type documentsUncheckedCreateWithoutDocument_invitationsInput = {
-    id?: number
-    title: string
-    description?: string | null
-    content?: string | null
-    file_path?: string | null
-    file_name?: string | null
-    file_original_name?: string | null
-    file_type?: string | null
-    file_size?: bigint | number | null
-    file_extension?: string | null
-    file_upload_date?: Date | string | null
-    owner_id: number
-    parent_folder_id?: number | null
-    is_folder?: boolean
-    is_deleted?: boolean
-    is_public?: boolean
-    is_template?: boolean
-    created_at?: Date | string
-    updated_at?: Date | string
-    last_modified_by?: number | null
-    last_accessed_at?: Date | string | null
-    auto_save_interval?: number
-    allow_comments?: boolean
-    tags?: string | null
-    metadata?: NullableJsonNullValueInput | InputJsonValue
-    calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
-    document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
-    other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
-  }
-
-  export type documentsCreateOrConnectWithoutDocument_invitationsInput = {
-    where: documentsWhereUniqueInput
-    create: XOR<documentsCreateWithoutDocument_invitationsInput, documentsUncheckedCreateWithoutDocument_invitationsInput>
-  }
-
-  export type usersCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput = {
-    username: string
-    email: string
-    password_hash: string
-    full_name?: string | null
-    profile_picture?: string | null
-    two_factor_enabled?: boolean | null
-    two_factor_secret?: string | null
-    is_admin?: boolean | null
-    is_active?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    last_login?: Date | string | null
-    login_attempts?: number | null
-    locked_until?: Date | string | null
-    call_participants?: call_participantsCreateNestedManyWithoutUsersInput
-    calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
-    document_versions?: document_versionsCreateNestedManyWithoutUsersInput
-    documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
-    documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
-    conversations_created?: conversationsCreateNestedManyWithoutUsersInput
-    conversation_participants?: conversation_participantsCreateNestedManyWithoutUsersInput
-    messages_sent?: messagesCreateNestedManyWithoutUsersInput
-    notifications_notifications_user_idTousers?: notificationsCreateNestedManyWithoutUsers_notifications_user_idTousersInput
-    notifications_notifications_sender_idTousers?: notificationsCreateNestedManyWithoutUsers_notifications_sender_idTousersInput
-  }
-
-  export type usersUncheckedCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput = {
-    id?: number
-    username: string
-    email: string
-    password_hash: string
-    full_name?: string | null
-    profile_picture?: string | null
-    two_factor_enabled?: boolean | null
-    two_factor_secret?: string | null
-    is_admin?: boolean | null
-    is_active?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    last_login?: Date | string | null
-    login_attempts?: number | null
-    locked_until?: Date | string | null
-    call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
-    calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
-    document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
-    documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
-    documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
-    conversations_created?: conversationsUncheckedCreateNestedManyWithoutUsersInput
-    conversation_participants?: conversation_participantsUncheckedCreateNestedManyWithoutUsersInput
-    messages_sent?: messagesUncheckedCreateNestedManyWithoutUsersInput
-    notifications_notifications_user_idTousers?: notificationsUncheckedCreateNestedManyWithoutUsers_notifications_user_idTousersInput
-    notifications_notifications_sender_idTousers?: notificationsUncheckedCreateNestedManyWithoutUsers_notifications_sender_idTousersInput
-  }
-
-  export type usersCreateOrConnectWithoutDocument_invitations_document_invitations_invited_byTousersInput = {
-    where: usersWhereUniqueInput
-    create: XOR<usersCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput, usersUncheckedCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput>
-  }
-
-  export type usersCreateWithoutDocument_invitations_document_invitations_user_idTousersInput = {
-    username: string
-    email: string
-    password_hash: string
-    full_name?: string | null
-    profile_picture?: string | null
-    two_factor_enabled?: boolean | null
-    two_factor_secret?: string | null
-    is_admin?: boolean | null
-    is_active?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    last_login?: Date | string | null
-    login_attempts?: number | null
-    locked_until?: Date | string | null
-    call_participants?: call_participantsCreateNestedManyWithoutUsersInput
-    calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_versions?: document_versionsCreateNestedManyWithoutUsersInput
-    documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
-    documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
-    conversations_created?: conversationsCreateNestedManyWithoutUsersInput
-    conversation_participants?: conversation_participantsCreateNestedManyWithoutUsersInput
-    messages_sent?: messagesCreateNestedManyWithoutUsersInput
-    notifications_notifications_user_idTousers?: notificationsCreateNestedManyWithoutUsers_notifications_user_idTousersInput
-    notifications_notifications_sender_idTousers?: notificationsCreateNestedManyWithoutUsers_notifications_sender_idTousersInput
-  }
-
-  export type usersUncheckedCreateWithoutDocument_invitations_document_invitations_user_idTousersInput = {
-    id?: number
-    username: string
-    email: string
-    password_hash: string
-    full_name?: string | null
-    profile_picture?: string | null
-    two_factor_enabled?: boolean | null
-    two_factor_secret?: string | null
-    is_admin?: boolean | null
-    is_active?: boolean | null
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-    last_login?: Date | string | null
-    login_attempts?: number | null
-    locked_until?: Date | string | null
-    call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
-    calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
-    documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
-    documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
-    conversations_created?: conversationsUncheckedCreateNestedManyWithoutUsersInput
-    conversation_participants?: conversation_participantsUncheckedCreateNestedManyWithoutUsersInput
-    messages_sent?: messagesUncheckedCreateNestedManyWithoutUsersInput
-    notifications_notifications_user_idTousers?: notificationsUncheckedCreateNestedManyWithoutUsers_notifications_user_idTousersInput
-    notifications_notifications_sender_idTousers?: notificationsUncheckedCreateNestedManyWithoutUsers_notifications_sender_idTousersInput
-  }
-
-  export type usersCreateOrConnectWithoutDocument_invitations_document_invitations_user_idTousersInput = {
-    where: usersWhereUniqueInput
-    create: XOR<usersCreateWithoutDocument_invitations_document_invitations_user_idTousersInput, usersUncheckedCreateWithoutDocument_invitations_document_invitations_user_idTousersInput>
-  }
-
-  export type documentsUpsertWithoutDocument_invitationsInput = {
-    update: XOR<documentsUpdateWithoutDocument_invitationsInput, documentsUncheckedUpdateWithoutDocument_invitationsInput>
-    create: XOR<documentsCreateWithoutDocument_invitationsInput, documentsUncheckedCreateWithoutDocument_invitationsInput>
-    where?: documentsWhereInput
-  }
-
-  export type documentsUpdateToOneWithWhereWithoutDocument_invitationsInput = {
-    where?: documentsWhereInput
-    data: XOR<documentsUpdateWithoutDocument_invitationsInput, documentsUncheckedUpdateWithoutDocument_invitationsInput>
-  }
-
-  export type documentsUpdateWithoutDocument_invitationsInput = {
-    title?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    content?: NullableStringFieldUpdateOperationsInput | string | null
-    file_path?: NullableStringFieldUpdateOperationsInput | string | null
-    file_name?: NullableStringFieldUpdateOperationsInput | string | null
-    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
-    file_type?: NullableStringFieldUpdateOperationsInput | string | null
-    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
-    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_folder?: BoolFieldUpdateOperationsInput | boolean
-    is_deleted?: BoolFieldUpdateOperationsInput | boolean
-    is_public?: BoolFieldUpdateOperationsInput | boolean
-    is_template?: BoolFieldUpdateOperationsInput | boolean
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: IntFieldUpdateOperationsInput | number
-    allow_comments?: BoolFieldUpdateOperationsInput | boolean
-    tags?: NullableStringFieldUpdateOperationsInput | string | null
-    metadata?: NullableJsonNullValueInput | InputJsonValue
-    calls?: callsUpdateManyWithoutDocumentsNestedInput
-    document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
-    users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
-    users_documents_owner_idTousers?: usersUpdateOneRequiredWithoutDocuments_documents_owner_idTousersNestedInput
-    documents?: documentsUpdateOneWithoutOther_documentsNestedInput
-    other_documents?: documentsUpdateManyWithoutDocumentsNestedInput
-  }
-
-  export type documentsUncheckedUpdateWithoutDocument_invitationsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    title?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    content?: NullableStringFieldUpdateOperationsInput | string | null
-    file_path?: NullableStringFieldUpdateOperationsInput | string | null
-    file_name?: NullableStringFieldUpdateOperationsInput | string | null
-    file_original_name?: NullableStringFieldUpdateOperationsInput | string | null
-    file_type?: NullableStringFieldUpdateOperationsInput | string | null
-    file_size?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    file_extension?: NullableStringFieldUpdateOperationsInput | string | null
-    file_upload_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    owner_id?: IntFieldUpdateOperationsInput | number
-    parent_folder_id?: NullableIntFieldUpdateOperationsInput | number | null
-    is_folder?: BoolFieldUpdateOperationsInput | boolean
-    is_deleted?: BoolFieldUpdateOperationsInput | boolean
-    is_public?: BoolFieldUpdateOperationsInput | boolean
-    is_template?: BoolFieldUpdateOperationsInput | boolean
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    last_modified_by?: NullableIntFieldUpdateOperationsInput | number | null
-    last_accessed_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    auto_save_interval?: IntFieldUpdateOperationsInput | number
-    allow_comments?: BoolFieldUpdateOperationsInput | boolean
-    tags?: NullableStringFieldUpdateOperationsInput | string | null
-    metadata?: NullableJsonNullValueInput | InputJsonValue
-    calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
-    document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
-    other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
-  }
-
-  export type usersUpsertWithoutDocument_invitations_document_invitations_invited_byTousersInput = {
-    update: XOR<usersUpdateWithoutDocument_invitations_document_invitations_invited_byTousersInput, usersUncheckedUpdateWithoutDocument_invitations_document_invitations_invited_byTousersInput>
-    create: XOR<usersCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput, usersUncheckedCreateWithoutDocument_invitations_document_invitations_invited_byTousersInput>
-    where?: usersWhereInput
-  }
-
-  export type usersUpdateToOneWithWhereWithoutDocument_invitations_document_invitations_invited_byTousersInput = {
-    where?: usersWhereInput
-    data: XOR<usersUpdateWithoutDocument_invitations_document_invitations_invited_byTousersInput, usersUncheckedUpdateWithoutDocument_invitations_document_invitations_invited_byTousersInput>
-  }
-
-  export type usersUpdateWithoutDocument_invitations_document_invitations_invited_byTousersInput = {
-    username?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    password_hash?: StringFieldUpdateOperationsInput | string
-    full_name?: NullableStringFieldUpdateOperationsInput | string | null
-    profile_picture?: NullableStringFieldUpdateOperationsInput | string | null
-    two_factor_enabled?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    two_factor_secret?: NullableStringFieldUpdateOperationsInput | string | null
-    is_admin?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    last_login?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    login_attempts?: NullableIntFieldUpdateOperationsInput | number | null
-    locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
-    calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
-    document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
-    documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
-    documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
-    conversations_created?: conversationsUpdateManyWithoutUsersNestedInput
-    conversation_participants?: conversation_participantsUpdateManyWithoutUsersNestedInput
-    messages_sent?: messagesUpdateManyWithoutUsersNestedInput
-    notifications_notifications_user_idTousers?: notificationsUpdateManyWithoutUsers_notifications_user_idTousersNestedInput
-    notifications_notifications_sender_idTousers?: notificationsUpdateManyWithoutUsers_notifications_sender_idTousersNestedInput
-  }
-
-  export type usersUncheckedUpdateWithoutDocument_invitations_document_invitations_invited_byTousersInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    username?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    password_hash?: StringFieldUpdateOperationsInput | string
-    full_name?: NullableStringFieldUpdateOperationsInput | string | null
-    profile_picture?: NullableStringFieldUpdateOperationsInput | string | null
-    two_factor_enabled?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    two_factor_secret?: NullableStringFieldUpdateOperationsInput | string | null
-    is_admin?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    last_login?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    login_attempts?: NullableIntFieldUpdateOperationsInput | number | null
-    locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
-    calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
-    document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
-    documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
-    documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
-    conversations_created?: conversationsUncheckedUpdateManyWithoutUsersNestedInput
-    conversation_participants?: conversation_participantsUncheckedUpdateManyWithoutUsersNestedInput
-    messages_sent?: messagesUncheckedUpdateManyWithoutUsersNestedInput
-    notifications_notifications_user_idTousers?: notificationsUncheckedUpdateManyWithoutUsers_notifications_user_idTousersNestedInput
-    notifications_notifications_sender_idTousers?: notificationsUncheckedUpdateManyWithoutUsers_notifications_sender_idTousersNestedInput
-  }
-
-  export type usersUpsertWithoutDocument_invitations_document_invitations_user_idTousersInput = {
-    update: XOR<usersUpdateWithoutDocument_invitations_document_invitations_user_idTousersInput, usersUncheckedUpdateWithoutDocument_invitations_document_invitations_user_idTousersInput>
-    create: XOR<usersCreateWithoutDocument_invitations_document_invitations_user_idTousersInput, usersUncheckedCreateWithoutDocument_invitations_document_invitations_user_idTousersInput>
-    where?: usersWhereInput
-  }
-
-  export type usersUpdateToOneWithWhereWithoutDocument_invitations_document_invitations_user_idTousersInput = {
-    where?: usersWhereInput
-    data: XOR<usersUpdateWithoutDocument_invitations_document_invitations_user_idTousersInput, usersUncheckedUpdateWithoutDocument_invitations_document_invitations_user_idTousersInput>
-  }
-
-  export type usersUpdateWithoutDocument_invitations_document_invitations_user_idTousersInput = {
-    username?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    password_hash?: StringFieldUpdateOperationsInput | string
-    full_name?: NullableStringFieldUpdateOperationsInput | string | null
-    profile_picture?: NullableStringFieldUpdateOperationsInput | string | null
-    two_factor_enabled?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    two_factor_secret?: NullableStringFieldUpdateOperationsInput | string | null
-    is_admin?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    last_login?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    login_attempts?: NullableIntFieldUpdateOperationsInput | number | null
-    locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
-    calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
-    documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
-    documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
-    conversations_created?: conversationsUpdateManyWithoutUsersNestedInput
-    conversation_participants?: conversation_participantsUpdateManyWithoutUsersNestedInput
-    messages_sent?: messagesUpdateManyWithoutUsersNestedInput
-    notifications_notifications_user_idTousers?: notificationsUpdateManyWithoutUsers_notifications_user_idTousersNestedInput
-    notifications_notifications_sender_idTousers?: notificationsUpdateManyWithoutUsers_notifications_sender_idTousersNestedInput
-  }
-
-  export type usersUncheckedUpdateWithoutDocument_invitations_document_invitations_user_idTousersInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    username?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    password_hash?: StringFieldUpdateOperationsInput | string
-    full_name?: NullableStringFieldUpdateOperationsInput | string | null
-    profile_picture?: NullableStringFieldUpdateOperationsInput | string | null
-    two_factor_enabled?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    two_factor_secret?: NullableStringFieldUpdateOperationsInput | string | null
-    is_admin?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    last_login?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    login_attempts?: NullableIntFieldUpdateOperationsInput | number | null
-    locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
-    calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -19688,7 +17473,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
     users_documents_owner_idTousers: usersCreateNestedOneWithoutDocuments_documents_owner_idTousersInput
     documents?: documentsCreateNestedOneWithoutOther_documentsInput
@@ -19722,7 +17506,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
   }
 
@@ -19748,8 +17531,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
     conversations_created?: conversationsCreateNestedManyWithoutUsersInput
@@ -19777,8 +17558,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
     conversations_created?: conversationsUncheckedCreateNestedManyWithoutUsersInput
@@ -19827,7 +17606,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
     users_documents_owner_idTousers?: usersUpdateOneRequiredWithoutDocuments_documents_owner_idTousersNestedInput
     documents?: documentsUpdateOneWithoutOther_documentsNestedInput
@@ -19861,7 +17639,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
   }
 
@@ -19893,8 +17670,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
     conversations_created?: conversationsUpdateManyWithoutUsersNestedInput
@@ -19922,8 +17697,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
     conversations_created?: conversationsUncheckedUpdateManyWithoutUsersNestedInput
@@ -19959,35 +17732,6 @@ export namespace Prisma {
 
   export type callsCreateManyDocumentsInputEnvelope = {
     data: callsCreateManyDocumentsInput | callsCreateManyDocumentsInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type document_invitationsCreateWithoutDocumentsInput = {
-    permission_level: string
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-    users_document_invitations_invited_byTousers?: usersCreateNestedOneWithoutDocument_invitations_document_invitations_invited_byTousersInput
-    users_document_invitations_user_idTousers: usersCreateNestedOneWithoutDocument_invitations_document_invitations_user_idTousersInput
-  }
-
-  export type document_invitationsUncheckedCreateWithoutDocumentsInput = {
-    id?: number
-    user_id: number
-    permission_level: string
-    invited_by?: number | null
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-  }
-
-  export type document_invitationsCreateOrConnectWithoutDocumentsInput = {
-    where: document_invitationsWhereUniqueInput
-    create: XOR<document_invitationsCreateWithoutDocumentsInput, document_invitationsUncheckedCreateWithoutDocumentsInput>
-  }
-
-  export type document_invitationsCreateManyDocumentsInputEnvelope = {
-    data: document_invitationsCreateManyDocumentsInput | document_invitationsCreateManyDocumentsInput[]
     skipDuplicates?: boolean
   }
 
@@ -20045,8 +17789,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
     conversations_created?: conversationsCreateNestedManyWithoutUsersInput
@@ -20074,8 +17816,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
     conversations_created?: conversationsUncheckedCreateNestedManyWithoutUsersInput
@@ -20107,8 +17847,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     conversations_created?: conversationsCreateNestedManyWithoutUsersInput
@@ -20136,8 +17874,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     conversations_created?: conversationsUncheckedCreateNestedManyWithoutUsersInput
@@ -20175,7 +17911,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
     users_documents_owner_idTousers: usersCreateNestedOneWithoutDocuments_documents_owner_idTousersInput
@@ -20209,7 +17944,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
   }
 
@@ -20241,7 +17975,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
     users_documents_owner_idTousers: usersCreateNestedOneWithoutDocuments_documents_owner_idTousersInput
@@ -20274,7 +18007,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
   }
@@ -20316,36 +18048,6 @@ export namespace Prisma {
     ended_at?: DateTimeNullableFilter<"calls"> | Date | string | null
     call_type?: StringFilter<"calls"> | string
     status?: StringNullableFilter<"calls"> | string | null
-  }
-
-  export type document_invitationsUpsertWithWhereUniqueWithoutDocumentsInput = {
-    where: document_invitationsWhereUniqueInput
-    update: XOR<document_invitationsUpdateWithoutDocumentsInput, document_invitationsUncheckedUpdateWithoutDocumentsInput>
-    create: XOR<document_invitationsCreateWithoutDocumentsInput, document_invitationsUncheckedCreateWithoutDocumentsInput>
-  }
-
-  export type document_invitationsUpdateWithWhereUniqueWithoutDocumentsInput = {
-    where: document_invitationsWhereUniqueInput
-    data: XOR<document_invitationsUpdateWithoutDocumentsInput, document_invitationsUncheckedUpdateWithoutDocumentsInput>
-  }
-
-  export type document_invitationsUpdateManyWithWhereWithoutDocumentsInput = {
-    where: document_invitationsScalarWhereInput
-    data: XOR<document_invitationsUpdateManyMutationInput, document_invitationsUncheckedUpdateManyWithoutDocumentsInput>
-  }
-
-  export type document_invitationsScalarWhereInput = {
-    AND?: document_invitationsScalarWhereInput | document_invitationsScalarWhereInput[]
-    OR?: document_invitationsScalarWhereInput[]
-    NOT?: document_invitationsScalarWhereInput | document_invitationsScalarWhereInput[]
-    id?: IntFilter<"document_invitations"> | number
-    document_id?: IntFilter<"document_invitations"> | number
-    user_id?: IntFilter<"document_invitations"> | number
-    permission_level?: StringFilter<"document_invitations"> | string
-    invited_by?: IntNullableFilter<"document_invitations"> | number | null
-    invitation_date?: DateTimeNullableFilter<"document_invitations"> | Date | string | null
-    accepted_date?: DateTimeNullableFilter<"document_invitations"> | Date | string | null
-    is_active?: BoolNullableFilter<"document_invitations"> | boolean | null
   }
 
   export type document_versionsUpsertWithWhereUniqueWithoutDocumentsInput = {
@@ -20410,8 +18112,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
     conversations_created?: conversationsUpdateManyWithoutUsersNestedInput
@@ -20439,8 +18139,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
     conversations_created?: conversationsUncheckedUpdateManyWithoutUsersNestedInput
@@ -20478,8 +18176,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     conversations_created?: conversationsUpdateManyWithoutUsersNestedInput
@@ -20507,8 +18203,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     conversations_created?: conversationsUncheckedUpdateManyWithoutUsersNestedInput
@@ -20552,7 +18246,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
     users_documents_owner_idTousers?: usersUpdateOneRequiredWithoutDocuments_documents_owner_idTousersNestedInput
@@ -20586,7 +18279,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
   }
 
@@ -20691,64 +18383,6 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput = {
-    permission_level: string
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-    documents: documentsCreateNestedOneWithoutDocument_invitationsInput
-    users_document_invitations_user_idTousers: usersCreateNestedOneWithoutDocument_invitations_document_invitations_user_idTousersInput
-  }
-
-  export type document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput = {
-    id?: number
-    document_id: number
-    user_id: number
-    permission_level: string
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-  }
-
-  export type document_invitationsCreateOrConnectWithoutUsers_document_invitations_invited_byTousersInput = {
-    where: document_invitationsWhereUniqueInput
-    create: XOR<document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput>
-  }
-
-  export type document_invitationsCreateManyUsers_document_invitations_invited_byTousersInputEnvelope = {
-    data: document_invitationsCreateManyUsers_document_invitations_invited_byTousersInput | document_invitationsCreateManyUsers_document_invitations_invited_byTousersInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput = {
-    permission_level: string
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-    documents: documentsCreateNestedOneWithoutDocument_invitationsInput
-    users_document_invitations_invited_byTousers?: usersCreateNestedOneWithoutDocument_invitations_document_invitations_invited_byTousersInput
-  }
-
-  export type document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput = {
-    id?: number
-    document_id: number
-    permission_level: string
-    invited_by?: number | null
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-  }
-
-  export type document_invitationsCreateOrConnectWithoutUsers_document_invitations_user_idTousersInput = {
-    where: document_invitationsWhereUniqueInput
-    create: XOR<document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput>
-  }
-
-  export type document_invitationsCreateManyUsers_document_invitations_user_idTousersInputEnvelope = {
-    data: document_invitationsCreateManyUsers_document_invitations_user_idTousersInput | document_invitationsCreateManyUsers_document_invitations_user_idTousersInput[]
-    skipDuplicates?: boolean
-  }
-
   export type document_versionsCreateWithoutUsersInput = {
     version_number: number
     title?: string | null
@@ -20809,7 +18443,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
     users_documents_owner_idTousers: usersCreateNestedOneWithoutDocuments_documents_owner_idTousersInput
     documents?: documentsCreateNestedOneWithoutOther_documentsInput
@@ -20842,7 +18475,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
   }
@@ -20880,7 +18512,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsCreateNestedManyWithoutDocumentsInput
     users_documents_last_modified_byTousers?: usersCreateNestedOneWithoutDocuments_documents_last_modified_byTousersInput
     documents?: documentsCreateNestedOneWithoutOther_documentsInput
@@ -20913,7 +18544,6 @@ export namespace Prisma {
     tags?: string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedCreateNestedManyWithoutDocumentsInput
-    document_invitations?: document_invitationsUncheckedCreateNestedManyWithoutDocumentsInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutDocumentsInput
     other_documents?: documentsUncheckedCreateNestedManyWithoutDocumentsInput
   }
@@ -21097,38 +18727,6 @@ export namespace Prisma {
   export type callsUpdateManyWithWhereWithoutUsersInput = {
     where: callsScalarWhereInput
     data: XOR<callsUpdateManyMutationInput, callsUncheckedUpdateManyWithoutUsersInput>
-  }
-
-  export type document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput = {
-    where: document_invitationsWhereUniqueInput
-    update: XOR<document_invitationsUpdateWithoutUsers_document_invitations_invited_byTousersInput, document_invitationsUncheckedUpdateWithoutUsers_document_invitations_invited_byTousersInput>
-    create: XOR<document_invitationsCreateWithoutUsers_document_invitations_invited_byTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_invited_byTousersInput>
-  }
-
-  export type document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_invited_byTousersInput = {
-    where: document_invitationsWhereUniqueInput
-    data: XOR<document_invitationsUpdateWithoutUsers_document_invitations_invited_byTousersInput, document_invitationsUncheckedUpdateWithoutUsers_document_invitations_invited_byTousersInput>
-  }
-
-  export type document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_invited_byTousersInput = {
-    where: document_invitationsScalarWhereInput
-    data: XOR<document_invitationsUpdateManyMutationInput, document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersInput>
-  }
-
-  export type document_invitationsUpsertWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput = {
-    where: document_invitationsWhereUniqueInput
-    update: XOR<document_invitationsUpdateWithoutUsers_document_invitations_user_idTousersInput, document_invitationsUncheckedUpdateWithoutUsers_document_invitations_user_idTousersInput>
-    create: XOR<document_invitationsCreateWithoutUsers_document_invitations_user_idTousersInput, document_invitationsUncheckedCreateWithoutUsers_document_invitations_user_idTousersInput>
-  }
-
-  export type document_invitationsUpdateWithWhereUniqueWithoutUsers_document_invitations_user_idTousersInput = {
-    where: document_invitationsWhereUniqueInput
-    data: XOR<document_invitationsUpdateWithoutUsers_document_invitations_user_idTousersInput, document_invitationsUncheckedUpdateWithoutUsers_document_invitations_user_idTousersInput>
-  }
-
-  export type document_invitationsUpdateManyWithWhereWithoutUsers_document_invitations_user_idTousersInput = {
-    where: document_invitationsScalarWhereInput
-    data: XOR<document_invitationsUpdateManyMutationInput, document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersInput>
   }
 
   export type document_versionsUpsertWithWhereUniqueWithoutUsersInput = {
@@ -21327,8 +18925,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -21356,8 +18952,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -21452,8 +19046,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -21481,8 +19073,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -21565,8 +19155,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -21594,8 +19182,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -21668,8 +19254,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -21697,8 +19281,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -21749,8 +19331,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -21778,8 +19358,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -21852,8 +19430,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -21881,8 +19457,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -21909,8 +19483,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -21938,8 +19510,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -21971,8 +19541,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsCreateNestedManyWithoutUsersInput
     calls?: callsCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -22000,8 +19568,6 @@ export namespace Prisma {
     locked_until?: Date | string | null
     call_participants?: call_participantsUncheckedCreateNestedManyWithoutUsersInput
     calls?: callsUncheckedCreateNestedManyWithoutUsersInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_invited_byTousersInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedCreateNestedManyWithoutUsers_document_invitations_user_idTousersInput
     document_versions?: document_versionsUncheckedCreateNestedManyWithoutUsersInput
     documents_documents_last_modified_byTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_last_modified_byTousersInput
     documents_documents_owner_idTousers?: documentsUncheckedCreateNestedManyWithoutUsers_documents_owner_idTousersInput
@@ -22044,8 +19610,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -22073,8 +19637,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -22112,8 +19674,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUpdateManyWithoutUsersNestedInput
     calls?: callsUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -22141,8 +19701,6 @@ export namespace Prisma {
     locked_until?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     call_participants?: call_participantsUncheckedUpdateManyWithoutUsersNestedInput
     calls?: callsUncheckedUpdateManyWithoutUsersNestedInput
-    document_invitations_document_invitations_invited_byTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersNestedInput
-    document_invitations_document_invitations_user_idTousers?: document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutUsersNestedInput
     documents_documents_last_modified_byTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_last_modified_byTousersNestedInput
     documents_documents_owner_idTousers?: documentsUncheckedUpdateManyWithoutUsers_documents_owner_idTousersNestedInput
@@ -22190,16 +19748,6 @@ export namespace Prisma {
     ended_at?: Date | string | null
     call_type: string
     status?: string | null
-  }
-
-  export type document_invitationsCreateManyDocumentsInput = {
-    id?: number
-    user_id: number
-    permission_level: string
-    invited_by?: number | null
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
   }
 
   export type document_versionsCreateManyDocumentsInput = {
@@ -22271,35 +19819,6 @@ export namespace Prisma {
     status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type document_invitationsUpdateWithoutDocumentsInput = {
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    users_document_invitations_invited_byTousers?: usersUpdateOneWithoutDocument_invitations_document_invitations_invited_byTousersNestedInput
-    users_document_invitations_user_idTousers?: usersUpdateOneRequiredWithoutDocument_invitations_document_invitations_user_idTousersNestedInput
-  }
-
-  export type document_invitationsUncheckedUpdateWithoutDocumentsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    user_id?: IntFieldUpdateOperationsInput | number
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invited_by?: NullableIntFieldUpdateOperationsInput | number | null
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
-  export type document_invitationsUncheckedUpdateManyWithoutDocumentsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    user_id?: IntFieldUpdateOperationsInput | number
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invited_by?: NullableIntFieldUpdateOperationsInput | number | null
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
   export type document_versionsUpdateWithoutDocumentsInput = {
     version_number?: IntFieldUpdateOperationsInput | number
     title?: NullableStringFieldUpdateOperationsInput | string | null
@@ -22364,7 +19883,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
     users_documents_owner_idTousers?: usersUpdateOneRequiredWithoutDocuments_documents_owner_idTousersNestedInput
@@ -22397,7 +19915,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
   }
@@ -22444,26 +19961,6 @@ export namespace Prisma {
     ended_at?: Date | string | null
     call_type: string
     status?: string | null
-  }
-
-  export type document_invitationsCreateManyUsers_document_invitations_invited_byTousersInput = {
-    id?: number
-    document_id: number
-    user_id: number
-    permission_level: string
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
-  }
-
-  export type document_invitationsCreateManyUsers_document_invitations_user_idTousersInput = {
-    id?: number
-    document_id: number
-    permission_level: string
-    invited_by?: number | null
-    invitation_date?: Date | string | null
-    accepted_date?: Date | string | null
-    is_active?: boolean | null
   }
 
   export type document_versionsCreateManyUsersInput = {
@@ -22630,64 +20127,6 @@ export namespace Prisma {
     status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type document_invitationsUpdateWithoutUsers_document_invitations_invited_byTousersInput = {
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    documents?: documentsUpdateOneRequiredWithoutDocument_invitationsNestedInput
-    users_document_invitations_user_idTousers?: usersUpdateOneRequiredWithoutDocument_invitations_document_invitations_user_idTousersNestedInput
-  }
-
-  export type document_invitationsUncheckedUpdateWithoutUsers_document_invitations_invited_byTousersInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    document_id?: IntFieldUpdateOperationsInput | number
-    user_id?: IntFieldUpdateOperationsInput | number
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
-  export type document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_invited_byTousersInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    document_id?: IntFieldUpdateOperationsInput | number
-    user_id?: IntFieldUpdateOperationsInput | number
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
-  export type document_invitationsUpdateWithoutUsers_document_invitations_user_idTousersInput = {
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    documents?: documentsUpdateOneRequiredWithoutDocument_invitationsNestedInput
-    users_document_invitations_invited_byTousers?: usersUpdateOneWithoutDocument_invitations_document_invitations_invited_byTousersNestedInput
-  }
-
-  export type document_invitationsUncheckedUpdateWithoutUsers_document_invitations_user_idTousersInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    document_id?: IntFieldUpdateOperationsInput | number
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invited_by?: NullableIntFieldUpdateOperationsInput | number | null
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
-  export type document_invitationsUncheckedUpdateManyWithoutUsers_document_invitations_user_idTousersInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    document_id?: IntFieldUpdateOperationsInput | number
-    permission_level?: StringFieldUpdateOperationsInput | string
-    invited_by?: NullableIntFieldUpdateOperationsInput | number | null
-    invitation_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    accepted_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    is_active?: NullableBoolFieldUpdateOperationsInput | boolean | null
-  }
-
   export type document_versionsUpdateWithoutUsersInput = {
     version_number?: IntFieldUpdateOperationsInput | number
     title?: NullableStringFieldUpdateOperationsInput | string | null
@@ -22752,7 +20191,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
     users_documents_owner_idTousers?: usersUpdateOneRequiredWithoutDocuments_documents_owner_idTousersNestedInput
     documents?: documentsUpdateOneWithoutOther_documentsNestedInput
@@ -22785,7 +20223,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
   }
@@ -22840,7 +20277,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUpdateManyWithoutDocumentsNestedInput
     users_documents_last_modified_byTousers?: usersUpdateOneWithoutDocuments_documents_last_modified_byTousersNestedInput
     documents?: documentsUpdateOneWithoutOther_documentsNestedInput
@@ -22873,7 +20309,6 @@ export namespace Prisma {
     tags?: NullableStringFieldUpdateOperationsInput | string | null
     metadata?: NullableJsonNullValueInput | InputJsonValue
     calls?: callsUncheckedUpdateManyWithoutDocumentsNestedInput
-    document_invitations?: document_invitationsUncheckedUpdateManyWithoutDocumentsNestedInput
     document_versions?: document_versionsUncheckedUpdateManyWithoutDocumentsNestedInput
     other_documents?: documentsUncheckedUpdateManyWithoutDocumentsNestedInput
   }

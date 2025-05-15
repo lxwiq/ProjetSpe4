@@ -393,19 +393,26 @@ export class WebsocketService {
     });
 
     this.socket.on('document:content-changed', (data) => {
-      this.logger.debug('Contenu du document modifié', {
-        service: 'WebsocketService',
-        documentId: data.documentId
-      });
+      // Réduire la verbosité des logs pour améliorer les performances
+      if (!environment.production) {
+        this.logger.debug('Contenu du document modifié', {
+          service: 'WebsocketService',
+          documentId: data.documentId
+        });
+      }
+      // Émettre l'événement immédiatement pour une meilleure réactivité
       this.documentContentChanged.next(data);
     });
 
     this.socket.on('document:cursor-moved', (data) => {
-      this.logger.debug('Curseur déplacé', {
-        service: 'WebsocketService',
-        documentId: data.documentId,
-        userId: data.userId
-      });
+      // Réduire la verbosité des logs pour améliorer les performances
+      if (!environment.production) {
+        this.logger.debug('Curseur déplacé', {
+          service: 'WebsocketService',
+          userId: data.userId
+        });
+      }
+      // Émettre l'événement immédiatement pour une meilleure réactivité
       this.documentCursorMoved.next(data);
     });
 
@@ -442,7 +449,7 @@ export class WebsocketService {
       this.callEnded.next(data);
     });
 
-    this.socket.on('call:joined', (data) => {
+    this.socket.on('call:user-joined', (data) => {
       this.logger.debug('Utilisateur a rejoint l\'appel', {
         service: 'WebsocketService',
         callId: data.callId,
@@ -451,7 +458,7 @@ export class WebsocketService {
       this.callJoined.next(data);
     });
 
-    this.socket.on('call:left', (data) => {
+    this.socket.on('call:user-left', (data) => {
       this.logger.debug('Utilisateur a quitté l\'appel', {
         service: 'WebsocketService',
         callId: data.callId,
@@ -495,11 +502,17 @@ export class WebsocketService {
    * @param callback Fonction de rappel (optionnelle)
    */
   emit(event: string, data: any, callback?: (response: any) => void): void {
+    // Vérifier si l'événement est lié aux curseurs ou au contenu pour réduire la verbosité des logs
+    const isHighFrequencyEvent = event === 'document:cursor-update' || event === 'document:update';
+
     if (!this.socket || !this.isConnected()) {
-      this.logger.warn(`Impossible d'émettre l'événement ${event}, socket non connecté. Mise en file d'attente.`, {
-        service: 'WebsocketService',
-        event
-      });
+      // Réduire la verbosité des logs pour les événements à haute fréquence
+      if (!isHighFrequencyEvent) {
+        this.logger.warn(`Impossible d'émettre l'événement ${event}, socket non connecté. Mise en file d'attente.`, {
+          service: 'WebsocketService',
+          event
+        });
+      }
 
       // Stocker l'émission pour la rejouer plus tard
       this.pendingEmits.push({event, data, callback});
@@ -510,7 +523,38 @@ export class WebsocketService {
     }
 
     try {
+      // Réduire la verbosité des logs pour les événements à haute fréquence
+      if (!isHighFrequencyEvent && !environment.production) {
+        this.logger.debug(`Émission de l'événement ${event}`, {
+          service: 'WebsocketService',
+          event,
+          data: event === 'cursor:move' ? { userId: data.userId } : data // Éviter de logger les positions complètes des curseurs
+        });
+      }
+
       this.socket.emit(event, data, (response: any) => {
+        // Réduire la verbosité des logs pour les événements à haute fréquence
+        if (!isHighFrequencyEvent && !environment.production) {
+          this.logger.debug(`Réponse reçue pour l'événement ${event}`, {
+            service: 'WebsocketService',
+            event,
+            success: response?.success,
+            error: response?.error
+          });
+        }
+
+        // Vérifier si la réponse est valide
+        if (!response) {
+          this.logger.error(`Réponse invalide pour l'événement ${event}`, {
+            service: 'WebsocketService',
+            event
+          });
+          if (callback) {
+            callback({ success: false, error: 'Réponse invalide du serveur' });
+            return;
+          }
+        }
+
         // Vérifier si la réponse indique une erreur d'authentification
         if (response && response.error &&
             (response.error.includes('Authentication') || response.error.includes('token'))) {

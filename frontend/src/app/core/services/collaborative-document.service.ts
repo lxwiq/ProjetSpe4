@@ -49,7 +49,13 @@ export class CollaborativeDocumentService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(data => {
         console.log('Utilisateur a rejoint le document:', data);
-        this.updateActiveUsers(data.activeUsers);
+        if (data && data.activeUsers) {
+          this.updateActiveUsers(data.activeUsers);
+        } else {
+          console.warn('Données d\'utilisateurs actifs manquantes dans l\'événement document:user-joined');
+          // Tenter de récupérer les utilisateurs actifs via l'API
+          this.refreshActiveUsers(this.currentDocumentId);
+        }
       });
 
     // Écouter les utilisateurs qui quittent le document
@@ -57,7 +63,13 @@ export class CollaborativeDocumentService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(data => {
         console.log('Utilisateur a quitté le document:', data);
-        this.updateActiveUsers(data.activeUsers);
+        if (data && data.activeUsers) {
+          this.updateActiveUsers(data.activeUsers);
+        } else {
+          console.warn('Données d\'utilisateurs actifs manquantes dans l\'événement document:user-left');
+          // Tenter de récupérer les utilisateurs actifs via l'API
+          this.refreshActiveUsers(this.currentDocumentId);
+        }
       });
 
     // Écouter les modifications de contenu
@@ -99,8 +111,27 @@ export class CollaborativeDocumentService {
    */
   private updateActiveUsers(users: ActiveDocumentUser[]): void {
     if (users && Array.isArray(users)) {
+      console.log('Mise à jour des utilisateurs actifs:', users);
       this.activeUsers.set(users);
     }
+  }
+
+  /**
+   * Rafraîchit la liste des utilisateurs actifs via l'API
+   * @param documentId ID du document
+   */
+  private refreshActiveUsers(documentId: number | null): void {
+    if (!documentId) return;
+
+    this.documentService.getActiveUsers(documentId).subscribe({
+      next: (users) => {
+        console.log('Utilisateurs actifs récupérés via API:', users);
+        this.updateActiveUsers(users);
+      },
+      error: (error) => {
+        console.error('Erreur lors de la récupération des utilisateurs actifs:', error);
+      }
+    });
   }
 
   /**
@@ -114,12 +145,20 @@ export class CollaborativeDocumentService {
 
     return new Observable(observer => {
       this.websocketService.emit('document:join', { documentId }, (response: any) => {
-        if (response.success) {
+        if (response && response.success) {
           console.log('Document rejoint avec succès:', response.data);
 
           // Mettre à jour l'état
-          this.activeDocument.set(response.data.document);
-          this.updateActiveUsers(response.data.activeUsers);
+          if (response.data && response.data.document) {
+            this.activeDocument.set(response.data.document);
+          }
+
+          if (response.data && response.data.activeUsers) {
+            this.updateActiveUsers(response.data.activeUsers);
+          } else {
+            // Si les utilisateurs actifs ne sont pas fournis, les récupérer via l'API
+            this.refreshActiveUsers(documentId);
+          }
 
           // Configurer la sauvegarde automatique avec un intervalle de 10 secondes
           this.setupAutoSave(documentId, 10);
@@ -128,8 +167,8 @@ export class CollaborativeDocumentService {
           observer.next(response.data);
           observer.complete();
         } else {
-          console.error('Erreur lors de la connexion au document:', response.error);
-          observer.error(new Error(response.error));
+          console.error('Erreur lors de la connexion au document:', response ? response.error : 'Réponse invalide');
+          observer.error(new Error(response ? response.error : 'Erreur de connexion au document'));
         }
       });
     });
@@ -220,6 +259,15 @@ export class CollaborativeDocumentService {
     }
   }
 
+  // Propriété pour stocker le dernier timestamp d'envoi de delta
+  private lastDeltaSentTimestamp = 0;
+  // Intervalle minimum entre les envois de delta (en ms) pour éviter de surcharger le serveur
+  private readonly DELTA_THROTTLE_INTERVAL = 50;
+  // File d'attente pour les deltas en attente d'envoi
+  private pendingDeltas: Array<{delta: any, content: string}> = [];
+  // Timer pour l'envoi des deltas en attente
+  private pendingDeltaTimer: any = null;
+
   /**
    * Met à jour le contenu d'un document
    * @param documentId ID du document
@@ -233,15 +281,10 @@ export class CollaborativeDocumentService {
 
     // Vérifier que le contenu est valide
     if (content === undefined || content === null || content.trim() === '') {
-      console.warn('🔄 [CollaborativeDoc] Alerte: Contenu vide ou invalide détecté');
       content = '<p>Document vide</p>'; // Utiliser un contenu HTML minimal comme fallback
     }
 
-    // Log du contenu à mettre à jour
-    console.log(`🔄 [CollaborativeDoc] Mise à jour: Document ${documentId} (${content.length} caractères)`);
-    console.log(`📝 [CollaborativeDoc] Contenu: ${content.substring(0, 50)}...`);
-
-    // Mettre à jour le document local
+    // Mettre à jour le document local immédiatement
     const activeDoc = this.activeDocument();
     if (activeDoc) {
       // Créer une copie pour éviter les problèmes de référence
@@ -250,39 +293,101 @@ export class CollaborativeDocumentService {
     }
 
     // Toujours privilégier l'envoi du delta pour les mises à jour en temps réel
-    // si disponible, car c'est plus efficace et précis
     const data: any = { documentId };
+    const now = Date.now();
 
     if (delta) {
-      data.delta = delta;
-      console.log('🔄 [CollaborativeDoc] Envoi: Delta au serveur');
-
       // Vérifier que le delta a une structure valide avec des opérations
       if (!delta.ops || !Array.isArray(delta.ops)) {
-        console.warn('🔄 [CollaborativeDoc] Alerte: Delta sans opérations valides, ajout d\'un tableau vide');
-        data.delta.ops = [];
+        // Si le delta est invalide, utiliser le contenu complet
+        data.content = content;
+        this.sendContentUpdate(data);
+        return;
       }
 
-      // S'assurer que le WebSocket est connecté avant d'envoyer
-      if (this.websocketService.isConnected()) {
-        this.websocketService.emit('document:update', data);
-      } else {
-        console.warn('🔄 [CollaborativeDoc] Alerte: WebSocket non connecté, mise à jour différée');
-        // Stocker la dernière mise à jour pour l'envoyer lors de la reconnexion
-        setTimeout(() => {
-          if (this.websocketService.isConnected()) {
-            console.log('🔄 [CollaborativeDoc] Réessai d\'envoi du delta après reconnexion');
-            this.websocketService.emit('document:update', data);
-          }
-        }, 1000);
+      // Appliquer la limitation de débit (throttling) pour les deltas
+      if (now - this.lastDeltaSentTimestamp < this.DELTA_THROTTLE_INTERVAL) {
+        // Ajouter le delta à la file d'attente
+        this.pendingDeltas.push({delta, content});
+
+        // Si aucun timer n'est en cours, en créer un pour traiter les deltas en attente
+        if (!this.pendingDeltaTimer) {
+          this.pendingDeltaTimer = setTimeout(() => {
+            this.processPendingDeltas(documentId);
+          }, this.DELTA_THROTTLE_INTERVAL);
+        }
+        return;
       }
+
+      // Envoyer le delta immédiatement
+      data.delta = delta;
+      data.content = content; // Inclure le contenu pour la synchronisation
+      this.lastDeltaSentTimestamp = now;
+      this.sendContentUpdate(data);
     } else {
       // Fallback au contenu complet si aucun delta n'est disponible
       data.content = content;
-      console.log(`🔄 [CollaborativeDoc] Envoi: Contenu complet au serveur (${content.length} caractères)`);
-      this.websocketService.emit('document:update', data);
+      this.sendContentUpdate(data);
     }
   }
+
+  /**
+   * Traite les deltas en attente d'envoi
+   * @param documentId ID du document
+   */
+  private processPendingDeltas(documentId: number): void {
+    // Réinitialiser le timer
+    this.pendingDeltaTimer = null;
+
+    if (this.pendingDeltas.length === 0) {
+      return;
+    }
+
+    // Prendre le dernier delta et le contenu correspondant
+    const lastItem = this.pendingDeltas.pop();
+
+    // Vider la file d'attente
+    this.pendingDeltas = [];
+
+    if (lastItem) {
+      // Envoyer le dernier delta avec le contenu complet pour assurer la synchronisation
+      const data = {
+        documentId,
+        delta: lastItem.delta,
+        content: lastItem.content
+      };
+
+      this.lastDeltaSentTimestamp = Date.now();
+      this.sendContentUpdate(data);
+    }
+  }
+
+  /**
+   * Envoie une mise à jour de contenu au serveur
+   * @param data Données à envoyer
+   */
+  private sendContentUpdate(data: any): void {
+    // S'assurer que le WebSocket est connecté avant d'envoyer
+    if (this.websocketService.isConnected()) {
+      this.websocketService.emit('document:update', data);
+    } else {
+      // Stocker la dernière mise à jour pour l'envoyer lors de la reconnexion
+      setTimeout(() => {
+        if (this.websocketService.isConnected()) {
+          this.websocketService.emit('document:update', data);
+        }
+      }, 1000);
+    }
+  }
+
+  // Propriété pour stocker le dernier timestamp d'envoi de position de curseur
+  private lastCursorSentTimestamp = 0;
+  // Intervalle minimum entre les envois de position de curseur (en ms)
+  private readonly CURSOR_THROTTLE_INTERVAL = 100;
+  // Dernière position de curseur en attente d'envoi
+  private pendingCursorPosition: CursorPosition | null = null;
+  // Timer pour l'envoi de la position de curseur en attente
+  private pendingCursorTimer: any = null;
 
   /**
    * Met à jour la position du curseur
@@ -294,10 +399,64 @@ export class CollaborativeDocumentService {
       return;
     }
 
-    this.websocketService.emit('document:cursor-update', {
-      documentId,
-      position
-    });
+    // Vérifier que la position est valide
+    if (!position || position.index === undefined) {
+      return;
+    }
+
+    const now = Date.now();
+
+    // Appliquer la limitation de débit (throttling) pour les positions de curseur
+    if (now - this.lastCursorSentTimestamp < this.CURSOR_THROTTLE_INTERVAL) {
+      // Stocker la dernière position
+      this.pendingCursorPosition = position;
+
+      // Si aucun timer n'est en cours, en créer un pour envoyer la position en attente
+      if (!this.pendingCursorTimer) {
+        this.pendingCursorTimer = setTimeout(() => {
+          this.processPendingCursorPosition(documentId);
+        }, this.CURSOR_THROTTLE_INTERVAL);
+      }
+      return;
+    }
+
+    // Envoyer la position immédiatement
+    this.lastCursorSentTimestamp = now;
+    this.sendCursorPosition(documentId, position);
+  }
+
+  /**
+   * Traite la position de curseur en attente d'envoi
+   * @param documentId ID du document
+   */
+  private processPendingCursorPosition(documentId: number): void {
+    // Réinitialiser le timer
+    this.pendingCursorTimer = null;
+
+    if (!this.pendingCursorPosition) {
+      return;
+    }
+
+    // Envoyer la position en attente
+    this.lastCursorSentTimestamp = Date.now();
+    this.sendCursorPosition(documentId, this.pendingCursorPosition);
+
+    // Réinitialiser la position en attente
+    this.pendingCursorPosition = null;
+  }
+
+  /**
+   * Envoie une position de curseur au serveur
+   * @param documentId ID du document
+   * @param position Position du curseur
+   */
+  private sendCursorPosition(documentId: number, position: CursorPosition): void {
+    if (this.websocketService.isConnected()) {
+      this.websocketService.emit('document:cursor-update', {
+        documentId,
+        position
+      });
+    }
   }
 
   /**

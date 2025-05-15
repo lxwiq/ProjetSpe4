@@ -50,7 +50,7 @@
         @for (file of selectedFiles(); track file.name; let i = $index) {
           <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white">
             <div class="flex items-center">
-              @if (showPreview && previews()[i]?.preview) {
+              @if (showPreview && previews()[i].preview) {
                 @if (file.type.startsWith('image/')) {
                   <img [src]="previews()[i].preview" alt="Prévisualisation" class="h-12 w-12 object-cover rounded mr-3">
                 } @else {

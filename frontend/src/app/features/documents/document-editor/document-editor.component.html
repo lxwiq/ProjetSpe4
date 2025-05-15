@@ -1,4 +1,4 @@
-<div class="h-full flex flex-col">
+<div class="h-full w-full flex flex-col">
   <!-- Barre d'outils -->
   <div class="bg-white border-b border-gray-200 px-4 py-2 flex justify-between items-center">
     <div class="flex items-center space-x-4">
@@ -58,28 +58,28 @@
   </div>
 
   <!-- Contenu principal -->
-  <div class="flex-1 flex overflow-hidden">
+  <div class="flex-1 flex overflow-hidden w-full">
     <!-- Éditeur -->
-    <div class="flex-1 overflow-auto">
+    <div class="flex-1 overflow-auto w-full">
       <!-- Élément d'éditeur Quill (toujours présent dans le DOM mais caché si nécessaire) -->
-      <div #editor class="h-full" [style.display]="isLoading() || error() ? 'none' : 'block'"></div>
+      <div #editor class="h-full w-full" [style.display]="isLoading() || error() ? 'none' : 'block'"></div>
 
       @if (isLoading()) {
-        <div class="flex justify-center items-center h-full">
+        <div class="flex justify-center items-center h-full w-full">
           <svg class="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
         </div>
       } @else if (error()) {
-        <div class="flex justify-center items-center h-full">
+        <div class="flex justify-center items-center h-full w-full">
           <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 max-w-lg">
             <p>{{ error() }}</p>
             <button (click)="loadDocument()" class="mt-2 text-sm font-medium hover:underline">Réessayer</button>
           </div>
         </div>
       } @else {
-        <div class="p-4 h-full">
+        <div class="p-4 h-full w-full">
           <!-- Contenu supplémentaire si nécessaire -->
         </div>
       }
@@ -90,7 +90,7 @@
       <!-- Composant d'appel vocal -->
       <div class="p-3 border-b border-gray-200">
         <app-voice-call
-          [documentId]="documentId"
+          [documentId]="documentId || 0"
           [activeUsers]="activeUserIds()"
         ></app-voice-call>
       </div>

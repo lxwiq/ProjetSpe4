@@ -90,16 +90,8 @@ class SocketManager {
       try {
         const { documentId } = data;
 
-        console.log(`User ${socket.userId} is joining document ${documentId}`);
-
         // Ajouter l'utilisateur à la salle du document
         socket.join(`document:${documentId}`);
-
-        console.log(`User ${socket.userId} joined room document:${documentId}`);
-
-        // Vérifier les salles auxquelles l'utilisateur est connecté
-        const rooms = Array.from(socket.rooms);
-        console.log(`User ${socket.userId} is in rooms:`, rooms);
 
         // Ajouter l'utilisateur au document actif
         const documentData = await realtimeDocumentService.joinDocument(documentId, socket.userId);
@@ -166,24 +158,22 @@ class SocketManager {
       try {
         const { documentId, content, delta } = data;
 
-        console.log(`Document update received from user ${socket.userId} for document ${documentId}`);
-        console.log(`Content length: ${content ? content.length : 'undefined'}, Delta: ${delta ? 'present' : 'undefined'}`);
+        // Réduire la verbosité des logs pour améliorer les performances
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`Document update received from user ${socket.userId} for document ${documentId}`);
+        }
 
         // Vérifier si l'utilisateur est dans la salle du document
         const rooms = Array.from(socket.rooms);
         const isInDocumentRoom = rooms.includes(`document:${documentId}`);
 
         if (!isInDocumentRoom) {
-          console.log(`User ${socket.userId} is not in room document:${documentId}, adding them now`);
           socket.join(`document:${documentId}`);
         }
 
         if (delta) {
-          console.log('Delta received:', delta);
-
           // Vérifier que le delta a une structure valide
           if (!delta.ops || !Array.isArray(delta.ops)) {
-            console.warn(`Invalid delta structure received from user ${socket.userId}`);
             if (callback) callback({
               success: false,
               error: 'Invalid delta structure'
@@ -191,8 +181,9 @@ class SocketManager {
             return;
           }
 
-          // Diffuser le delta à tous les utilisateurs dans la salle
-          this.io.to(`document:${documentId}`).emit('document:content-changed', {
+          // Diffuser le delta à tous les AUTRES utilisateurs dans la salle
+          // Fix: Ne pas renvoyer la mise à jour au même utilisateur pour éviter les problèmes de synchronisation
+          socket.to(`document:${documentId}`).emit('document:content-changed', {
             ops: delta.ops,
             userId: socket.userId,
             timestamp: new Date()
@@ -201,38 +192,38 @@ class SocketManager {
           // Si un callback est fourni, répondre avec succès
           if (callback) callback({ success: true });
 
-          // Si le delta contient des modifications substantielles, mettre également à jour le contenu complet
-          // pour assurer la synchronisation
-          if (content && delta.ops.length > 5) {
+          // Mettre à jour le contenu en mémoire sans écrire sur le disque à chaque modification
+          // pour améliorer les performances
+          if (content) {
             try {
-              // Mettre à jour le contenu du document en arrière-plan
-              realtimeDocumentService.updateDocumentContent(documentId, socket.userId, content)
-                .then(() => console.log(`Background content update successful for document ${documentId}`))
-                .catch(err => console.error(`Background content update failed for document ${documentId}:`, err));
+              // Mettre à jour uniquement le contenu en mémoire
+              realtimeDocumentService.updateDocumentContentInMemory(documentId, socket.userId, content);
+
+              // Planifier une écriture sur disque périodique (toutes les 30 secondes)
+              // Cette fonction sera implémentée dans le service realtimeDocumentService
+              realtimeDocumentService.scheduleDocumentPersistence(documentId);
             } catch (backgroundError) {
-              console.error('Error in background content update:', backgroundError);
-              // Ne pas échouer l'opération principale si la mise à jour en arrière-plan échoue
+              console.error('Error in memory content update:', backgroundError);
             }
           }
         } else if (content) {
-          console.log(`Updating document content: ${content.substring(0, 100)}...`);
+          // Mettre à jour le contenu du document en mémoire
+          const updateData = await realtimeDocumentService.updateDocumentContentInMemory(documentId, socket.userId, content);
 
-          // Mettre à jour le contenu du document
-          const updateData = await realtimeDocumentService.updateDocumentContent(documentId, socket.userId, content);
-
-          // Diffuser la mise à jour à tous les utilisateurs dans la salle
-          this.io.to(`document:${documentId}`).emit('document:content-changed', {
+          // Diffuser la mise à jour à tous les AUTRES utilisateurs dans la salle
+          socket.to(`document:${documentId}`).emit('document:content-changed', {
             content,
             userId: socket.userId,
             timestamp: updateData.lastModified
           });
 
+          // Planifier une écriture sur disque périodique
+          realtimeDocumentService.scheduleDocumentPersistence(documentId);
+
           // Convertir les BigInt en nombre avant de les renvoyer
           const safeUpdateData = JSON.parse(JSON.stringify(updateData, (key, value) =>
             typeof value === 'bigint' ? Number(value) : value
           ));
-
-          console.log(`Document content updated successfully, file written: ${documentId}`);
 
           // Répondre avec les données de mise à jour
           if (callback) callback({ success: true, data: safeUpdateData });
@@ -248,8 +239,6 @@ class SocketManager {
     // Mettre à jour la position du curseur
     socket.on('document:cursor-update', (data) => {
       const { documentId, position } = data;
-
-      console.log(`Cursor update received from user ${socket.userId} for document ${documentId}:`, position);
 
       // Récupérer les informations de l'utilisateur
       realtimeDocumentService.getUserInfo(socket.userId).then(userInfo => {
@@ -272,10 +261,9 @@ class SocketManager {
           timestamp: new Date().toISOString()
         };
 
-        console.log(`Emitting cursor update to room document:${documentId}:`, cursorData);
-
-        // Diffuser la mise à jour du curseur à tous les utilisateurs dans la salle
-        this.io.to(`document:${documentId}`).emit('document:cursor-moved', cursorData);
+        // Diffuser la mise à jour du curseur à tous les AUTRES utilisateurs dans la salle
+        // Fix: Ne pas renvoyer la mise à jour au même utilisateur pour éviter les curseurs dupliqués
+        socket.to(`document:${documentId}`).emit('document:cursor-moved', cursorData);
       }).catch(error => {
         console.error('Error getting user info for cursor update:', error);
       });
@@ -302,14 +290,10 @@ class SocketManager {
     socket.on('document:typing', (data) => {
       const { documentId, isTyping } = data;
 
-      console.log(`Typing status received from user ${socket.userId} for document ${documentId}:`, { isTyping });
-
       const typingData = {
         userId: socket.userId,
         isTyping
       };
-
-      console.log(`Emitting typing status to room document:${documentId}:`, typingData);
 
       // Diffuser le statut de frappe à tous les utilisateurs dans la salle
       this.io.to(`document:${documentId}`).emit('document:typing', typingData);
@@ -320,25 +304,16 @@ class SocketManager {
       try {
         const { documentId, content } = data;
 
-        console.log(`Document save request received from user ${socket.userId} for document ${documentId}`);
-        console.log(`Content received for saving: ${content ? content.length : 0} characters`);
-
         // Vérifier si le document est en édition active
         const activeUsers = await realtimeDocumentService.getActiveUsers(documentId);
-        if (!activeUsers.includes(socket.userId)) {
-          console.warn(`User ${socket.userId} is not in the active users list for document ${documentId}`);
-        }
 
         // Si le contenu est fourni, mettre d'abord à jour le contenu du document actif
         if (content !== undefined) {
-          console.log(`Updating document content before saving: ${content.substring(0, 100)}...`);
           await realtimeDocumentService.updateDocumentContent(documentId, socket.userId, content);
         }
 
         // Sauvegarder le document
         const saveData = await realtimeDocumentService.saveDocument(documentId, socket.userId);
-
-        console.log(`Document ${documentId} saved successfully by user ${socket.userId}, version ${saveData.versionNumber}`);
 
         // Informer tous les utilisateurs que le document a été sauvegardé
         this.io.to(`document:${documentId}`).emit('document:saved', {
@@ -366,20 +341,17 @@ class SocketManager {
       try {
         const { documentId, invitedUserId, permissionLevel } = data;
 
-        // Créer l'invitation
-        const invitation = await realtimeDocumentService.inviteUserToDocument(
-          documentId,
-          invitedUserId,
-          socket.userId,
-          permissionLevel
-        );
-
-        // Créer une notification pour l'invitation au document
+        // Récupérer les informations du document
         const document = await prisma.documents.findUnique({
           where: { id: parseInt(documentId) },
           select: { title: true }
         });
 
+        if (!document) {
+          throw new Error('Document non trouvé');
+        }
+
+        // Créer une notification pour l'invitation au document
         const notification = await notificationService.createDocumentInviteNotification(
           invitedUserId,
           parseInt(documentId),
@@ -394,21 +366,21 @@ class SocketManager {
           this.io.to(invitedUserSocketId).emit('document:invitation', {
             documentId,
             invitedBy: socket.userId,
-            permissionLevel,
-            invitation
+            permissionLevel
           });
 
           // Envoyer également la notification
           this.sendNotification(invitedUserId, notification);
         }
 
-        // Convertir les BigInt en nombre avant de les renvoyer
-        const safeInvitation = JSON.parse(JSON.stringify(invitation, (key, value) =>
-          typeof value === 'bigint' ? Number(value) : value
-        ));
-
-        // Répondre avec les données d'invitation
-        if (callback) callback({ success: true, data: safeInvitation });
+        // Répondre avec succès
+        if (callback) callback({
+          success: true,
+          data: {
+            documentId: parseInt(documentId),
+            invitedUserId: parseInt(invitedUserId)
+          }
+        });
       } catch (error) {
         console.error('Error inviting user to document:', error);
         if (callback) callback({ success: false, error: error.message });
@@ -426,38 +398,122 @@ class SocketManager {
       try {
         const { documentId } = data;
 
+        console.log(`[APPEL VOCAL] Utilisateur ${socket.userId} démarre un appel pour le document ${documentId}`);
+
         // Vérifier si l'utilisateur a accès au document
         const hasAccess = await realtimeDocumentService.checkUserDocumentAccess(documentId, socket.userId);
         if (!hasAccess) {
+          console.error(`[APPEL VOCAL] Utilisateur ${socket.userId} n'a pas accès au document ${documentId}`);
           throw new Error('Accès refusé au document');
         }
 
-        // Créer un nouvel appel dans la base de données
-        const newCall = await prisma.calls.create({
-          data: {
+        // Vérifier s'il existe déjà un appel actif pour ce document
+        const existingCall = await prisma.calls.findFirst({
+          where: {
             document_id: parseInt(documentId),
-            initiated_by: socket.userId,
-            call_type: 'audio',
-            status: 'active'
+            status: 'active',
+            ended_at: null
           }
         });
 
-        // Ajouter l'initiateur comme participant
-        await prisma.call_participants.create({
-          data: {
-            call_id: newCall.id,
-            user_id: socket.userId
-          }
-        });
+        let callId;
 
-        // Ajouter l'appel à la liste des appels actifs
-        this.activeCalls.set(newCall.id, {
-          participants: [{ userId: socket.userId, socketId: socket.id }],
-          document_id: parseInt(documentId)
-        });
+        if (existingCall) {
+          console.log(`[APPEL VOCAL] Appel actif existant ${existingCall.id} trouvé pour le document ${documentId}`);
+          callId = existingCall.id;
+
+          // Utiliser upsert pour créer ou mettre à jour le participant en une seule opération atomique
+          try {
+            // Utiliser l'opération upsert de Prisma pour créer ou mettre à jour le participant
+            await prisma.call_participants.upsert({
+              where: {
+                call_id_user_id: {
+                  call_id: callId,
+                  user_id: socket.userId
+                }
+              },
+              update: {
+                is_active: true,
+                joined_at: new Date(),
+                left_at: null
+              },
+              create: {
+                call_id: callId,
+                user_id: socket.userId,
+                is_active: true,
+                joined_at: new Date()
+              }
+            });
+            console.log(`[APPEL VOCAL] Participant ajouté ou mis à jour pour l'utilisateur ${socket.userId} dans l'appel ${callId}`);
+          } catch (err) {
+            console.error(`[APPEL VOCAL] Erreur lors de l'ajout ou de la mise à jour du participant: ${err.message}`);
+            // Ne pas lancer d'erreur pour permettre à l'appel de continuer même en cas d'erreur
+          }
+
+          // Ajouter l'utilisateur à la liste des participants de l'appel
+          if (this.activeCalls.has(callId)) {
+            const activeCall = this.activeCalls.get(callId);
+            activeCall.participants.push({ userId: socket.userId, socketId: socket.id });
+            this.activeCalls.set(callId, activeCall);
+          } else {
+            // Si l'appel n'est pas dans la liste des appels actifs, l'ajouter
+            this.activeCalls.set(callId, {
+              participants: [{ userId: socket.userId, socketId: socket.id }],
+              document_id: parseInt(documentId)
+            });
+          }
+        } else {
+          // Créer un nouvel appel dans la base de données
+          console.log(`[APPEL VOCAL] Création d'un nouvel appel pour le document ${documentId} par l'utilisateur ${socket.userId}`);
+          const newCall = await prisma.calls.create({
+            data: {
+              document_id: parseInt(documentId),
+              initiated_by: socket.userId,
+              call_type: 'audio',
+              status: 'active'
+            }
+          });
+
+          callId = newCall.id;
+          console.log(`[APPEL VOCAL] Nouvel appel créé avec l'ID ${callId}`);
+
+          // Ajouter l'initiateur comme participant avec upsert
+          try {
+            // Utiliser l'opération upsert de Prisma pour créer ou mettre à jour le participant
+            await prisma.call_participants.upsert({
+              where: {
+                call_id_user_id: {
+                  call_id: callId,
+                  user_id: socket.userId
+                }
+              },
+              update: {
+                is_active: true,
+                joined_at: new Date(),
+                left_at: null
+              },
+              create: {
+                call_id: callId,
+                user_id: socket.userId,
+                is_active: true,
+                joined_at: new Date()
+              }
+            });
+            console.log(`[APPEL VOCAL] Initiateur ${socket.userId} ajouté comme participant à l'appel ${callId}`);
+          } catch (err) {
+            console.error(`[APPEL VOCAL] Erreur lors de l'ajout de l'initiateur comme participant: ${err.message}`);
+            // Ne pas lancer d'erreur pour permettre à l'appel de continuer même en cas d'erreur
+          }
+
+          // Ajouter l'appel à la liste des appels actifs
+          this.activeCalls.set(callId, {
+            participants: [{ userId: socket.userId, socketId: socket.id }],
+            document_id: parseInt(documentId)
+          });
+        }
 
         // Rejoindre la salle de l'appel
-        socket.join(`call:${newCall.id}`);
+        socket.join(`call:${callId}`);
 
         // Récupérer les informations du document
         const document = await prisma.documents.findUnique({
@@ -473,7 +529,7 @@ class SocketManager {
         // Récupérer les utilisateurs actifs sur le document
         let activeUsers = [];
         try {
-          activeUsers = realtimeDocumentService.getActiveUsers(documentId) || [];
+          activeUsers = await realtimeDocumentService.getActiveUsers(documentId) || [];
           console.log(`Active users for document ${documentId}:`, activeUsers);
         } catch (error) {
           console.error(`Error getting active users for document ${documentId}:`, error);
@@ -493,7 +549,7 @@ class SocketManager {
               // Créer une notification pour l'appel
               const notification = await notificationService.createCallNotification(
                 userId,
-                newCall.id,
+                callId,
                 socket.userId,
                 parseInt(documentId),
                 document.title
@@ -503,7 +559,7 @@ class SocketManager {
               if (this.userSockets.has(userId)) {
                 const userSocketId = this.userSockets.get(userId);
                 this.io.to(userSocketId).emit('call:started', {
-                  callId: newCall.id,
+                  callId: callId,
                   documentId,
                   initiatedBy: socket.userId
                 });
@@ -512,18 +568,41 @@ class SocketManager {
                 this.sendNotification(userId, notification);
               }
             } catch (error) {
-              console.error(`Error notifying user ${userId} about call ${newCall.id}:`, error);
+              console.error(`Error notifying user ${userId} about call ${callId}:`, error);
             }
           }
         }
 
+        // Récupérer les participants actuels de l'appel
+        const currentParticipants = await prisma.call_participants.findMany({
+          where: {
+            call_id: callId,
+            is_active: true
+          },
+          select: {
+            user_id: true
+          }
+        });
+
+        const participantIds = currentParticipants.map(p => p.user_id);
+
         // Répondre avec les données de l'appel
+        console.log(`Call ${callId} created successfully for document ${documentId} by user ${socket.userId}`);
+        console.log(`Sending response to user ${socket.userId}:`, {
+          success: true,
+          data: {
+            callId: callId,
+            documentId: parseInt(documentId),
+            participants: participantIds
+          }
+        });
+
         if (callback) callback({
           success: true,
           data: {
-            callId: newCall.id,
+            callId: callId,
             documentId: parseInt(documentId),
-            participants: [socket.userId]
+            participants: participantIds
           }
         });
       } catch (error) {
@@ -537,6 +616,8 @@ class SocketManager {
       try {
         const { callId } = data;
 
+        console.log(`[APPEL VOCAL] Utilisateur ${socket.userId} tente de rejoindre l'appel ${callId}`);
+
         // Vérifier si l'appel existe
         const call = await prisma.calls.findUnique({
           where: { id: parseInt(callId) },
@@ -546,22 +627,48 @@ class SocketManager {
         });
 
         if (!call) {
+          console.error(`[APPEL VOCAL] Appel ${callId} non trouvé`);
           throw new Error('Appel non trouvé');
         }
+
+        console.log(`[APPEL VOCAL] Appel ${callId} trouvé pour le document ${call.document_id}`);
 
         // Vérifier si l'utilisateur a accès au document
         const hasAccess = await realtimeDocumentService.checkUserDocumentAccess(call.document_id, socket.userId);
         if (!hasAccess) {
+          console.error(`[APPEL VOCAL] Utilisateur ${socket.userId} n'a pas accès au document ${call.document_id}`);
           throw new Error('Accès refusé au document');
         }
 
-        // Ajouter l'utilisateur comme participant
-        await prisma.call_participants.create({
-          data: {
-            call_id: parseInt(callId),
-            user_id: socket.userId
-          }
-        });
+        console.log(`[APPEL VOCAL] Utilisateur ${socket.userId} a accès au document ${call.document_id}`);
+
+        // Utiliser upsert pour créer ou mettre à jour le participant en une seule opération atomique
+        try {
+          // Utiliser l'opération upsert de Prisma pour créer ou mettre à jour le participant
+          await prisma.call_participants.upsert({
+            where: {
+              call_id_user_id: {
+                call_id: parseInt(callId),
+                user_id: socket.userId
+              }
+            },
+            update: {
+              is_active: true,
+              joined_at: new Date(),
+              left_at: null
+            },
+            create: {
+              call_id: parseInt(callId),
+              user_id: socket.userId,
+              is_active: true,
+              joined_at: new Date()
+            }
+          });
+          console.log(`[APPEL VOCAL] Participant ajouté ou mis à jour pour l'utilisateur ${socket.userId} dans l'appel ${callId}`);
+        } catch (err) {
+          console.error(`[APPEL VOCAL] Erreur lors de l'ajout ou de la mise à jour du participant: ${err.message}`);
+          // Ne pas lancer d'erreur pour permettre à l'appel de continuer même en cas d'erreur
+        }
 
         // Ajouter l'utilisateur à la liste des participants de l'appel
         if (this.activeCalls.has(parseInt(callId))) {
@@ -604,6 +711,8 @@ class SocketManager {
       try {
         const { callId } = data;
 
+        console.log(`[APPEL VOCAL] Utilisateur ${socket.userId} quitte l'appel ${callId}`);
+
         // Mettre à jour le participant dans la base de données
         await prisma.call_participants.updateMany({
           where: {
@@ -624,8 +733,10 @@ class SocketManager {
 
           // Si plus aucun participant, terminer l'appel
           if (activeCall.participants.length === 0) {
+            console.log(`[APPEL VOCAL] Plus aucun participant dans l'appel ${callId}, terminaison de l'appel`);
             await this.endCall(parseInt(callId));
           } else {
+            console.log(`[APPEL VOCAL] ${activeCall.participants.length} participant(s) restant(s) dans l'appel ${callId}`);
             this.activeCalls.set(parseInt(callId), activeCall);
 
             // Informer les autres participants que l'utilisateur a quitté
@@ -667,13 +778,14 @@ class SocketManager {
       try {
         const { callId, isSpeaking } = data;
 
-        // Vérifier si l'appel existe
+        // Nous ne loggons pas chaque activité vocale pour éviter de surcharger les logs
+        // Mais nous vérifions quand même si l'appel existe
         const call = await prisma.calls.findUnique({
           where: { id: parseInt(callId) }
         });
 
         if (!call) {
-          console.error(`Call ${callId} not found`);
+          console.error(`[APPEL VOCAL] Appel ${callId} non trouvé pour l'activité vocale`);
           return;
         }
 
@@ -687,7 +799,7 @@ class SocketManager {
         });
 
         if (!isParticipant) {
-          console.error(`User ${socket.userId} is not a participant in call ${callId}`);
+          console.error(`[APPEL VOCAL] Utilisateur ${socket.userId} n'est pas un participant actif dans l'appel ${callId}`);
           return;
         }
 
@@ -785,6 +897,8 @@ class SocketManager {
    * @param {number} callId - ID de l'appel
    */
   async endCall(callId) {
+    console.log(`[APPEL VOCAL] Terminaison de l'appel ${callId}`);
+
     // Mettre à jour l'appel dans la base de données
     await prisma.calls.update({
       where: { id: callId },
@@ -794,11 +908,26 @@ class SocketManager {
       }
     });
 
+    // Mettre à jour tous les participants pour les marquer comme inactifs
+    await prisma.call_participants.updateMany({
+      where: {
+        call_id: callId,
+        is_active: true
+      },
+      data: {
+        is_active: false,
+        left_at: new Date()
+      }
+    });
+
+    console.log(`[APPEL VOCAL] Appel ${callId} marqué comme terminé dans la base de données`);
+
     // Supprimer l'appel de la liste des appels actifs
     this.activeCalls.delete(callId);
 
     // Informer tous les utilisateurs dans la salle que l'appel est terminé
     this.io.to(`call:${callId}`).emit('call:ended', { callId });
+    console.log(`[APPEL VOCAL] Notification de fin d'appel envoyée pour l'appel ${callId}`);
   }
 
   /**

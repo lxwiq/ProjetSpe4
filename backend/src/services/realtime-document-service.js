@@ -6,6 +6,13 @@ class RealtimeDocumentService {
     // Map pour stocker les documents actuellement en édition
     // clé: document_id, valeur: { content, users: [user_ids], lastSaved: timestamp }
     this.activeDocuments = new Map();
+
+    // Map pour stocker les timers de persistance des documents
+    // clé: document_id, valeur: timer
+    this.persistenceTimers = new Map();
+
+    // Intervalle de persistance en millisecondes (30 secondes)
+    this.persistenceInterval = 30000;
   }
 
   /**
@@ -28,20 +35,6 @@ class RealtimeDocumentService {
     const document = await prisma.documents.findUnique({
       where: { id: documentId },
       include: {
-        document_invitations: {
-          where: {
-            is_active: true
-          },
-          include: {
-            users_document_invitations_user_idTousers: {
-              select: {
-                id: true,
-                username: true,
-                full_name: true
-              }
-            }
-          }
-        },
         users_documents_owner_idTousers: {
           select: {
             id: true,
@@ -70,18 +63,13 @@ class RealtimeDocumentService {
           const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
           const fullPath = path.join(uploadsDir, relativePath);
 
-          console.log(`RealtimeDocumentService: Tentative de lecture du fichier: ${fullPath}`);
-
           // Vérifier si le fichier existe
           if (fs.existsSync(fullPath)) {
             // Lire le contenu du fichier
             content = fs.readFileSync(fullPath, 'utf8');
-            console.log(`RealtimeDocumentService: Contenu du fichier lu avec succès (${content.length} caractères)`);
-          } else {
-            console.warn(`RealtimeDocumentService: Fichier non trouvé: ${fullPath}`);
           }
         } catch (error) {
-          console.error('RealtimeDocumentService: Erreur lors de la lecture du fichier:', error);
+          console.error('Erreur lors de la lecture du fichier:', error);
         }
       }
 
@@ -191,8 +179,7 @@ class RealtimeDocumentService {
     activeDoc.lastModified = new Date();
     this.activeDocuments.set(documentId, activeDoc);
 
-    console.log(`RealtimeDocumentService: Contenu du document ${documentId} mis à jour avec succès`);
-    console.log(`RealtimeDocumentService: Nouveau contenu (début): ${content.substring(0, 100)}...`);
+    // Contenu du document mis à jour avec succès
 
     // Récupérer les informations du document depuis la base de données
     const existingDocument = await prisma.documents.findUnique({
@@ -258,8 +245,6 @@ class RealtimeDocumentService {
       // Écrire le contenu dans le fichier
       fs.writeFileSync(fullPath, content);
 
-      console.log(`RealtimeDocumentService: Contenu écrit dans le fichier ${fullPath} lors de la mise à jour`);
-
       // Mettre à jour la taille du fichier dans la base de données
       const stats = fs.statSync(fullPath);
       await prisma.documents.update({
@@ -271,7 +256,7 @@ class RealtimeDocumentService {
         }
       });
     } catch (error) {
-      console.error(`RealtimeDocumentService: Erreur lors de l'écriture du fichier pendant la mise à jour:`, error);
+      console.error(`Erreur lors de l'écriture du fichier:`, error);
       // Ne pas échouer complètement si l'écriture échoue
     }
 
@@ -330,23 +315,19 @@ class RealtimeDocumentService {
             const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
             const fullPath = path.join(uploadsDir, relativePath);
 
-            console.log(`RealtimeDocumentService: Tentative de lecture du fichier: ${fullPath}`);
+
 
             // Vérifier si le fichier existe
             if (fs.existsSync(fullPath)) {
               // Lire le contenu du fichier
               content = fs.readFileSync(fullPath, 'utf8');
-              console.log(`RealtimeDocumentService: Contenu du fichier lu avec succès (${content.length} caractères)`);
-            } else {
-              console.warn(`RealtimeDocumentService: Fichier non trouvé: ${fullPath}`);
             }
           } catch (error) {
-            console.error('RealtimeDocumentService: Erreur lors de la lecture du fichier:', error);
+            console.error('Erreur lors de la lecture du fichier:', error);
           }
         }
 
         // Ajouter le document à la liste des documents actifs
-        console.log(`RealtimeDocumentService: Ajout du document ${documentId} à la liste des documents actifs`);
         this.activeDocuments.set(documentId, {
           content: content,
           users: [userId],
@@ -528,7 +509,7 @@ class RealtimeDocumentService {
       activeDoc.lastSaved = new Date();
       this.activeDocuments.set(documentId, activeDoc);
 
-      console.log(`RealtimeDocumentService: Document ${documentId} sauvegardé avec succès, version ${newVersionNumber}`);
+
       return {
         documentId,
         savedAt: activeDoc.lastSaved,
@@ -582,6 +563,12 @@ class RealtimeDocumentService {
 
     const userIds = this.activeDocuments.get(documentId).users;
 
+    // S'assurer que userIds est un tableau
+    if (!Array.isArray(userIds)) {
+      console.error(`getActiveUsers: userIds is not an array for document ${documentId}:`, userIds);
+      return [];
+    }
+
     if (!detailed) {
       return userIds;
     }
@@ -599,6 +586,128 @@ class RealtimeDocumentService {
     );
 
     return activeUsers;
+  }
+
+  /**
+   * Met à jour le contenu d'un document en mémoire uniquement (sans écriture sur disque)
+   * @param {number} documentId - ID du document
+   * @param {number} userId - ID de l'utilisateur
+   * @param {string} content - Nouveau contenu
+   * @returns {Promise<Object>} - Informations sur la mise à jour
+   */
+  async updateDocumentContentInMemory(documentId, userId, content) {
+    documentId = parseInt(documentId);
+    userId = parseInt(userId);
+
+    // Vérifier si le contenu est vide ou null
+    if (!content && content !== '') {
+      content = ''; // Assurer que le contenu est au moins une chaîne vide
+    }
+
+    // Si le contenu est vide, utiliser un contenu par défaut
+    if (content === '') {
+      content = '<p>Document vide</p>';
+    }
+
+    // Vérifier si l'utilisateur a accès au document
+    const hasAccess = await this.checkUserDocumentAccess(documentId, userId);
+    if (!hasAccess) {
+      throw new Error('Accès refusé au document');
+    }
+
+    // Vérifier si le document est en édition active
+    if (!this.activeDocuments.has(documentId)) {
+      throw new Error('Document non actif');
+    }
+
+    // Mettre à jour le contenu en mémoire uniquement
+    const activeDoc = this.activeDocuments.get(documentId);
+    activeDoc.content = content;
+    activeDoc.lastModifiedBy = userId;
+    activeDoc.lastModified = new Date();
+    this.activeDocuments.set(documentId, activeDoc);
+
+    return {
+      documentId,
+      content,
+      lastModifiedBy: userId,
+      lastModified: activeDoc.lastModified
+    };
+  }
+
+  /**
+   * Planifie la persistance d'un document sur le disque
+   * @param {number} documentId - ID du document
+   */
+  scheduleDocumentPersistence(documentId) {
+    documentId = parseInt(documentId);
+
+    // Annuler le timer existant s'il y en a un
+    if (this.persistenceTimers.has(documentId)) {
+      clearTimeout(this.persistenceTimers.get(documentId));
+    }
+
+    // Créer un nouveau timer pour la persistance
+    const timer = setTimeout(async () => {
+      try {
+        // Vérifier si le document est toujours actif
+        if (!this.activeDocuments.has(documentId)) {
+          return;
+        }
+
+        const activeDoc = this.activeDocuments.get(documentId);
+        const content = activeDoc.content;
+        const userId = activeDoc.lastModifiedBy || activeDoc.users[0];
+
+        // Récupérer les informations du document depuis la base de données
+        const document = await prisma.documents.findUnique({
+          where: { id: documentId }
+        });
+
+        if (!document) {
+          return;
+        }
+
+        // Vérifier si le document a un chemin de fichier
+        if (document.file_path) {
+          const fs = require('fs');
+          const path = require('path');
+
+          // Construire le chemin complet du fichier
+          const uploadsDir = path.join(__dirname, '..', '..', 'src', 'uploads');
+          const relativePath = document.file_path.replace(/^\/uploads\//, '');
+          const fullPath = path.join(uploadsDir, relativePath);
+
+          // Créer le répertoire parent si nécessaire
+          const dirPath = path.dirname(fullPath);
+          if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+          }
+
+          // Écrire le contenu dans le fichier
+          fs.writeFileSync(fullPath, content);
+
+          // Mettre à jour la taille du fichier dans la base de données
+          const stats = fs.statSync(fullPath);
+          await prisma.documents.update({
+            where: { id: documentId },
+            data: {
+              file_size: stats.size,
+              last_modified_by: userId,
+              updated_at: new Date()
+            }
+          });
+        }
+      } catch (error) {
+        console.error(`Erreur lors de la persistance du document ${documentId}:`, error);
+      } finally {
+        // Supprimer le timer de la map
+        this.persistenceTimers.delete(documentId);
+      }
+    }, this.persistenceInterval);
+
+    // Stocker le timer dans la map
+    this.persistenceTimers.set(documentId, timer);
   }
 
   /**

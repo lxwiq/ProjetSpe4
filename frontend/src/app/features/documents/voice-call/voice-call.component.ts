@@ -1,17 +1,19 @@
 import { Component, Input, OnInit, OnDestroy, DestroyRef, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 
 import { CallService } from '../../../core/services/call.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
+import { LoggingService } from '../../../core/services/logging.service';
 import { Call, CallParticipant, VoiceActivityData } from '../../../core/models/call.model';
 import { User } from '../../../core/models/user.model';
 
 @Component({
   selector: 'app-voice-call',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './voice-call.component.html',
   styleUrls: ['./voice-call.component.css']
 })
@@ -26,22 +28,42 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
   isMuted = signal<boolean>(false);
   isCallAvailable = signal<boolean>(false);
 
+  // Signaux pour l'état de la connexion WebRTC
+  isConnected = signal<boolean>(false);
+  connectionStatus = signal<string>('disconnected'); // 'disconnected', 'connecting', 'connected'
+
+  // Signaux pour les paramètres audio
+  availableInputDevices = signal<MediaDeviceInfo[]>([]);
+  availableOutputDevices = signal<MediaDeviceInfo[]>([]);
+  selectedInputDevice = signal<string>('');
+  selectedOutputDevice = signal<string>('');
+  inputVolume = signal<number>(100);
+  outputVolume = signal<number>(100);
+  showAudioSettings = signal<boolean>(false);
+
   // Utilisateurs
   userMap = signal<Map<number, User>>(new Map());
 
   // Calcul du nombre de participants
-  participantCount = computed(() => this.participants().filter(p => p.is_active).length);
+  participantCount = computed(() => {
+    const count = this.participants().filter(p => p.is_active).length;
+    console.log('VoiceCallComponent: Nombre de participants actifs:', count, this.participants());
+    return count;
+  });
 
   // Référence pour le nettoyage
   private destroyRef = inject(DestroyRef);
 
   // Audio
   private audioElements: Map<number, HTMLAudioElement> = new Map();
+  private audioContext: AudioContext | null = null;
+  private inputGainNode: GainNode | null = null;
 
   constructor(
     private callService: CallService,
     private authService: AuthService,
-    private userService: UserService
+    private userService: UserService,
+    private logger: LoggingService
   ) {}
 
   ngOnInit(): void {
@@ -49,11 +71,31 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
     effect(() => {
       const call = this.callService.activeCall();
       this.call.set(call);
-      this.isCallAvailable.set(!!call && call?.document_id === this.documentId);
+
+      // Vérifier si un appel est disponible pour ce document
+      // Assurons-nous que les deux IDs sont du même type (number) pour la comparaison
+      const isAvailable = !!call && Number(call?.document_id) === Number(this.documentId);
+      this.isCallAvailable.set(isAvailable);
+
+      console.log('[APPEL VOCAL] État de l\'appel mis à jour', {
+        callId: call?.id,
+        documentId: call?.document_id,
+        currentDocumentId: this.documentId,
+        isCallAvailable: isAvailable
+      });
     });
 
     effect(() => {
       this.isInCall.set(this.callService.isInCall());
+
+      // Mettre à jour l'état de connexion
+      if (this.isInCall()) {
+        this.connectionStatus.set('connected');
+        this.isConnected.set(true);
+      } else {
+        this.connectionStatus.set('disconnected');
+        this.isConnected.set(false);
+      }
     });
 
     effect(() => {
@@ -65,25 +107,52 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
       this.participants.set(participants);
       this.updateAudioElements(participants);
       this.loadMissingUserInfo(participants);
+
+      // Log des participants actifs
+      const activeParticipants = participants.filter(p => p.is_active);
+      this.logger.info('Participants actifs dans l\'appel', {
+        component: 'VoiceCallComponent',
+        count: activeParticipants.length,
+        participantIds: activeParticipants.map(p => p.user_id)
+      });
+    });
+
+    // Effet spécifique pour surveiller le nombre de participants
+    effect(() => {
+      const count = this.participantCount();
+      this.logger.info('Nombre de participants mis à jour', {
+        component: 'VoiceCallComponent',
+        participantCount: count
+      });
     });
 
     // S'abonner aux événements d'appel
     this.callService.onCallJoined()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((participant: CallParticipant) => {
-        console.log('Participant a rejoint l\'appel:', participant);
+        this.logger.info('Participant a rejoint l\'appel', {
+          component: 'VoiceCallComponent',
+          participantId: participant.user_id
+        });
       });
 
     this.callService.onCallLeft()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((participant: CallParticipant) => {
-        console.log('Participant a quitté l\'appel:', participant);
+        this.logger.info('Participant a quitté l\'appel', {
+          component: 'VoiceCallComponent',
+          participantId: participant.user_id
+        });
       });
 
     this.callService.onVoiceActivity()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data: VoiceActivityData) => {
-        console.log('Activité vocale détectée:', data);
+        this.logger.debug('Activité vocale détectée', {
+          component: 'VoiceCallComponent',
+          userId: data.userId,
+          isSpeaking: data.isSpeaking
+        });
       });
 
     // Vérifier si un appel est disponible pour ce document
@@ -91,6 +160,16 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
 
     // Vérifier si nous devons démarrer un appel automatiquement
     this.checkAutoStartCall();
+
+    // Charger les périphériques audio disponibles
+    this.loadAvailableAudioDevices();
+
+    // Écouter les changements de périphériques
+    if (navigator.mediaDevices && navigator.mediaDevices.ondevicechange) {
+      navigator.mediaDevices.ondevicechange = () => {
+        this.loadAvailableAudioDevices();
+      };
+    }
   }
 
   ngOnDestroy(): void {
@@ -105,15 +184,45 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
       element.remove();
     });
     this.audioElements.clear();
+
+    // Nettoyer le contexte audio
+    if (this.audioContext) {
+      this.audioContext.close().catch(err => {
+        this.logger.error('Erreur lors de la fermeture du contexte audio', {
+          component: 'VoiceCallComponent',
+          error: err
+        });
+      });
+    }
+
+    // Supprimer l'écouteur d'événements de changement de périphérique
+    if (navigator.mediaDevices && navigator.mediaDevices.ondevicechange) {
+      navigator.mediaDevices.ondevicechange = null;
+    }
   }
 
   /**
    * Vérifie s'il y a un appel actif pour ce document
    */
   private checkForActiveCall(): void {
-    // Cette méthode pourrait faire une requête API pour vérifier
-    // s'il y a un appel actif pour ce document
-    // Pour l'instant, nous nous fions aux événements WebSocket
+    // Vérifier si un appel est déjà disponible via le service
+    const activeCall = this.callService.activeCall();
+
+    if (activeCall) {
+      console.log('[APPEL VOCAL] Appel actif détecté lors de l\'initialisation', {
+        callId: activeCall.id,
+        documentId: activeCall.document_id,
+        currentDocumentId: this.documentId,
+        isMatch: Number(activeCall.document_id) === Number(this.documentId)
+      });
+
+      // Mettre à jour l'état si l'appel concerne ce document
+      if (Number(activeCall.document_id) === Number(this.documentId)) {
+        this.isCallAvailable.set(true);
+      }
+    } else {
+      console.log('[APPEL VOCAL] Aucun appel actif détecté lors de l\'initialisation');
+    }
   }
 
   /**
@@ -148,16 +257,28 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
    */
   startCall(): void {
     if (this.isInCall()) {
-      console.log('VoiceCallComponent: Déjà dans un appel');
+      console.log('[APPEL VOCAL] Déjà dans un appel, action ignorée');
       return;
     }
 
+    console.log('[APPEL VOCAL] Tentative de démarrage d\'un appel pour le document', {
+      documentId: this.documentId
+    });
+
     this.callService.startCall(this.documentId).subscribe({
       next: (call) => {
-        console.log('VoiceCallComponent: Appel démarré avec succès', call);
+        console.log('[APPEL VOCAL] Appel démarré avec succès', {
+          callId: call.id,
+          documentId: call.document_id,
+          initiatedBy: call.initiated_by
+        });
       },
       error: (error) => {
-        console.error('VoiceCallComponent: Erreur lors du démarrage de l\'appel', error);
+        console.log('[APPEL VOCAL] Erreur lors du démarrage de l\'appel', {
+          error: error.message,
+          documentId: this.documentId
+        });
+        alert('Erreur lors du démarrage de l\'appel: ' + (error.message || JSON.stringify(error)));
       }
     });
   }
@@ -166,16 +287,37 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
    * Rejoint un appel existant
    */
   joinCall(): void {
+    console.log('[APPEL VOCAL] Tentative de rejoindre l\'appel - État actuel', {
+      isInCall: this.isInCall(),
+      hasCall: !!this.call(),
+      callId: this.call()?.id,
+      isCallAvailable: this.isCallAvailable()
+    });
+
     if (this.isInCall() || !this.call()) {
+      console.log('[APPEL VOCAL] Impossible de rejoindre l\'appel - Conditions non remplies', {
+        isInCall: this.isInCall(),
+        hasCall: !!this.call()
+      });
       return;
     }
 
-    this.callService.joinCall(this.call()!.id).subscribe({
+    const callId = this.call()!.id;
+    console.log('[APPEL VOCAL] Tentative de rejoindre l\'appel', { callId });
+
+    this.callService.joinCall(callId).subscribe({
       next: (call) => {
-        console.log('VoiceCallComponent: Appel rejoint avec succès', call);
+        console.log('[APPEL VOCAL] Appel rejoint avec succès', {
+          callId: call.id,
+          documentId: call.document_id,
+          participants: this.callService.participants().length
+        });
       },
       error: (error) => {
-        console.error('VoiceCallComponent: Erreur lors de la connexion à l\'appel', error);
+        console.log('[APPEL VOCAL] Erreur lors de la connexion à l\'appel', {
+          error: error.message,
+          callId
+        });
       }
     });
   }
@@ -185,15 +327,22 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
    */
   leaveCall(): void {
     if (!this.isInCall()) {
+      console.log('[APPEL VOCAL] Impossible de quitter l\'appel (pas dans un appel)');
       return;
     }
 
+    const callId = this.call()?.id;
+    console.log('[APPEL VOCAL] Tentative de quitter l\'appel', { callId });
+
     this.callService.leaveCall().subscribe({
       next: (success) => {
-        console.log('VoiceCallComponent: Appel quitté avec succès');
+        console.log('[APPEL VOCAL] Appel quitté avec succès', { callId });
       },
       error: (error) => {
-        console.error('VoiceCallComponent: Erreur lors de la déconnexion de l\'appel', error);
+        console.log('[APPEL VOCAL] Erreur lors de la déconnexion de l\'appel', {
+          error: error.message,
+          callId
+        });
       }
     });
   }
@@ -204,6 +353,8 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
   toggleMute(): void {
     this.callService.toggleMute();
   }
+
+
 
   /**
    * Met à jour les éléments audio pour les participants
@@ -344,5 +495,191 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
   getUserDisplayName(userId: number): string {
     const user = this.getUserInfo(userId);
     return user?.username || `Utilisateur ${userId}`;
+  }
+
+  /**
+   * Charge les périphériques audio disponibles
+   */
+  async loadAvailableAudioDevices(): Promise<void> {
+    try {
+      // Vérifier que l'API est disponible
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        this.logger.warn('L\'API MediaDevices n\'est pas disponible', {
+          component: 'VoiceCallComponent'
+        });
+        return;
+      }
+
+      // Demander les permissions si nécessaire
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Énumérer les périphériques
+      const devices = await navigator.mediaDevices.enumerateDevices();
+
+      // Filtrer les périphériques audio
+      const inputDevices = devices.filter(device => device.kind === 'audioinput');
+      const outputDevices = devices.filter(device => device.kind === 'audiooutput');
+
+      this.logger.info('Périphériques audio détectés', {
+        component: 'VoiceCallComponent',
+        inputCount: inputDevices.length,
+        outputCount: outputDevices.length
+      });
+
+      // Mettre à jour les signaux
+      this.availableInputDevices.set(inputDevices);
+      this.availableOutputDevices.set(outputDevices);
+
+      // Sélectionner les périphériques par défaut si aucun n'est sélectionné
+      if (!this.selectedInputDevice() && inputDevices.length > 0) {
+        this.selectedInputDevice.set(inputDevices[0].deviceId);
+      }
+
+      if (!this.selectedOutputDevice() && outputDevices.length > 0) {
+        this.selectedOutputDevice.set(outputDevices[0].deviceId);
+      }
+    } catch (error) {
+      this.logger.error('Erreur lors du chargement des périphériques audio', {
+        component: 'VoiceCallComponent',
+        error
+      });
+    }
+  }
+
+  /**
+   * Change le périphérique d'entrée audio
+   * @param deviceId ID du périphérique
+   */
+  async changeInputDevice(deviceId: string): Promise<void> {
+    try {
+      this.logger.info('Changement de périphérique d\'entrée audio', {
+        component: 'VoiceCallComponent',
+        deviceId
+      });
+
+      // Mettre à jour le signal
+      this.selectedInputDevice.set(deviceId);
+
+      // Si nous sommes dans un appel, appliquer le changement
+      if (this.isInCall()) {
+        await this.callService.changeInputDevice(deviceId);
+      }
+    } catch (error) {
+      this.logger.error('Erreur lors du changement de périphérique d\'entrée', {
+        component: 'VoiceCallComponent',
+        error
+      });
+    }
+  }
+
+  /**
+   * Change le périphérique de sortie audio
+   * @param deviceId ID du périphérique
+   */
+  async changeOutputDevice(deviceId: string): Promise<void> {
+    try {
+      this.logger.info('Changement de périphérique de sortie audio', {
+        component: 'VoiceCallComponent',
+        deviceId
+      });
+
+      // Mettre à jour le signal
+      this.selectedOutputDevice.set(deviceId);
+
+      // Appliquer le changement à tous les éléments audio
+      this.audioElements.forEach(element => {
+        if (element.setSinkId) {
+          element.setSinkId(deviceId).catch(err => {
+            this.logger.error('Erreur lors du changement de périphérique de sortie', {
+              component: 'VoiceCallComponent',
+              error: err
+            });
+          });
+        }
+      });
+    } catch (error) {
+      this.logger.error('Erreur lors du changement de périphérique de sortie', {
+        component: 'VoiceCallComponent',
+        error
+      });
+    }
+  }
+
+  /**
+   * Ajuste le volume d'entrée (microphone)
+   * @param value Valeur du volume (0-100)
+   */
+  adjustInputVolume(value: number): void {
+    try {
+      this.logger.debug('Ajustement du volume d\'entrée', {
+        component: 'VoiceCallComponent',
+        value
+      });
+
+      // Mettre à jour le signal
+      this.inputVolume.set(value);
+
+      // Si nous avons un nœud de gain, ajuster le gain
+      if (this.inputGainNode) {
+        // Convertir la valeur de pourcentage (0-100) en gain (0-2)
+        const gain = value / 50;
+        this.inputGainNode.gain.value = gain;
+      }
+    } catch (error) {
+      this.logger.error('Erreur lors de l\'ajustement du volume d\'entrée', {
+        component: 'VoiceCallComponent',
+        error
+      });
+    }
+  }
+
+  /**
+   * Ajuste le volume de sortie (haut-parleurs)
+   * @param value Valeur du volume (0-100)
+   */
+  adjustOutputVolume(value: number): void {
+    try {
+      this.logger.debug('Ajustement du volume de sortie', {
+        component: 'VoiceCallComponent',
+        value
+      });
+
+      // Mettre à jour le signal
+      this.outputVolume.set(value);
+
+      // Appliquer le volume à tous les éléments audio
+      this.audioElements.forEach(element => {
+        element.volume = value / 100;
+      });
+    } catch (error) {
+      this.logger.error('Erreur lors de l\'ajustement du volume de sortie', {
+        component: 'VoiceCallComponent',
+        error
+      });
+    }
+  }
+
+  /**
+   * Affiche ou masque le panneau des paramètres audio
+   */
+  toggleAudioSettings(): void {
+    this.showAudioSettings.update(value => !value);
+  }
+
+  /**
+   * Gère le clic sur le bouton d'appel (démarrer ou rejoindre)
+   */
+  handleCallButtonClick(): void {
+    console.log('[APPEL VOCAL] Clic sur le bouton d\'appel', {
+      isCallAvailable: this.isCallAvailable(),
+      callId: this.call()?.id,
+      documentId: this.documentId
+    });
+
+    if (this.isCallAvailable()) {
+      this.joinCall();
+    } else {
+      this.startCall();
+    }
   }
 }

@@ -139,17 +139,6 @@ exports.Prisma.CallsScalarFieldEnum = {
   status: 'status'
 };
 
-exports.Prisma.Document_invitationsScalarFieldEnum = {
-  id: 'id',
-  document_id: 'document_id',
-  user_id: 'user_id',
-  permission_level: 'permission_level',
-  invited_by: 'invited_by',
-  invitation_date: 'invitation_date',
-  accepted_date: 'accepted_date',
-  is_active: 'is_active'
-};
-
 exports.Prisma.Document_versionsScalarFieldEnum = {
   id: 'id',
   document_id: 'document_id',
@@ -280,7 +269,6 @@ exports.Prisma.JsonNullValueFilter = {
 exports.Prisma.ModelName = {
   call_participants: 'call_participants',
   calls: 'calls',
-  document_invitations: 'document_invitations',
   document_versions: 'document_versions',
   documents: 'documents',
   users: 'users',
