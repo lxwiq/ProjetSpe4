@@ -17,18 +17,12 @@ La configuration Docker comprend trois services :
 
 ## Démarrage rapide
 
-1. Clonez le dépôt :
-   ```bash
-   git clone <repository-url>
-   cd <repository-directory>
-   ```
-
-2. Lancez les conteneurs avec Docker Compose :
+1. Lancez les conteneurs avec Docker Compose :
    ```bash
    docker-compose up -d
    ```
 
-3. Accédez à l'application :
+2. Accédez à l'application :
    - Frontend : http://localhost
    - Backend API : http://localhost:3000
 
