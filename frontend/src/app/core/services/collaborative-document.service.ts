@@ -27,6 +27,8 @@ export class CollaborativeDocumentService {
   private contentChanged = new Subject<DocumentDelta>();
   private cursorMoved = new Subject<{ userId: number, position: CursorPosition }>();
   private documentSaved = new Subject<{ documentId: number, savedAt: Date, versionNumber: number }>();
+  private chatMessage = new Subject<any>();
+  private chatTyping = new Subject<any>();
 
   private destroyRef = inject(DestroyRef);
   private autoSaveInterval: any;
@@ -102,6 +104,22 @@ export class CollaborativeDocumentService {
           savedAt: new Date(data.savedAt),
           versionNumber: data.versionNumber
         });
+      });
+
+    // Écouter les messages de chat du document
+    this.websocketService.onDocumentChatMessage()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(data => {
+        console.log('Message de chat reçu:', data);
+        this.chatMessage.next(data);
+      });
+
+    // Écouter les notifications de frappe dans le chat
+    this.websocketService.onDocumentChatTyping()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(data => {
+        console.log('Utilisateur en train de taper dans le chat:', data);
+        this.chatTyping.next(data);
       });
   }
 
@@ -685,5 +703,53 @@ export class CollaborativeDocumentService {
    */
   onDocumentSaved(): Observable<{ documentId: number, savedAt: Date, versionNumber: number }> {
     return this.documentSaved.asObservable();
+  }
+
+  /**
+   * Observable pour les messages de chat
+   * @returns Observable avec les messages de chat
+   */
+  onChatMessage(): Observable<any> {
+    return this.chatMessage.asObservable();
+  }
+
+  /**
+   * Observable pour les notifications de frappe dans le chat
+   * @returns Observable avec les notifications de frappe
+   */
+  onChatTyping(): Observable<any> {
+    return this.chatTyping.asObservable();
+  }
+
+  /**
+   * Envoie un message dans le chat du document
+   * @param documentId ID du document
+   * @param content Contenu du message
+   */
+  sendChatMessage(documentId: number, content: string): void {
+    if (!this.isEditing() || this.currentDocumentId !== documentId || !content.trim()) {
+      return;
+    }
+
+    this.websocketService.emit('document:chat:message', {
+      documentId,
+      content
+    });
+  }
+
+  /**
+   * Envoie une notification de frappe dans le chat du document
+   * @param documentId ID du document
+   * @param isTyping Indique si l'utilisateur est en train de taper
+   */
+  sendChatTypingStatus(documentId: number, isTyping: boolean): void {
+    if (!this.isEditing() || this.currentDocumentId !== documentId) {
+      return;
+    }
+
+    this.websocketService.emit('document:chat:typing', {
+      documentId,
+      isTyping
+    });
   }
 }

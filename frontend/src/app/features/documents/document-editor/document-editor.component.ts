@@ -9,13 +9,14 @@ import { LoggingService } from '../../../core/services/logging.service';
 import { Document } from '../../../core/models/document.model';
 import { CursorManager } from './cursor-manager';
 import { VoiceCallComponent } from '../voice-call/voice-call.component';
+import { DocumentChatComponent } from '../document-chat/document-chat.component';
 import Quill from 'quill';
 
 @Component({
   selector: 'app-document-editor',
   templateUrl: './document-editor.component.html',
   styleUrls: ['./document-editor.component.css'],
-  imports: [CommonModule, FormsModule, VoiceCallComponent],
+  imports: [CommonModule, FormsModule, VoiceCallComponent, DocumentChatComponent],
   standalone: true
 })
 export class DocumentEditorComponent implements OnInit, OnDestroy {

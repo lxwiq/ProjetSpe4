@@ -32,6 +32,8 @@ export class WebsocketService {
   private documentCursorMoved = new Subject<any>();
   private documentSaved = new Subject<any>();
   private documentInvitation = new Subject<any>();
+  private documentChatMessage = new Subject<any>();
+  private documentChatTyping = new Subject<any>();
   private callStarted = new Subject<any>();
   private callEnded = new Subject<any>();
   private callJoined = new Subject<any>();
@@ -432,6 +434,26 @@ export class WebsocketService {
       this.documentInvitation.next(data);
     });
 
+    // Événements de chat de document
+    this.socket.on('document:chat:message', (data) => {
+      this.logger.debug('Message de chat de document reçu', {
+        service: 'WebsocketService',
+        documentId: data.documentId,
+        userId: data.userId
+      });
+      this.documentChatMessage.next(data);
+    });
+
+    this.socket.on('document:chat:typing', (data) => {
+      this.logger.debug('Utilisateur en train de taper dans le chat du document', {
+        service: 'WebsocketService',
+        documentId: data.documentId,
+        userId: data.userId,
+        isTyping: data.isTyping
+      });
+      this.documentChatTyping.next(data);
+    });
+
     // Événements d'appel
     this.socket.on('call:started', (data) => {
       this.logger.debug('Appel démarré', {
@@ -647,5 +669,13 @@ export class WebsocketService {
 
   onMessageReceived(): Observable<any> {
     return this.messageReceived.asObservable();
+  }
+
+  onDocumentChatMessage(): Observable<any> {
+    return this.documentChatMessage.asObservable();
+  }
+
+  onDocumentChatTyping(): Observable<any> {
+    return this.documentChatTyping.asObservable();
   }
 }

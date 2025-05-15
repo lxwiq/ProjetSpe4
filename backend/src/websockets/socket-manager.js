@@ -386,6 +386,65 @@ class SocketManager {
         if (callback) callback({ success: false, error: error.message });
       }
     });
+
+    // Envoyer un message dans le chat du document
+    socket.on('document:chat:message', async (data) => {
+      try {
+        const { documentId, content } = data;
+
+        // Vérifier si l'utilisateur est dans la salle du document
+        const rooms = Array.from(socket.rooms);
+        const isInDocumentRoom = rooms.includes(`document:${documentId}`);
+
+        if (!isInDocumentRoom) {
+          console.error(`User ${socket.userId} tried to send a chat message to document ${documentId} but is not in the room`);
+          return;
+        }
+
+        // Récupérer les informations de l'utilisateur
+        const userInfo = await realtimeDocumentService.getUserInfo(socket.userId);
+
+        // Créer l'objet message
+        const messageData = {
+          documentId: parseInt(documentId),
+          userId: socket.userId,
+          username: userInfo.username || `Utilisateur ${socket.userId}`,
+          content,
+          timestamp: new Date(),
+          profilePicture: userInfo.profile_picture || null
+        };
+
+        console.log(`Chat message from user ${socket.userId} in document ${documentId}: ${content}`);
+
+        // Diffuser le message à tous les utilisateurs dans la salle du document
+        this.io.to(`document:${documentId}`).emit('document:chat:message', messageData);
+      } catch (error) {
+        console.error('Error sending chat message:', error);
+      }
+    });
+
+    // Indiquer qu'un utilisateur est en train de taper dans le chat
+    socket.on('document:chat:typing', (data) => {
+      try {
+        const { documentId, isTyping } = data;
+
+        // Vérifier si l'utilisateur est dans la salle du document
+        const rooms = Array.from(socket.rooms);
+        const isInDocumentRoom = rooms.includes(`document:${documentId}`);
+
+        if (!isInDocumentRoom) {
+          return;
+        }
+
+        // Diffuser le statut de frappe aux autres utilisateurs dans la salle
+        socket.to(`document:${documentId}`).emit('document:chat:typing', {
+          userId: socket.userId,
+          isTyping
+        });
+      } catch (error) {
+        console.error('Error sending typing status:', error);
+      }
+    });
   }
 
   /**

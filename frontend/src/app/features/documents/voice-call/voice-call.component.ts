@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, DestroyRef, inject, signal, computed, effect } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, DestroyRef, inject, signal, computed, effect, runInInjectionContext, Injector } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -51,8 +51,7 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
     return count;
   });
 
-  // Référence pour le nettoyage
-  private destroyRef = inject(DestroyRef);
+  // Référence pour le nettoyage (déjà injectée plus bas)
 
   // Audio
   private audioElements: Map<number, HTMLAudioElement> = new Map();
@@ -66,63 +65,73 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
     private logger: LoggingService
   ) {}
 
+  // Injection pour les effets
+  private destroyRef = inject(DestroyRef);
+  private injector = inject(Injector);
+
   ngOnInit(): void {
-    // Utiliser effect pour réagir aux changements des signaux du service
-    effect(() => {
-      const call = this.callService.activeCall();
-      this.call.set(call);
+    // Créer les effets dans le contexte d'injection
+    runInInjectionContext(this.injector, () => {
+      // Effet pour surveiller l'appel actif
+      effect(() => {
+        const call = this.callService.activeCall();
+        this.call.set(call);
 
-      // Vérifier si un appel est disponible pour ce document
-      // Assurons-nous que les deux IDs sont du même type (number) pour la comparaison
-      const isAvailable = !!call && Number(call?.document_id) === Number(this.documentId);
-      this.isCallAvailable.set(isAvailable);
+        // Vérifier si un appel est disponible pour ce document
+        // Assurons-nous que les deux IDs sont du même type (number) pour la comparaison
+        const isAvailable = !!call && Number(call?.document_id) === Number(this.documentId);
+        this.isCallAvailable.set(isAvailable);
 
-      console.log('[APPEL VOCAL] État de l\'appel mis à jour', {
-        callId: call?.id,
-        documentId: call?.document_id,
-        currentDocumentId: this.documentId,
-        isCallAvailable: isAvailable
+        console.log('[APPEL VOCAL] État de l\'appel mis à jour', {
+          callId: call?.id,
+          documentId: call?.document_id,
+          currentDocumentId: this.documentId,
+          isCallAvailable: isAvailable
+        });
       });
-    });
 
-    effect(() => {
-      this.isInCall.set(this.callService.isInCall());
+      // Effet pour surveiller l'état de participation à l'appel
+      effect(() => {
+        this.isInCall.set(this.callService.isInCall());
 
-      // Mettre à jour l'état de connexion
-      if (this.isInCall()) {
-        this.connectionStatus.set('connected');
-        this.isConnected.set(true);
-      } else {
-        this.connectionStatus.set('disconnected');
-        this.isConnected.set(false);
-      }
-    });
-
-    effect(() => {
-      this.isMuted.set(this.callService.isMuted());
-    });
-
-    effect(() => {
-      const participants = this.callService.participants();
-      this.participants.set(participants);
-      this.updateAudioElements(participants);
-      this.loadMissingUserInfo(participants);
-
-      // Log des participants actifs
-      const activeParticipants = participants.filter(p => p.is_active);
-      this.logger.info('Participants actifs dans l\'appel', {
-        component: 'VoiceCallComponent',
-        count: activeParticipants.length,
-        participantIds: activeParticipants.map(p => p.user_id)
+        // Mettre à jour l'état de connexion
+        if (this.isInCall()) {
+          this.connectionStatus.set('connected');
+          this.isConnected.set(true);
+        } else {
+          this.connectionStatus.set('disconnected');
+          this.isConnected.set(false);
+        }
       });
-    });
 
-    // Effet spécifique pour surveiller le nombre de participants
-    effect(() => {
-      const count = this.participantCount();
-      this.logger.info('Nombre de participants mis à jour', {
-        component: 'VoiceCallComponent',
-        participantCount: count
+      // Effet pour surveiller l'état de sourdine
+      effect(() => {
+        this.isMuted.set(this.callService.isMuted());
+      });
+
+      // Effet pour surveiller les participants
+      effect(() => {
+        const participants = this.callService.participants();
+        this.participants.set(participants);
+        this.updateAudioElements(participants);
+        this.loadMissingUserInfo(participants);
+
+        // Log des participants actifs
+        const activeParticipants = participants.filter(p => p.is_active);
+        this.logger.info('Participants actifs dans l\'appel', {
+          component: 'VoiceCallComponent',
+          count: activeParticipants.length,
+          participantIds: activeParticipants.map(p => p.user_id)
+        });
+      });
+
+      // Effet pour surveiller le nombre de participants
+      effect(() => {
+        const count = this.participantCount();
+        this.logger.info('Nombre de participants mis à jour', {
+          component: 'VoiceCallComponent',
+          participantCount: count
+        });
       });
     });
 
