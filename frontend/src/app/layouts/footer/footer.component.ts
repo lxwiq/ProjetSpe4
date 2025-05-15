@@ -6,7 +6,7 @@ import { Component } from '@angular/core';
   template: `
     <footer class="app-footer">
       <div class="container">
-        <p>&copy; 2024 Application de Collaboration Documentaire</p>
+        <p>&copy; 2025 Live Campus</p>
       </div>
     </footer>
   `,
@@ -19,7 +19,7 @@ import { Component } from '@angular/core';
       text-align: center;
       color: #6c757d;
     }
-    
+
     .container {
       width: 100%;
       max-width: 1200px;
