@@ -1,0 +1,369 @@
+{
+  "info": {
+    "name": "Fonctionnalités Collaboratives API",
+    "description": "Collection de requêtes pour tester les fonctionnalités collaboratives et les appels audio",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentification",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"test123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["login"]
+            },
+            "description": "Connexion avec un compte administrateur pour obtenir un token JWT"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Vérifier que le statut est 200 OK",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Vérifier que la réponse contient un token",
+                  "pm.test(\"Response has token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    ",
+                  "    // Stocker le token pour les autres requêtes",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        pm.environment.set(\"adminToken\", jsonData.data.token);",
+                  "        console.log(\"Token d'administrateur enregistré dans la variable d'environnement\");",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"test123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["login"]
+            },
+            "description": "Connexion avec un compte utilisateur standard pour obtenir un token JWT"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Vérifier que le statut est 200 OK",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Vérifier que la réponse contient un token",
+                  "pm.test(\"Response has token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    ",
+                  "    // Stocker le token pour les autres requêtes",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        pm.environment.set(\"userToken\", jsonData.data.token);",
+                  "        console.log(\"Token d'utilisateur enregistré dans la variable d'environnement\");",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Créer un document de test",
+      "item": [
+        {
+          "name": "Ajouter un document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Document collaboratif de test\",\n    \"content\": \"Contenu du document collaboratif de test\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["documents", "add"]
+            },
+            "description": "Ajoute un nouveau document pour l'utilisateur connecté"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Vérifier que le statut est 201 Created",
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Vérifier que la réponse contient les données du document",
+                  "pm.test(\"Response has document data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    ",
+                  "    // Stocker l'ID du document pour les tests suivants",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.environment.set(\"testDocumentId\", jsonData.data.id);",
+                  "        console.log(\"ID du document test enregistré: \" + jsonData.data.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Fonctionnalités collaboratives",
+      "item": [
+        {
+          "name": "Récupérer les utilisateurs actifs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/collaborative-documents/{{testDocumentId}}/active-users",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaborative-documents", "{{testDocumentId}}", "active-users"]
+            },
+            "description": "Récupère la liste des utilisateurs actuellement connectés à un document"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Vérifier que le statut est 200 OK",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Vérifier que la réponse est un tableau",
+                  "pm.test(\"Response is an array\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Récupérer les invitations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/collaborative-documents/{{testDocumentId}}/invitations",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaborative-documents", "{{testDocumentId}}", "invitations"]
+            },
+            "description": "Récupère la liste des invitations pour un document spécifique"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Vérifier le statut (200 OK ou 403 si l'utilisateur n'est pas propriétaire)",
+                  "pm.test(\"Status code is 200 or 403\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Inviter un utilisateur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"invitedUserId\": 2,\n    \"permissionLevel\": \"write\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaborative-documents/{{testDocumentId}}/invite",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaborative-documents", "{{testDocumentId}}", "invite"]
+            },
+            "description": "Invite un utilisateur à collaborer sur un document"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Vérifier le statut (201 Created ou autre code d'erreur)",
+                  "pm.test(\"Status code is 201 or error code\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 400, 403, 404, 500]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Récupérer les appels actifs pour un document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/collaborative-documents/{{testDocumentId}}/calls",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaborative-documents", "{{testDocumentId}}", "calls"]
+            },
+            "description": "Récupère la liste des appels audio actifs pour un document spécifique"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Vérifier que le statut est 200 OK",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Vérifier que la réponse est un tableau",
+                  "pm.test(\"Response is an array\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testDocumentId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

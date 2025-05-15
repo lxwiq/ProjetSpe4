@@ -38,12 +38,12 @@ export class ProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Get current user
+    // Récupérer l'utilisateur actuel
     this.user = this.authService.currentUser();
     console.log('ProfileComponent - User from AuthService:', this.user);
     console.log('ProfileComponent - User has profile_picture:', this.user?.profile_picture ? 'Yes' : 'No');
 
-    // Initialize form
+    // Initialiser le formulaire
     this.initForm();
 
     // If user is not available, check auth status
