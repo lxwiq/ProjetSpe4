@@ -1,0 +1,219 @@
+<div class="bg-white rounded-lg shadow-md p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-gray-800">Gestion des utilisateurs</h2>
+    <button
+      (click)="toggleCreateForm()"
+      class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+    >
+      @if (showCreateForm()) {
+        Annuler
+      } @else {
+        Créer un utilisateur
+      }
+    </button>
+  </div>
+
+  <!-- Les messages sont maintenant gérés par le service d'alerte -->
+
+  <!-- Formulaire de création d'utilisateur -->
+  @if (showCreateForm()) {
+    <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <h3 class="text-lg font-medium text-gray-800 mb-4">Créer un nouvel utilisateur</h3>
+
+      <form [formGroup]="createUserForm" (ngSubmit)="onSubmit()" class="space-y-4">
+        <!-- Nom d'utilisateur -->
+        <div>
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur</label>
+          <input
+            type="text"
+            id="username"
+            formControlName="username"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            [ngClass]="{'border-red-500': formSubmitted() && f['username'].errors}"
+          >
+          @if (formSubmitted() && f['username'].errors) {
+            <div class="mt-1 text-sm text-red-600">
+              @if (f['username'].errors['required']) {
+                Le nom d'utilisateur est requis.
+              }
+              @if (f['username'].errors['minlength']) {
+                Le nom d'utilisateur doit contenir au moins 3 caractères.
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            [ngClass]="{'border-red-500': formSubmitted() && f['email'].errors}"
+          >
+          @if (formSubmitted() && f['email'].errors) {
+            <div class="mt-1 text-sm text-red-600">
+              @if (f['email'].errors['required']) {
+                L'email est requis.
+              }
+              @if (f['email'].errors['email']) {
+                Veuillez entrer une adresse email valide.
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Mot de passe -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+          <input
+            type="password"
+            id="password"
+            formControlName="password"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            [ngClass]="{'border-red-500': formSubmitted() && f['password'].errors}"
+          >
+          @if (formSubmitted() && f['password'].errors) {
+            <div class="mt-1 text-sm text-red-600">
+              @if (f['password'].errors['required']) {
+                Le mot de passe est requis.
+              }
+              @if (f['password'].errors['minlength']) {
+                Le mot de passe doit contenir au moins 8 caractères.
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Nom complet -->
+        <div>
+          <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
+          <input
+            type="text"
+            id="full_name"
+            formControlName="full_name"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          >
+        </div>
+
+        <!-- Administrateur -->
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="is_admin"
+            formControlName="is_admin"
+            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+          >
+          <label for="is_admin" class="ml-2 block text-sm text-gray-700">
+            Administrateur
+          </label>
+        </div>
+
+        <!-- Boutons -->
+        <div class="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            (click)="resetForm()"
+            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Réinitialiser
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Créer
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- Liste des utilisateurs -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+    </div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          @for (user of users(); track user.id) {
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10">
+                    @if (user.profile_picture) {
+                      <img class="h-10 w-10 rounded-full" [src]="user.profile_picture" alt="Profile picture">
+                    } @else {
+                      <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-medium">
+                        {{ user.username.charAt(0).toUpperCase() }}
+                      </div>
+                    }
+                  </div>
+                  <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-900">{{ user.username }}</div>
+                    <div class="text-sm text-gray-500">{{ user.full_name }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">{{ user.email }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                @if (user.is_admin || user.isAdmin) {
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Admin
+                  </span>
+                } @else {
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                    Utilisateur
+                  </span>
+                }
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                @if (user.is_active !== false) {
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    Actif
+                  </span>
+                } @else {
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                    Bloqué
+                  </span>
+                }
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                @if (user.is_active !== false) {
+                  <button
+                    (click)="blockUser(user.id)"
+                    class="text-red-600 hover:text-red-900 ml-2"
+                  >
+                    Bloquer
+                  </button>
+                } @else {
+                  <button
+                    (click)="unblockUser(user.id)"
+                    class="text-green-600 hover:text-green-900 ml-2"
+                  >
+                    Débloquer
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,231 @@
+<div class="voice-call-container">
+  <!-- Notification d'appel disponible -->
+  @if (isCallAvailable() && !isInCall()) {
+    <div class="call-available">
+      <div class="flex items-center justify-between bg-blue-50 p-3 rounded-lg shadow-sm mb-3">
+        <div>
+          <h3 class="text-sm font-medium text-blue-800">Appel vocal disponible</h3>
+          <p class="text-xs text-blue-600">D'autres utilisateurs sont en appel sur ce document</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Appel actif -->
+  @if (isInCall()) {
+    <div class="active-call bg-gray-50 rounded-lg shadow-sm p-3">
+      <!-- Indicateur de statut de connexion WebRTC -->
+      <div class="connection-status mb-2 text-xs flex items-center">
+        <span class="inline-block w-2 h-2 rounded-full mr-2"
+              [class.bg-green-500]="connectionStatus() === 'connected'"
+              [class.bg-yellow-500]="connectionStatus() === 'connecting'"
+              [class.bg-red-500]="connectionStatus() === 'disconnected'"></span>
+        <span class="text-gray-600">
+          @if (connectionStatus() === 'connected') {
+            Connexion WebRTC établie
+          } @else if (connectionStatus() === 'connecting') {
+            Connexion WebRTC en cours...
+          } @else {
+            Connexion WebRTC non établie
+          }
+        </span>
+      </div>
+
+      <div class="call-header flex items-center justify-between mb-3">
+        <div class="flex items-center">
+          <div class="call-indicator flex items-center">
+            <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+            <span class="text-sm font-medium">Appel vocal</span>
+          </div>
+          <!-- Badge plus visible pour le nombre de participants -->
+          <div class="flex items-center ml-3 px-2 py-0.5 rounded-full"
+               [class.bg-blue-100]="participantCount() > 0"
+               [class.text-blue-800]="participantCount() > 0"
+               [class.bg-yellow-100]="participantCount() === 0"
+               [class.text-yellow-800]="participantCount() === 0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+            </svg>
+            <span class="font-medium">{{ participantCount() }}</span>
+          </div>
+          <span class="text-xs text-gray-500 ml-2">
+            {{ participantCount() }} participant{{ participantCount() > 1 ? 's' : '' }}
+          </span>
+        </div>
+        <div class="call-controls flex space-x-2">
+          <!-- Bouton paramètres audio -->
+          <button
+            (click)="toggleAudioSettings()"
+            class="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
+            title="Paramètres audio"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+            </svg>
+          </button>
+
+          <!-- Bouton micro -->
+          <button
+            (click)="toggleMute()"
+            class="p-2 rounded-full"
+            [class.bg-gray-200]="!isMuted()"
+            [class.bg-red-100]="isMuted()"
+            [title]="isMuted() ? 'Activer le micro' : 'Couper le micro'"
+          >
+            @if (isMuted()) {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
+                <path d="M3 3.5a.5.5 0 01.5-.5h13a.5.5 0 010 1h-13a.5.5 0 01-.5-.5z" />
+              </svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
+              </svg>
+            }
+          </button>
+
+          <!-- Bouton quitter -->
+          <button
+            (click)="leaveCall()"
+            class="p-2 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+            title="Quitter l'appel"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+              <path d="M16.707 3.293a1 1 0 010 1.414L15.414 6l1.293 1.293a1 1 0 01-1.414 1.414L14 7.414l-1.293 1.293a1 1 0 11-1.414-1.414L12.586 6l-1.293-1.293a1 1 0 011.414-1.414L14 4.586l1.293-1.293a1 1 0 011.414 0z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Panneau des paramètres audio -->
+      @if (showAudioSettings()) {
+        <div class="audio-settings bg-white border border-gray-200 rounded-md p-3 mb-3">
+          <h4 class="text-sm font-medium text-gray-700 mb-2">Paramètres audio</h4>
+
+          <!-- Périphérique d'entrée (microphone) -->
+          <div class="mb-3">
+            <label class="block text-xs text-gray-600 mb-1">Microphone</label>
+            <select
+              [ngModel]="selectedInputDevice()"
+              (ngModelChange)="changeInputDevice($event)"
+              class="w-full text-xs border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            >
+              @for (device of availableInputDevices(); track device.deviceId; let i = $index) {
+                <option [value]="device.deviceId">{{ device.label || 'Microphone ' + (i + 1) }}</option>
+              }
+            </select>
+
+            <!-- Volume d'entrée -->
+            <div class="flex items-center mt-1">
+              <span class="text-xs text-gray-500 mr-2">Volume</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [ngModel]="inputVolume()"
+                (ngModelChange)="adjustInputVolume($event)"
+                class="flex-1 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              >
+              <span class="text-xs text-gray-500 ml-2">{{ inputVolume() }}%</span>
+            </div>
+          </div>
+
+          <!-- Périphérique de sortie (haut-parleurs) -->
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Haut-parleurs</label>
+            <select
+              [ngModel]="selectedOutputDevice()"
+              (ngModelChange)="changeOutputDevice($event)"
+              class="w-full text-xs border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            >
+              @for (device of availableOutputDevices(); track device.deviceId; let i = $index) {
+                <option [value]="device.deviceId">{{ device.label || 'Haut-parleur ' + (i + 1) }}</option>
+              }
+            </select>
+
+            <!-- Volume de sortie -->
+            <div class="flex items-center mt-1">
+              <span class="text-xs text-gray-500 mr-2">Volume</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [ngModel]="outputVolume()"
+                (ngModelChange)="adjustOutputVolume($event)"
+                class="flex-1 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              >
+              <span class="text-xs text-gray-500 ml-2">{{ outputVolume() }}%</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Liste des participants -->
+      <div class="participants-list">
+        <ul class="space-y-2">
+          @for (participant of participants(); track participant.user_id) {
+            @if (participant.is_active) {
+              <li class="flex items-center space-x-2 p-1.5 rounded-md" [class.bg-blue-50]="isSpeaking(participant.user_id)">
+                <!-- Avatar -->
+                @let user = getUserInfo(participant.user_id);
+                <div class="relative">
+                  @if (user?.profile_picture) {
+                    <img [src]="user?.profile_picture" alt="Avatar" class="h-8 w-8 rounded-full">
+                  } @else {
+                    <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                      {{ getUserInitial(participant.user_id) }}
+                    </div>
+                  }
+
+                  <!-- Indicateur de parole -->
+                  @if (isSpeaking(participant.user_id)) {
+                    <span class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+                  }
+
+                  <!-- Indicateur de micro coupé -->
+                  @if (isUserMuted(participant.user_id)) {
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3 3.5a.5.5 0 01.5-.5h13a.5.5 0 010 1h-13a.5.5 0 01-.5-.5z" />
+                      </svg>
+                    </span>
+                  }
+                </div>
+
+                <!-- Nom d'utilisateur -->
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">
+                    {{ getUserDisplayName(participant.user_id) }}
+                    @if (isCurrentUser(participant.user_id)) {
+                      <span class="text-xs text-gray-500 ml-1">(vous)</span>
+                    }
+                  </p>
+                </div>
+              </li>
+            }
+          }
+        </ul>
+      </div>
+    </div>
+  }
+
+  <!-- Bouton pour démarrer ou rejoindre un appel (si pas déjà dans un appel) -->
+  @if (!isInCall() && activeUsers.length >= 2) {
+    <div class="start-call mt-3">
+      <button
+        (click)="handleCallButtonClick()"
+        class="flex items-center justify-center w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+        </svg>
+        @if (isCallAvailable()) {
+          Rejoindre l'appel
+        } @else {
+          Démarrer un appel vocal
+        }
+      </button>
+    </div>
+  }
+</div>

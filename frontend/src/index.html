@@ -6,6 +6,23 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Quill.js pour l'éditeur de texte riche (version mise à jour) -->
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+  <!-- Script pour supprimer l'avertissement de dépréciation DOMNodeInserted -->
+  <script>
+    // Supprimer les avertissements de dépréciation pour DOMNodeInserted
+    const originalConsoleWarn = console.warn;
+    console.warn = function(message) {
+      // Ignorer les avertissements spécifiques liés à DOMNodeInserted
+      if (typeof message === 'string' && message.includes('DOMNodeInserted')) {
+        return;
+      }
+      // Laisser passer tous les autres avertissements
+      originalConsoleWarn.apply(console, arguments);
+    };
+  </script>
 </head>
 <body>
   <app-root></app-root>

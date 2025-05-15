@@ -1,0 +1,56 @@
+<div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+  <div class="p-4 border-b border-gray-200">
+    <h3 class="text-lg font-semibold text-gray-800">Documents actifs</h3>
+  </div>
+
+  @if (activeDocuments.length === 0) {
+    <div class="p-4 text-center text-gray-500">
+      <p>Aucun document actif en ce moment</p>
+    </div>
+  } @else {
+    <div class="divide-y divide-gray-200">
+      @for (item of activeDocuments; track item.document.id) {
+        <div class="p-4 hover:bg-gray-50 transition-colors">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <div class="mr-3 text-indigo-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-gray-900">{{ item.document.title }}</h4>
+                <p class="text-xs text-gray-500">
+                  {{ item.users.length }} utilisateur(s) actif(s)
+                </p>
+              </div>
+            </div>
+
+            <div class="flex -space-x-2">
+              @for (user of item.users.slice(0, 3); track user.id) {
+                <div class="w-6 h-6 rounded-full bg-indigo-100 border border-white flex items-center justify-center text-xs text-indigo-800 overflow-hidden">
+                  @if (user.profile_picture) {
+                    <img [src]="user.profile_picture" alt="User" class="w-full h-full object-cover">
+                  } @else {
+                    {{ user.username && user.username.charAt(0) || 'U' }}
+                  }
+                </div>
+              }
+              @if (item.users.length > 3) {
+                <div class="w-6 h-6 rounded-full bg-indigo-500 border border-white flex items-center justify-center text-xs text-white">
+                  +{{ item.users.length - 3 }}
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="mt-2 flex justify-end">
+            <a [routerLink]="['/documents', item.document.id]" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition-colors">
+              Rejoindre
+            </a>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

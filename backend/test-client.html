@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WebSocket - Édition Collaborative</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .editor-container {
+            flex: 2;
+        }
+        .sidebar {
+            flex: 1;
+            border-left: 1px solid #ccc;
+            padding-left: 20px;
+        }
+        #editor {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .user-list {
+            margin-bottom: 20px;
+        }
+        .user {
+            padding: 5px;
+            margin-bottom: 5px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 12px;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        .call-controls {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test WebSocket - Édition Collaborative</h1>
+    
+    <div class="login-container" id="loginContainer">
+        <h2>Connexion</h2>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="user@example.com">
+        </div>
+        <div>
+            <label for="password">Mot de passe:</label>
+            <input type="password" id="password" value="user_password">
+        </div>
+        <button id="loginBtn">Se connecter</button>
+        <div id="loginStatus" class="status"></div>
+    </div>
+    
+    <div class="document-list-container hidden" id="documentListContainer">
+        <h2>Mes documents</h2>
+        <div id="documentList"></div>
+        <button id="refreshDocumentsBtn">Rafraîchir</button>
+        <div id="documentListStatus" class="status"></div>
+    </div>
+    
+    <div class="container hidden" id="editorContainer">
+        <div class="editor-container">
+            <h2>Éditeur - <span id="documentTitle"></span></h2>
+            <textarea id="editor"></textarea>
+            <div class="controls">
+                <button id="saveBtn">Sauvegarder</button>
+                <button id="leaveBtn">Quitter</button>
+            </div>
+            <div id="editorStatus" class="status"></div>
+        </div>
+        
+        <div class="sidebar">
+            <h3>Utilisateurs actifs</h3>
+            <div id="userList" class="user-list"></div>
+            
+            <h3>Inviter un utilisateur</h3>
+            <div>
+                <label for="inviteUserId">ID de l'utilisateur:</label>
+                <input type="number" id="inviteUserId">
+            </div>
+            <div>
+                <label for="permissionLevel">Permission:</label>
+                <select id="permissionLevel">
+                    <option value="read">Lecture</option>
+                    <option value="write" selected>Écriture</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button id="inviteBtn">Inviter</button>
+            <div id="inviteStatus" class="status"></div>
+            
+            <div class="call-controls">
+                <h3>Appel audio</h3>
+                <div id="noCallControls">
+                    <button id="startCallBtn">Démarrer un appel</button>
+                </div>
+                <div id="activeCallControls" class="hidden">
+                    <button id="leaveCallBtn">Quitter l'appel</button>
+                    <div>Participants: <span id="callParticipants"></span></div>
+                </div>
+                <div id="incomingCallControls" class="hidden">
+                    <div>Appel entrant de <span id="callerId"></span></div>
+                    <button id="acceptCallBtn">Accepter</button>
+                    <button id="rejectCallBtn">Refuser</button>
+                </div>
+                <div id="callStatus" class="status"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script>
+        // Configuration
+        const API_URL = 'http://localhost:3000';
+        let socket;
+        let token;
+        let userId;
+        let currentDocumentId;
+        let activeCallId;
+        let peers = {};
+        
+        // Éléments DOM
+        const loginContainer = document.getElementById('loginContainer');
+        const documentListContainer = document.getElementById('documentListContainer');
+        const editorContainer = document.getElementById('editorContainer');
+        const editor = document.getElementById('editor');
+        const documentTitle = document.getElementById('documentTitle');
+        const userList = document.getElementById('userList');
+        const documentList = document.getElementById('documentList');
+        
+        // Statuts
+        const loginStatus = document.getElementById('loginStatus');
+        const documentListStatus = document.getElementById('documentListStatus');
+        const editorStatus = document.getElementById('editorStatus');
+        const inviteStatus = document.getElementById('inviteStatus');
+        const callStatus = document.getElementById('callStatus');
+        
+        // Contrôles d'appel
+        const noCallControls = document.getElementById('noCallControls');
+        const activeCallControls = document.getElementById('activeCallControls');
+        const incomingCallControls = document.getElementById('incomingCallControls');
+        const callParticipants = document.getElementById('callParticipants');
+        const callerId = document.getElementById('callerId');
+        
+        // Événements
+        document.getElementById('loginBtn').addEventListener('click', login);
+        document.getElementById('refreshDocumentsBtn').addEventListener('click', fetchDocuments);
+        document.getElementById('saveBtn').addEventListener('click', saveDocument);
+        document.getElementById('leaveBtn').addEventListener('click', leaveDocument);
+        document.getElementById('inviteBtn').addEventListener('click', inviteUser);
+        document.getElementById('startCallBtn').addEventListener('click', startCall);
+        document.getElementById('leaveCallBtn').addEventListener('click', leaveCall);
+        document.getElementById('acceptCallBtn').addEventListener('click', acceptCall);
+        document.getElementById('rejectCallBtn').addEventListener('click', rejectCall);
+        
+        // Délai de sauvegarde automatique (30 secondes)
+        let autoSaveInterval;
+        
+        // Fonction de connexion
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                loginStatus.textContent = 'Connexion en cours...';
+                
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur de connexion: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                userId = data.data.user.id;
+                
+                // Récupérer le token depuis les cookies
+                token = getCookie('jwt_token');
+                
+                if (!token) {
+                    // Si le token n'est pas dans les cookies, utiliser celui de la réponse
+                    token = data.data.token;
+                }
+                
+                loginStatus.textContent = 'Connexion réussie!';
+                
+                // Connecter le socket
+                connectSocket();
+                
+                // Afficher la liste des documents
+                loginContainer.classList.add('hidden');
+                documentListContainer.classList.remove('hidden');
+                
+                // Charger les documents
+                fetchDocuments();
+                
+            } catch (error) {
+                console.error('Erreur de connexion:', error);
+                loginStatus.textContent = `Erreur: ${error.message}`;
+            }
+        }
+        
+        // Fonction pour récupérer un cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        
+        // Fonction pour connecter le socket
+        function connectSocket() {
+            socket = io(API_URL, {
+                auth: { token },
+                withCredentials: true
+            });
+            
+            // Événements de connexion
+            socket.on('connect', () => {
+                console.log('Socket connecté');
+            });
+            
+            socket.on('connect_error', (error) => {
+                console.error('Erreur de connexion socket:', error);
+            });
+            
+            // Événements de document
+            socket.on('document:user-joined', handleUserJoined);
+            socket.on('document:user-left', handleUserLeft);
+            socket.on('document:content-changed', handleContentChanged);
+            socket.on('document:saved', handleDocumentSaved);
+            socket.on('document:invitation', handleDocumentInvitation);
+            
+            // Événements d'appel
+            socket.on('call:started', handleCallStarted);
+            socket.on('call:user-joined', handleCallUserJoined);
+            socket.on('call:user-left', handleCallUserLeft);
+            socket.on('call:ended', handleCallEnded);
+            socket.on('call:signal', handleCallSignal);
+        }
+        
+        // Fonction pour récupérer les documents
+        async function fetchDocuments() {
+            try {
+                documentListStatus.textContent = 'Chargement des documents...';
+                
+                const response = await fetch(`${API_URL}/documents`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur: ${response.status}`);
+                }
+                
+                const documents = await response.json();
+                
+                // Afficher les documents
+                documentList.innerHTML = '';
+                documents.forEach(doc => {
+                    const docElement = document.createElement('div');
+                    docElement.classList.add('user');
+                    docElement.textContent = doc.title;
+                    docElement.addEventListener('click', () => joinDocument(doc.id));
+                    documentList.appendChild(docElement);
+                });
+                
+                documentListStatus.textContent = `${documents.length} documents chargés`;
+                
+            } catch (error) {
+                console.error('Erreur lors du chargement des documents:', error);
+                documentListStatus.textContent = `Erreur: ${error.message}`;
+            }
+        }
+        
+        // Fonction pour rejoindre un document
+        function joinDocument(documentId) {
+            currentDocumentId = documentId;
+            
+            socket.emit('document:join', { documentId }, (response) => {
+                if (response.success) {
+                    // Afficher l'éditeur
+                    documentListContainer.classList.add('hidden');
+                    editorContainer.classList.remove('hidden');
+                    
+                    // Mettre à jour le titre et le contenu
+                    documentTitle.textContent = response.data.document.title;
+                    editor.value = response.data.currentContent;
+                    
+                    // Mettre à jour la liste des utilisateurs
+                    updateUserList(response.data.activeUsers);
+                    
+                    // Configurer la sauvegarde automatique
+                    autoSaveInterval = setInterval(() => {
+                        if (editor.value.trim() !== '') {
+                            socket.emit('document:update', {
+                                documentId: currentDocumentId,
+                                content: editor.value
+                            });
+                        }
+                    }, 5000); // Toutes les 5 secondes
+                    
+                    editorStatus.textContent = 'Document chargé';
+                } else {
+                    console.error('Erreur lors du chargement du document:', response.error);
+                    editorStatus.textContent = `Erreur: ${response.error}`;
+                }
+            });
+        }
+        
+        // Fonction pour quitter un document
+        function leaveDocument() {
+            if (currentDocumentId) {
+                socket.emit('document:leave', { documentId: currentDocumentId });
+                
+                // Arrêter la sauvegarde automatique
+                clearInterval(autoSaveInterval);
+                
+                // Quitter l'appel si actif
+                if (activeCallId) {
+                    leaveCall();
+                }
+                
+                // Réinitialiser les variables
+                currentDocumentId = null;
+                
+                // Afficher la liste des documents
+                editorContainer.classList.add('hidden');
+                documentListContainer.classList.remove('hidden');
+                
+                // Rafraîchir la liste des documents
+                fetchDocuments();
+            }
+        }
+        
+        // Fonction pour sauvegarder un document
+        function saveDocument() {
+            if (currentDocumentId) {
+                editorStatus.textContent = 'Sauvegarde en cours...';
+                
+                socket.emit('document:save', { documentId: currentDocumentId }, (response) => {
+                    if (response.success) {
+                        editorStatus.textContent = `Document sauvegardé (version ${response.data.versionNumber})`;
+                    } else {
+                        console.error('Erreur lors de la sauvegarde:', response.error);
+                        editorStatus.textContent = `Erreur: ${response.error}`;
+                    }
+                });
+            }
+        }
+        
+        // Fonction pour inviter un utilisateur
+        function inviteUser() {
+            if (currentDocumentId) {
+                const invitedUserId = document.getElementById('inviteUserId').value;
+                const permissionLevel = document.getElementById('permissionLevel').value;
+                
+                if (!invitedUserId) {
+                    inviteStatus.textContent = 'Veuillez entrer un ID d\'utilisateur';
+                    return;
+                }
+                
+                inviteStatus.textContent = 'Invitation en cours...';
+                
+                socket.emit('document:invite', {
+                    documentId: currentDocumentId,
+                    invitedUserId,
+                    permissionLevel
+                }, (response) => {
+                    if (response.success) {
+                        inviteStatus.textContent = 'Invitation envoyée';
+                    } else {
+                        console.error('Erreur lors de l\'invitation:', response.error);
+                        inviteStatus.textContent = `Erreur: ${response.error}`;
+                    }
+                });
+            }
+        }
+        
+        // Fonction pour démarrer un appel
+        function startCall() {
+            if (currentDocumentId) {
+                callStatus.textContent = 'Démarrage de l\'appel...';
+                
+                socket.emit('call:start', { documentId: currentDocumentId }, (response) => {
+                    if (response.success) {
+                        activeCallId = response.data.callId;
+                        
+                        // Afficher les contrôles d'appel actif
+                        noCallControls.classList.add('hidden');
+                        activeCallControls.classList.remove('hidden');
+                        
+                        callStatus.textContent = 'Appel démarré';
+                        callParticipants.textContent = userId;
+                        
+                        // Initialiser l'audio local
+                        setupLocalAudio();
+                    } else {
+                        console.error('Erreur lors du démarrage de l\'appel:', response.error);
+                        callStatus.textContent = `Erreur: ${response.error}`;
+                    }
+                });
+            }
+        }
+        
+        // Fonction pour quitter un appel
+        function leaveCall() {
+            if (activeCallId) {
+                socket.emit('call:leave', { callId: activeCallId }, (response) => {
+                    if (response.success) {
+                        // Fermer les connexions WebRTC
+                        Object.values(peers).forEach(peer => peer.destroy());
+                        peers = {};
+                        
+                        // Arrêter l'audio local
+                        stopLocalAudio();
+                        
+                        // Réinitialiser les variables
+                        activeCallId = null;
+                        
+                        // Afficher les contrôles d'appel normal
+                        activeCallControls.classList.add('hidden');
+                        incomingCallControls.classList.add('hidden');
+                        noCallControls.classList.remove('hidden');
+                        
+                        callStatus.textContent = 'Appel terminé';
+                    } else {
+                        console.error('Erreur lors de la sortie de l\'appel:', response.error);
+                        callStatus.textContent = `Erreur: ${response.error}`;
+                    }
+                });
+            }
+        }
+        
+        // Fonction pour accepter un appel
+        function acceptCall() {
+            if (activeCallId) {
+                socket.emit('call:join', { callId: activeCallId }, (response) => {
+                    if (response.success) {
+                        // Afficher les contrôles d'appel actif
+                        incomingCallControls.classList.add('hidden');
+                        noCallControls.classList.add('hidden');
+                        activeCallControls.classList.remove('hidden');
+                        
+                        callStatus.textContent = 'Appel en cours';
+                        callParticipants.textContent = response.data.participants.join(', ');
+                        
+                        // Initialiser l'audio local
+                        setupLocalAudio();
+                        
+                        // Initialiser les connexions WebRTC avec les participants existants
+                        response.data.participants.forEach(participantId => {
+                            if (participantId !== userId) {
+                                initializePeerConnection(participantId, false);
+                            }
+                        });
+                    } else {
+                        console.error('Erreur lors de l\'acceptation de l\'appel:', response.error);
+                        callStatus.textContent = `Erreur: ${response.error}`;
+                    }
+                });
+            }
+        }
+        
+        // Fonction pour refuser un appel
+        function rejectCall() {
+            // Masquer les contrôles d'appel entrant
+            incomingCallControls.classList.add('hidden');
+            noCallControls.classList.remove('hidden');
+            
+            // Réinitialiser les variables
+            activeCallId = null;
+            
+            callStatus.textContent = 'Appel refusé';
+        }
+        
+        // Gestionnaires d'événements de document
+        function handleUserJoined(data) {
+            console.log('Utilisateur rejoint:', data);
+            updateUserList(data.activeUsers);
+            editorStatus.textContent = `Utilisateur ${data.userId} a rejoint le document`;
+        }
+        
+        function handleUserLeft(data) {
+            console.log('Utilisateur parti:', data);
+            updateUserList(data.activeUsers);
+            editorStatus.textContent = `Utilisateur ${data.userId} a quitté le document`;
+        }
+        
+        function handleContentChanged(data) {
+            console.log('Contenu modifié:', data);
+            editor.value = data.content;
+            editorStatus.textContent = `Document modifié par ${data.userId}`;
+        }
+        
+        function handleDocumentSaved(data) {
+            console.log('Document sauvegardé:', data);
+            editorStatus.textContent = `Document sauvegardé par ${data.savedBy} (version ${data.versionNumber})`;
+        }
+        
+        function handleDocumentInvitation(data) {
+            console.log('Invitation reçue:', data);
+            alert(`Vous avez été invité à éditer le document ${data.documentId} par l'utilisateur ${data.invitedBy}`);
+        }
+        
+        // Gestionnaires d'événements d'appel
+        function handleCallStarted(data) {
+            console.log('Appel démarré:', data);
+            
+            // Stocker l'ID de l'appel
+            activeCallId = data.callId;
+            
+            // Afficher les contrôles d'appel entrant
+            noCallControls.classList.add('hidden');
+            incomingCallControls.classList.remove('hidden');
+            
+            callerId.textContent = data.initiatedBy;
+            callStatus.textContent = 'Appel entrant';
+        }
+        
+        function handleCallUserJoined(data) {
+            console.log('Utilisateur rejoint l\'appel:', data);
+            
+            // Initialiser la connexion WebRTC avec le nouvel utilisateur
+            initializePeerConnection(data.userId, true);
+            
+            // Mettre à jour la liste des participants
+            const currentParticipants = callParticipants.textContent.split(', ');
+            if (!currentParticipants.includes(data.userId)) {
+                currentParticipants.push(data.userId);
+                callParticipants.textContent = currentParticipants.join(', ');
+            }
+            
+            callStatus.textContent = `Utilisateur ${data.userId} a rejoint l'appel`;
+        }
+        
+        function handleCallUserLeft(data) {
+            console.log('Utilisateur quitté l\'appel:', data);
+            
+            // Fermer la connexion WebRTC avec l'utilisateur
+            if (peers[data.userId]) {
+                peers[data.userId].destroy();
+                delete peers[data.userId];
+            }
+            
+            // Mettre à jour la liste des participants
+            const currentParticipants = callParticipants.textContent.split(', ');
+            const index = currentParticipants.indexOf(data.userId.toString());
+            if (index !== -1) {
+                currentParticipants.splice(index, 1);
+                callParticipants.textContent = currentParticipants.join(', ');
+            }
+            
+            callStatus.textContent = `Utilisateur ${data.userId} a quitté l'appel`;
+        }
+        
+        function handleCallEnded(data) {
+            console.log('Appel terminé:', data);
+            
+            // Fermer les connexions WebRTC
+            Object.values(peers).forEach(peer => peer.destroy());
+            peers = {};
+            
+            // Arrêter l'audio local
+            stopLocalAudio();
+            
+            // Réinitialiser les variables
+            activeCallId = null;
+            
+            // Afficher les contrôles d'appel normal
+            activeCallControls.classList.add('hidden');
+            incomingCallControls.classList.add('hidden');
+            noCallControls.classList.remove('hidden');
+            
+            callStatus.textContent = 'Appel terminé';
+        }
+        
+        function handleCallSignal(data) {
+            console.log('Signal reçu:', data);
+            
+            // Si la connexion WebRTC n'existe pas encore, l'initialiser
+            if (!peers[data.userId]) {
+                initializePeerConnection(data.userId, false);
+            }
+            
+            // Traiter le signal
+            try {
+                peers[data.userId].signal(data.signal);
+            } catch (error) {
+                console.error('Erreur lors du traitement du signal:', error);
+            }
+        }
+        
+        // Fonction pour mettre à jour la liste des utilisateurs
+        function updateUserList(activeUsers) {
+            userList.innerHTML = '';
+            activeUsers.forEach(userId => {
+                const userElement = document.createElement('div');
+                userElement.classList.add('user');
+                userElement.textContent = `Utilisateur ${userId}`;
+                userList.appendChild(userElement);
+            });
+        }
+        
+        // Fonctions WebRTC
+        let localStream;
+        
+        // Fonction pour initialiser l'audio local
+        async function setupLocalAudio() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } catch (error) {
+                console.error('Erreur lors de l\'accès au microphone:', error);
+                callStatus.textContent = `Erreur: ${error.message}`;
+            }
+        }
+        
+        // Fonction pour arrêter l'audio local
+        function stopLocalAudio() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+        }
+        
+        // Fonction pour initialiser une connexion WebRTC
+        function initializePeerConnection(remoteUserId, initiator) {
+            // Note: Dans un environnement réel, vous devriez utiliser une bibliothèque comme simple-peer
+            // Ici, nous simulons simplement le comportement
+            
+            // Créer un "faux" peer pour la démonstration
+            const peer = {
+                userId: remoteUserId,
+                initiator: initiator,
+                destroy: function() {
+                    console.log(`Connexion WebRTC avec ${this.userId} fermée`);
+                },
+                signal: function(data) {
+                    console.log(`Signal reçu de ${this.userId}:`, data);
+                    
+                    // Simuler une réponse au signal
+                    if (initiator) {
+                        socket.emit('call:signal', {
+                            callId: activeCallId,
+                            userId: remoteUserId,
+                            signal: { type: 'answer', sdp: 'simulated-sdp' }
+                        });
+                    } else {
+                        socket.emit('call:signal', {
+                            callId: activeCallId,
+                            userId: remoteUserId,
+                            signal: { type: 'offer', sdp: 'simulated-sdp' }
+                        });
+                    }
+                }
+            };
+            
+            // Stocker la connexion
+            peers[remoteUserId] = peer;
+            
+            // Si initiateur, envoyer une offre
+            if (initiator) {
+                socket.emit('call:signal', {
+                    callId: activeCallId,
+                    userId: remoteUserId,
+                    signal: { type: 'offer', sdp: 'simulated-sdp' }
+                });
+            }
+            
+            return peer;
+        }
+    </script>
+</body>
+</html>

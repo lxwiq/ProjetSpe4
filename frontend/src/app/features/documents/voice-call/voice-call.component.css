@@ -1,0 +1,92 @@
+.voice-call-container {
+  margin-bottom: 1rem;
+}
+
+.call-available {
+  margin-bottom: 1rem;
+}
+
+.active-call {
+  border: 1px solid #e5e7eb;
+}
+
+.call-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.participants-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Styles pour les paramètres audio */
+.audio-settings {
+  transition: all 0.3s ease;
+}
+
+.connection-status {
+  transition: all 0.3s ease;
+}
+
+/* Styles pour les contrôles de volume */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: #e5e7eb;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+/* Animation pour l'indicateur de parole */
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}

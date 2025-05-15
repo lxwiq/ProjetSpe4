@@ -1,0 +1,93 @@
+<div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+  <div class="p-4 border-b border-gray-200">
+    <h3 class="text-lg font-semibold text-gray-800">Notifications</h3>
+  </div>
+
+  @if (notifications.length === 0) {
+    <div class="p-4 text-center text-gray-500">
+      <p>Aucune notification</p>
+    </div>
+  } @else {
+    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+      @for (notification of notifications; track notification.id) {
+        <div
+          class="p-4 hover:bg-gray-50 transition-colors flex items-start cursor-pointer"
+          [class.bg-blue-50]="!notification.is_read"
+          (click)="markAsRead(notification)"
+        >
+          <div class="mr-3 text-indigo-600 flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getNotificationIcon(notification.type)" />
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate">
+              @switch (notification.type) {
+                @case ('new_message') {
+                  Nouveau message de {{ notification.content?.senderName }}
+                }
+                @case ('document_invite') {
+                  Invitation au document "{{ notification.content?.documentTitle }}"
+                }
+                @case ('document_update') {
+                  Mise à jour du document "{{ notification.content?.documentTitle }}"
+                }
+                @case ('conversation_invite') {
+                  Invitation à la conversation "{{ notification.content?.conversationName }}"
+                }
+                @case ('incoming_call') {
+                  Appel entrant pour le document "{{ notification.content?.documentTitle }}"
+                }
+                @case ('system') {
+                  {{ notification.content?.title }}
+                }
+                @default {
+                  Nouvelle notification
+                }
+              }
+            </p>
+            <p class="text-sm text-gray-500 truncate">
+              @switch (notification.type) {
+                @case ('new_message') {
+                  {{ notification.content?.preview }}
+                }
+                @case ('document_invite') {
+                  {{ notification.sender?.full_name || notification.sender?.username }} vous a invité à collaborer
+                }
+                @case ('document_update') {
+                  {{ notification.sender?.full_name || notification.sender?.username }} a modifié le document
+                }
+                @case ('conversation_invite') {
+                  {{ notification.sender?.full_name || notification.sender?.username }} vous a ajouté à la conversation
+                }
+                @case ('incoming_call') {
+                  {{ notification.sender?.full_name || notification.sender?.username }} vous appelle
+                }
+                @case ('system') {
+                  {{ notification.content?.message }}
+                }
+                @default {
+                  Cliquez pour voir les détails
+                }
+              }
+            </p>
+            <p class="text-xs text-gray-400 mt-1">
+              {{ formatDate(notification.created_at) }}
+            </p>
+          </div>
+          @if (!notification.is_read) {
+            <div class="ml-2 flex-shrink-0">
+              <span class="inline-block w-2 h-2 rounded-full bg-indigo-600"></span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="p-2 border-t border-gray-200 bg-gray-50">
+      <a routerLink="/notifications" class="block text-center text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+        Voir toutes les notifications
+      </a>
+    </div>
+  }
+</div>
