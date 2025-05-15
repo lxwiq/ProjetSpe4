@@ -4,6 +4,119 @@ const router = express.Router();
 const verifyToken = require('../middlewares/jwt');
 const prisma = require('../lib/prisma');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Calls
+ *   description: Gestion des appels audio entre collaborateurs
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Call:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID de l'appel
+ *         document_id:
+ *           type: integer
+ *           description: ID du document associé
+ *         initiated_by:
+ *           type: integer
+ *           description: ID de l'utilisateur qui a initié l'appel
+ *         started_at:
+ *           type: string
+ *           format: date-time
+ *           description: Date de début de l'appel
+ *         ended_at:
+ *           type: string
+ *           format: date-time
+ *           description: Date de fin de l'appel
+ *         status:
+ *           type: string
+ *           enum: [active, ended, failed]
+ *           description: Statut de l'appel
+ *         call_participants:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/CallParticipant'
+ *           description: Liste des participants à l'appel
+ *     CallParticipant:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID du participant
+ *         call_id:
+ *           type: integer
+ *           description: ID de l'appel
+ *         user_id:
+ *           type: integer
+ *           description: ID de l'utilisateur
+ *         joined_at:
+ *           type: string
+ *           format: date-time
+ *           description: Date à laquelle l'utilisateur a rejoint l'appel
+ *         left_at:
+ *           type: string
+ *           format: date-time
+ *           description: Date à laquelle l'utilisateur a quitté l'appel
+ *         is_active:
+ *           type: boolean
+ *           description: Indique si l'utilisateur est actuellement dans l'appel
+ *         users:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *             username:
+ *               type: string
+ *             full_name:
+ *               type: string
+ *             profile_picture:
+ *               type: string
+ */
+
+/**
+ * @swagger
+ * /calls/document/{documentId}/active:
+ *   get:
+ *     summary: Récupérer les appels actifs pour un document
+ *     description: Renvoie la liste des appels actifs pour un document spécifique
+ *     tags: [Calls]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du document
+ *     responses:
+ *       200:
+ *         description: Liste des appels actifs récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Appels actifs récupérés avec succès
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Call'
+ *       403:
+ *         description: Accès refusé au document
+ *       500:
+ *         description: Erreur lors de la récupération des appels actifs
+ */
 // Récupérer tous les appels actifs pour un document
 router.get('/document/:documentId/active', verifyToken, async (req, res) => {
   try {
@@ -59,6 +172,43 @@ router.get('/document/:documentId/active', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /calls/{callId}:
+ *   get:
+ *     summary: Récupérer les détails d'un appel
+ *     description: Renvoie les détails d'un appel spécifique, y compris les participants
+ *     tags: [Calls]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: callId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'appel
+ *     responses:
+ *       200:
+ *         description: Détails de l'appel récupérés avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Appel récupéré avec succès
+ *                 data:
+ *                   $ref: '#/components/schemas/Call'
+ *       403:
+ *         description: Accès refusé au document
+ *       404:
+ *         description: Appel non trouvé
+ *       500:
+ *         description: Erreur lors de la récupération de l'appel
+ */
 // Récupérer les détails d'un appel
 router.get('/:callId', verifyToken, async (req, res) => {
   try {
@@ -116,6 +266,43 @@ router.get('/:callId', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /calls/{callId}/end:
+ *   put:
+ *     summary: Terminer un appel
+ *     description: Termine un appel actif et met à jour le statut de tous les participants
+ *     tags: [Calls]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: callId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'appel à terminer
+ *     responses:
+ *       200:
+ *         description: Appel terminé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Appel terminé avec succès
+ *                 data:
+ *                   $ref: '#/components/schemas/Call'
+ *       403:
+ *         description: Accès refusé au document
+ *       404:
+ *         description: Appel non trouvé
+ *       500:
+ *         description: Erreur lors de la terminaison de l'appel
+ */
 // Terminer un appel
 router.put('/:callId/end', verifyToken, async (req, res) => {
   try {
