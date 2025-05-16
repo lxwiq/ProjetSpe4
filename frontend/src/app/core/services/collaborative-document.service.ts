@@ -25,14 +25,16 @@ export class CollaborativeDocumentService {
 
   // Sujets pour les événements d'édition
   private contentChanged = new Subject<DocumentDelta>();
-  private cursorMoved = new Subject<{ userId: number, position: CursorPosition }>();
   private documentSaved = new Subject<{ documentId: number, savedAt: Date, versionNumber: number }>();
   private chatMessage = new Subject<any>();
   private chatTyping = new Subject<any>();
+  private cursorMoved = new Subject<{ userId: number, position: CursorPosition }>();
 
   private destroyRef = inject(DestroyRef);
   private autoSaveInterval: any;
   private currentDocumentId: number | null = null;
+  private contentChangeCounter: number = 0;
+  private hasUnsavedChanges: boolean = false;
 
   constructor(
     private websocketService: WebsocketService,
@@ -82,16 +84,7 @@ export class CollaborativeDocumentService {
         this.contentChanged.next(data);
       });
 
-    // Écouter les mouvements de curseur
-    this.websocketService.onDocumentCursorMoved()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(data => {
-        console.log('Curseur déplacé:', data);
-        this.cursorMoved.next({
-          userId: data.userId,
-          position: data.position
-        });
-      });
+
 
     // Écouter les sauvegardes de document
     this.websocketService.onDocumentSaved()
@@ -178,8 +171,8 @@ export class CollaborativeDocumentService {
             this.refreshActiveUsers(documentId);
           }
 
-          // Configurer la sauvegarde automatique avec un intervalle de 10 secondes
-          this.setupAutoSave(documentId, 10);
+          // Configurer la sauvegarde automatique avec un intervalle de 3 secondes pour une sauvegarde plus fréquente
+          this.setupAutoSave(documentId, 3);
 
           // Notifier l'observateur
           observer.next(response.data);
@@ -223,12 +216,18 @@ export class CollaborativeDocumentService {
     // Nettoyer tout intervalle existant
     this.clearAutoSave();
 
-    // Configurer un nouvel intervalle
+    // Configurer un nouvel intervalle avec un intervalle plus court pour une sauvegarde plus fréquente
     this.autoSaveInterval = interval(intervalSeconds * 1000)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         switchMap(() => {
           if (!this.isEditing() || !this.currentDocumentId) {
+            return of(null);
+          }
+
+          // Vérifier si des modifications ont été apportées depuis la dernière sauvegarde
+          if (!this.hasUnsavedChanges) {
+            console.log('CollaborativeDocumentService: Aucune modification à sauvegarder');
             return of(null);
           }
 
@@ -239,18 +238,26 @@ export class CollaborativeDocumentService {
           return this.saveDocument(documentId).pipe(
             tap(result => {
               console.log('CollaborativeDocumentService: Sauvegarde automatique réussie:', result);
+              // Réinitialiser le flag de modifications non sauvegardées
+              this.hasUnsavedChanges = false;
+              // Réinitialiser le compteur de modifications
+              this.contentChangeCounter = 0;
             }),
             catchError(error => {
               console.error('CollaborativeDocumentService: Erreur lors de la sauvegarde automatique:', error);
 
-              // Planifier une nouvelle tentative dans 30 secondes
+              // Planifier une nouvelle tentative plus rapidement (5 secondes)
               setTimeout(() => {
                 console.log('CollaborativeDocumentService: Nouvelle tentative de sauvegarde automatique');
                 this.saveDocument(documentId).subscribe({
-                  next: () => console.log('CollaborativeDocumentService: Nouvelle tentative réussie'),
+                  next: () => {
+                    console.log('CollaborativeDocumentService: Nouvelle tentative réussie');
+                    this.hasUnsavedChanges = false;
+                    this.contentChangeCounter = 0;
+                  },
                   error: (retryError) => console.error('CollaborativeDocumentService: Échec de la nouvelle tentative:', retryError)
                 });
-              }, 30000);
+              }, 5000);
 
               return of(null);
             }),
@@ -275,6 +282,44 @@ export class CollaborativeDocumentService {
       this.autoSaveInterval.unsubscribe();
       this.autoSaveInterval = null;
     }
+  }
+
+  /**
+   * Déclenche une sauvegarde automatique immédiate
+   * @param documentId ID du document à sauvegarder
+   */
+  private triggerAutoSave(documentId: number): void {
+    if (!this.isEditing() || !documentId) {
+      return;
+    }
+
+    // Vérifier si des modifications ont été apportées
+    if (!this.hasUnsavedChanges) {
+      console.log('CollaborativeDocumentService: Aucune modification à sauvegarder');
+      return;
+    }
+
+    console.log('CollaborativeDocumentService: Sauvegarde automatique déclenchée après modifications');
+
+    // Vérifier si une sauvegarde est déjà en cours
+    if (this.isSaving()) {
+      console.log('CollaborativeDocumentService: Sauvegarde déjà en cours, report de la sauvegarde automatique');
+      return;
+    }
+
+    // Déclencher la sauvegarde
+    this.saveDocument(documentId).subscribe({
+      next: (result) => {
+        console.log('CollaborativeDocumentService: Sauvegarde après modifications réussie:', result);
+        // Réinitialiser le flag de modifications non sauvegardées
+        this.hasUnsavedChanges = false;
+        // Réinitialiser le compteur de modifications
+        this.contentChangeCounter = 0;
+      },
+      error: (error) => {
+        console.error('CollaborativeDocumentService: Erreur lors de la sauvegarde après modifications:', error);
+      }
+    });
   }
 
   // Propriété pour stocker le dernier timestamp d'envoi de delta
@@ -342,6 +387,16 @@ export class CollaborativeDocumentService {
       data.content = content; // Inclure le contenu pour la synchronisation
       this.lastDeltaSentTimestamp = now;
       this.sendContentUpdate(data);
+
+      // Marquer qu'il y a des modifications non sauvegardées
+      this.hasUnsavedChanges = true;
+
+      // Déclencher une sauvegarde automatique après un certain nombre de modifications
+      // Utiliser un compteur de modifications pour déclencher la sauvegarde
+      this.contentChangeCounter = (this.contentChangeCounter || 0) + 1;
+      if (this.contentChangeCounter >= 5) { // Sauvegarder après 5 modifications
+        this.triggerAutoSave(documentId);
+      }
     } else {
       // Fallback au contenu complet si aucun delta n'est disponible
       data.content = content;
@@ -385,97 +440,56 @@ export class CollaborativeDocumentService {
    * @param data Données à envoyer
    */
   private sendContentUpdate(data: any): void {
+    // Vérifier que les données sont valides
+    if (!data || !data.documentId) {
+      console.error('CollaborativeDocumentService: Données de mise à jour invalides', data);
+      return;
+    }
+
+    // S'assurer que le contenu est toujours inclus pour une meilleure synchronisation
+    if (!data.content && data.delta) {
+      console.warn('CollaborativeDocumentService: Delta sans contenu, synchronisation potentiellement instable');
+    }
+
     // S'assurer que le WebSocket est connecté avant d'envoyer
     if (this.websocketService.isConnected()) {
-      this.websocketService.emit('document:update', data);
+      console.log('CollaborativeDocumentService: Envoi de mise à jour au serveur', {
+        documentId: data.documentId,
+        hasDelta: !!data.delta,
+        hasContent: !!data.content,
+        contentLength: data.content ? data.content.length : 0
+      });
+
+      // Envoyer la mise à jour avec un callback pour confirmer la réception
+      this.websocketService.emit('document:update', data, (response: any) => {
+        if (response && response.success) {
+          console.log('CollaborativeDocumentService: Mise à jour envoyée avec succès');
+        } else {
+          console.error('CollaborativeDocumentService: Erreur lors de l\'envoi de la mise à jour', response?.error);
+        }
+      });
     } else {
+      console.warn('CollaborativeDocumentService: WebSocket non connecté, tentative de reconnexion...');
+
       // Stocker la dernière mise à jour pour l'envoyer lors de la reconnexion
       setTimeout(() => {
         if (this.websocketService.isConnected()) {
+          console.log('CollaborativeDocumentService: Reconnexion réussie, envoi de la mise à jour');
           this.websocketService.emit('document:update', data);
+        } else {
+          console.error('CollaborativeDocumentService: Échec de la reconnexion, mise à jour perdue');
         }
       }, 1000);
     }
   }
 
-  // Propriété pour stocker le dernier timestamp d'envoi de position de curseur
-  private lastCursorSentTimestamp = 0;
-  // Intervalle minimum entre les envois de position de curseur (en ms)
-  private readonly CURSOR_THROTTLE_INTERVAL = 100;
-  // Dernière position de curseur en attente d'envoi
-  private pendingCursorPosition: CursorPosition | null = null;
-  // Timer pour l'envoi de la position de curseur en attente
-  private pendingCursorTimer: any = null;
 
-  /**
-   * Met à jour la position du curseur
-   * @param documentId ID du document
-   * @param position Position du curseur
-   */
-  updateCursorPosition(documentId: number, position: CursorPosition): void {
-    if (!this.isEditing() || this.currentDocumentId !== documentId) {
-      return;
-    }
 
-    // Vérifier que la position est valide
-    if (!position || position.index === undefined) {
-      return;
-    }
 
-    const now = Date.now();
 
-    // Appliquer la limitation de débit (throttling) pour les positions de curseur
-    if (now - this.lastCursorSentTimestamp < this.CURSOR_THROTTLE_INTERVAL) {
-      // Stocker la dernière position
-      this.pendingCursorPosition = position;
 
-      // Si aucun timer n'est en cours, en créer un pour envoyer la position en attente
-      if (!this.pendingCursorTimer) {
-        this.pendingCursorTimer = setTimeout(() => {
-          this.processPendingCursorPosition(documentId);
-        }, this.CURSOR_THROTTLE_INTERVAL);
-      }
-      return;
-    }
 
-    // Envoyer la position immédiatement
-    this.lastCursorSentTimestamp = now;
-    this.sendCursorPosition(documentId, position);
-  }
 
-  /**
-   * Traite la position de curseur en attente d'envoi
-   * @param documentId ID du document
-   */
-  private processPendingCursorPosition(documentId: number): void {
-    // Réinitialiser le timer
-    this.pendingCursorTimer = null;
-
-    if (!this.pendingCursorPosition) {
-      return;
-    }
-
-    // Envoyer la position en attente
-    this.lastCursorSentTimestamp = Date.now();
-    this.sendCursorPosition(documentId, this.pendingCursorPosition);
-
-    // Réinitialiser la position en attente
-    this.pendingCursorPosition = null;
-  }
-
-  /**
-   * Envoie une position de curseur au serveur
-   * @param documentId ID du document
-   * @param position Position du curseur
-   */
-  private sendCursorPosition(documentId: number, position: CursorPosition): void {
-    if (this.websocketService.isConnected()) {
-      this.websocketService.emit('document:cursor-update', {
-        documentId,
-        position
-      });
-    }
-  }
 
   /**
    * Sauvegarde un document
@@ -689,13 +703,7 @@ export class CollaborativeDocumentService {
     return this.contentChanged.asObservable();
   }
 
-  /**
-   * Observable pour les mouvements de curseur
-   * @returns Observable avec les positions de curseur
-   */
-  onCursorMoved(): Observable<{ userId: number, position: CursorPosition }> {
-    return this.cursorMoved.asObservable();
-  }
+  // Fonctionnalité de curseur supprimée
 
   /**
    * Observable pour les sauvegardes de document
