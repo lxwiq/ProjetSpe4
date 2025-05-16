@@ -790,7 +790,7 @@ class SocketManager {
           }
         });
 
-        // Répondre avec les données de l'appel
+        // Répondre avec les données de l'appel, y compris les détails complets de l'appel
         if (callback) callback({
           success: true,
           data: {
@@ -801,7 +801,21 @@ class SocketManager {
               username: p.username,
               fullName: p.full_name,
               profilePicture: p.profile_picture
-            }))
+            })),
+            // Ajouter les détails complets de l'appel pour permettre au client de mettre à jour son état
+            callDetails: {
+              id: call.id,
+              document_id: call.document_id,
+              initiated_by: call.initiated_by,
+              started_at: call.started_at,
+              call_type: call.call_type,
+              status: call.status,
+              // Ajouter des informations sur le document associé
+              document: {
+                id: call.document_id,
+                title: call.documents?.title || 'Document sans titre'
+              }
+            }
           }
         });
       } catch (error) {
