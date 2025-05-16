@@ -59,6 +59,21 @@ export const routes: Routes = [
         canActivate: [AuthGuard]
       },
       {
+        path: 'messaging',
+        loadComponent: () => import('./features/messaging/conversation-list/conversation-list.component').then(m => m.ConversationListComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'messaging/new',
+        loadComponent: () => import('./features/messaging/new-conversation/new-conversation.component').then(m => m.NewConversationComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'messaging/conversations/:id',
+        loadComponent: () => import('./features/messaging/conversation/conversation.component').then(m => m.ConversationComponent),
+        canActivate: [AuthGuard]
+      },
+      {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full'
