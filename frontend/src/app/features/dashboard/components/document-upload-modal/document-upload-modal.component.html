@@ -30,7 +30,21 @@
         }
       </div>
 
-      <div class="mb-6">
+      <div class="mb-4">
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="isFolder"
+            formControlName="isFolder"
+            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+          >
+          <label for="isFolder" class="ml-2 block text-sm text-gray-700 cursor-pointer">
+            Créer un dossier
+          </label>
+        </div>
+      </div>
+
+      <div class="mb-6" *ngIf="!uploadForm.get('isFolder')?.value">
         <app-file-upload
           [uploadUrl]="uploadUrl"
           [acceptedFileTypes]="'.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif'"

@@ -33,7 +33,8 @@ export class DocumentUploadModalComponent {
   constructor() {
     this.uploadForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-      parentFolderId: [null]
+      parentFolderId: [null],
+      isFolder: [false]
     });
   }
 
@@ -113,7 +114,8 @@ export class DocumentUploadModalComponent {
     // Mettre à jour les options d'upload avec les valeurs du formulaire
     this.uploadOptions.set({
       title: this.uploadForm.get('title')?.value,
-      parentFolderId: this.uploadForm.get('parentFolderId')?.value
+      parentFolderId: this.uploadForm.get('parentFolderId')?.value,
+      isFolder: this.uploadForm.get('isFolder')?.value
     });
 
     this.logger.info('Soumission du formulaire d\'upload', {
@@ -121,14 +123,48 @@ export class DocumentUploadModalComponent {
       formValues: this.uploadForm.value
     });
 
-    // Déclencher l'upload via le composant FileUploadComponent
-    setTimeout(() => {
-      if (this.fileUpload) {
-        this.fileUpload.uploadFiles();
-      } else {
-        this.error.set('Erreur: Composant d\'upload non initialisé');
-        this.isSubmitting.set(false);
-      }
-    }, 0);
+    // Si c'est un dossier, créer directement sans passer par le composant d'upload
+    if (this.uploadForm.get('isFolder')?.value) {
+      this.documentService.createDocument({
+        title: this.uploadForm.get('title')?.value,
+        isFolder: true,
+        parentFolderId: this.uploadForm.get('parentFolderId')?.value
+      }).subscribe({
+        next: (document) => {
+          this.success.set(true);
+          this.isSubmitting.set(false);
+          this.logger.info('Dossier créé avec succès', {
+            component: 'DocumentUploadModalComponent',
+            documentId: document.id
+          });
+
+          // Émettre l'événement avec le document créé
+          this.documentUploaded.emit(document);
+
+          // Fermer la modal après un court délai
+          setTimeout(() => {
+            this.closeModal();
+          }, 2000);
+        },
+        error: (error) => {
+          this.isSubmitting.set(false);
+          this.error.set('Erreur lors de la création du dossier: ' + (error.message || 'Erreur inconnue'));
+          this.logger.error('Erreur lors de la création du dossier', {
+            component: 'DocumentUploadModalComponent',
+            error
+          });
+        }
+      });
+    } else {
+      // Pour les fichiers, déclencher l'upload via le composant FileUploadComponent
+      setTimeout(() => {
+        if (this.fileUpload) {
+          this.fileUpload.uploadFiles();
+        } else {
+          this.error.set('Erreur: Composant d\'upload non initialisé');
+          this.isSubmitting.set(false);
+        }
+      }, 0);
+    }
   }
 }
