@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 
 import { Document } from '../../../../core/models/document.model';
 
@@ -12,6 +12,8 @@ import { Document } from '../../../../core/models/document.model';
 })
 export class DocumentCardComponent {
   @Input() document!: Document;
+
+  constructor(private router: Router) {}
 
   /**
    * Format the date to a readable format
@@ -50,5 +52,18 @@ export class DocumentCardComponent {
 
     // Default document icon
     return 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z';
+  }
+
+  /**
+   * Ouvre un dossier ou navigue vers un document
+   */
+  openDocument(): void {
+    if (this.document.is_folder) {
+      // Pour les dossiers, naviguer vers la liste des documents avec ce dossier comme dossier courant
+      this.router.navigate(['/documents'], { queryParams: { folder: this.document.id } });
+    } else {
+      // Pour les fichiers, naviguer vers la vue du document
+      this.router.navigate(['/documents', this.document.id]);
+    }
   }
 }
