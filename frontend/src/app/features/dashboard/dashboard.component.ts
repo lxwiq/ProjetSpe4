@@ -211,8 +211,14 @@ export class DashboardComponent implements OnInit {
     this.showCreateModal.set(false);
     this.loadDocuments();
 
-    // Naviguer vers le nouveau document (les documents texte vont à l'éditeur)
-    this.router.navigate(['/documents/edit', document.id]);
+    // Ne naviguer vers l'éditeur que si le document n'est pas un dossier
+    if (!document.is_folder) {
+      // Naviguer vers l'éditeur pour les documents texte
+      this.router.navigate(['/documents/edit', document.id]);
+    } else {
+      // Pour les dossiers, naviguer vers la liste des documents avec ce dossier comme dossier courant
+      this.router.navigate(['/documents'], { queryParams: { folder: document.id } });
+    }
   }
 
   /**
@@ -222,8 +228,14 @@ export class DashboardComponent implements OnInit {
     this.showUploadModal.set(false);
     this.loadDocuments();
 
-    // Naviguer vers la visionneuse de document qui déterminera la vue appropriée
-    this.router.navigate(['/documents', document.id]);
+    // Ne naviguer vers la visionneuse que si le document n'est pas un dossier
+    if (!document.is_folder) {
+      // Naviguer vers la visionneuse de document qui déterminera la vue appropriée
+      this.router.navigate(['/documents', document.id]);
+    } else {
+      // Pour les dossiers, naviguer vers la liste des documents avec ce dossier comme dossier courant
+      this.router.navigate(['/documents'], { queryParams: { folder: document.id } });
+    }
   }
 
   /**
