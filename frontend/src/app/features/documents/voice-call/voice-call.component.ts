@@ -196,32 +196,66 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
           currentDocumentId: this.documentId
         });
 
-        // Vérifier si l'appel concerne ce document
+        // Vérifier si l'appel concerne le document actuel
         if (Number(callData.documentId) === Number(this.documentId)) {
-          this.logger.info('Appel disponible pour ce document', {
+          this.logger.info('Notification d\'appel pour le document actuel, mise à jour de l\'interface', {
             component: 'VoiceCallComponent',
             callId: callData.callId,
             documentId: callData.documentId
           });
 
-          // Créer un objet Call pour mettre à jour l'état
-          const call: Call = {
-            id: parseInt(callData.callId.toString()),
-            document_id: parseInt(callData.documentId.toString()),
-            initiated_by: callData.callerId,
-            started_at: new Date().toISOString(),
-            call_type: 'audio',
-            status: 'active'
-          };
+          // Créer un objet Call temporaire si nécessaire
+          if (!this.call()) {
+            const tempCall: Call = {
+              id: callData.callId,
+              document_id: callData.documentId,
+              initiated_by: callData.callerId,
+              started_at: new Date().toISOString(),
+              call_type: 'audio',
+              status: 'active'
+            };
 
-          // Mettre à jour l'état de l'appel
-          this.call.set(call);
+            // Mettre à jour l'état local
+            this.call.set(tempCall);
+            this.isCallAvailable.set(true);
+
+            this.logger.info('Appel temporaire créé pour le document actuel', {
+              component: 'VoiceCallComponent',
+              callId: tempCall.id,
+              documentId: tempCall.document_id
+            });
+          } else {
+            this.logger.info('Appel déjà disponible pour ce document', {
+              component: 'VoiceCallComponent',
+              callId: callData.callId,
+              documentId: callData.documentId
+            });
+          }
+
+          // Si nous n'avons pas déjà créé un appel temporaire, mettre à jour l'état avec les données de la notification
+          if (!this.call()) {
+            // Créer un objet Call pour mettre à jour l'état
+            const call: Call = {
+              id: parseInt(callData.callId.toString()),
+              document_id: parseInt(callData.documentId.toString()),
+              initiated_by: callData.callerId,
+              started_at: new Date().toISOString(),
+              call_type: 'audio',
+              status: 'active'
+            };
+
+            // Mettre à jour l'état de l'appel
+            this.call.set(call);
+          }
+
+          // Mettre à jour l'état de disponibilité de l'appel
           this.isCallAvailable.set(true);
 
+          const currentCall = this.call();
           this.logger.info('L\'interface d\'appel a été mise à jour pour afficher l\'appel disponible', {
             component: 'VoiceCallComponent',
-            callId: call.id,
-            documentId: call.document_id,
+            callId: currentCall?.id,
+            documentId: currentCall?.document_id,
             isCallAvailable: this.isCallAvailable()
           });
         }
