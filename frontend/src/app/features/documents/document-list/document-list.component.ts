@@ -142,9 +142,9 @@ export class DocumentListComponent implements OnInit {
           comparison = dateA - dateB;
           break;
         case 'owner':
-          const ownerA = a.owner?.username || '';
-          const ownerB = b.owner?.username || '';
-          comparison = ownerA.localeCompare(ownerB);
+          const modifierA = a.last_modifier?.username || a.owner?.username || '';
+          const modifierB = b.last_modifier?.username || b.owner?.username || '';
+          comparison = modifierA.localeCompare(modifierB);
           break;
       }
 
