@@ -22,6 +22,16 @@ export interface TwoFactorVerifyResponse {
 }
 
 /**
+ * Interface for 2FA status response
+ */
+export interface TwoFactorStatusResponse {
+  message: string;
+  data: {
+    enabled: boolean;
+  };
+}
+
+/**
  * Service for handling Two-Factor Authentication operations
  */
 @Injectable({
@@ -77,6 +87,17 @@ export class TwoFactorAuthService {
     return this.http.post<any>(
       `${this.API_URL}/2fa/verify-login`,
       { token, tempToken },
+      { withCredentials: true }
+    );
+  }
+
+  /**
+   * Checks the current 2FA status for the user
+   * @returns Observable with the 2FA status
+   */
+  checkStatus(): Observable<TwoFactorStatusResponse> {
+    return this.http.get<TwoFactorStatusResponse>(
+      `${this.API_URL}/2fa/status`,
       { withCredentials: true }
     );
   }

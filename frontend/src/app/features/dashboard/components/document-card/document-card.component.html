@@ -9,6 +9,9 @@
       <h3 class="text-md font-semibold text-gray-800 truncate">{{ document.title }}</h3>
       <p class="text-xs text-gray-500 mt-1">
         Modifié le {{ formatDate(document.updated_at) }}
+        @if (document.last_modifier) {
+          par {{ document.last_modifier.username }}
+        }
       </p>
     </div>
 

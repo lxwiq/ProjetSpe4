@@ -61,12 +61,26 @@ export class TwoFactorDisableComponent implements OnInit {
         this.loading = false;
         this.success = true;
 
-        // Update user state to reflect 2FA is now disabled
-        const currentUser = this.authService.currentUser();
-        if (currentUser) {
-          currentUser.two_factor_enabled = false;
-          this.authService.setCurrentUser(currentUser);
-        }
+        // Vérifier le statut 2FA auprès du backend
+        this.twoFactorAuthService.checkStatus().subscribe({
+          next: (response) => {
+            // Update user state to reflect 2FA is now disabled
+            const currentUser = this.authService.currentUser();
+            if (currentUser) {
+              currentUser.two_factor_enabled = response.data.enabled;
+              this.authService.setCurrentUser(currentUser);
+            }
+          },
+          error: (error) => {
+            console.error('Error checking 2FA status after disabling:', error);
+            // Fallback to manual update if status check fails
+            const currentUser = this.authService.currentUser();
+            if (currentUser) {
+              currentUser.two_factor_enabled = false;
+              this.authService.setCurrentUser(currentUser);
+            }
+          }
+        });
       },
       error: (error) => {
         this.loading = false;

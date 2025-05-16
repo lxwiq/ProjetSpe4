@@ -91,12 +91,26 @@ export class TwoFactorSetupComponent implements OnInit {
         this.success = true;
         this.setupStep = 3;
 
-        // Update user state to reflect 2FA is now enabled
-        const currentUser = this.authService.currentUser();
-        if (currentUser) {
-          currentUser.two_factor_enabled = true;
-          this.authService.setCurrentUser(currentUser);
-        }
+        // Vérifier le statut 2FA auprès du backend
+        this.twoFactorAuthService.checkStatus().subscribe({
+          next: (response) => {
+            // Update user state to reflect 2FA is now enabled
+            const currentUser = this.authService.currentUser();
+            if (currentUser) {
+              currentUser.two_factor_enabled = response.data.enabled;
+              this.authService.setCurrentUser(currentUser);
+            }
+          },
+          error: (error) => {
+            console.error('Error checking 2FA status after enabling:', error);
+            // Fallback to manual update if status check fails
+            const currentUser = this.authService.currentUser();
+            if (currentUser) {
+              currentUser.two_factor_enabled = true;
+              this.authService.setCurrentUser(currentUser);
+            }
+          }
+        });
       },
       error: (error) => {
         this.loading = false;

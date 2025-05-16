@@ -28,7 +28,12 @@ export class DocumentService {
   getAllDocuments(): Observable<Document[]> {
     return this.http.get<DocumentResponse>(`${this.API_URL}/documents`, { withCredentials: true })
       .pipe(
-        map(response => Array.isArray(response) ? response : (Array.isArray(response.data) ? response.data : [])),
+        map(response => {
+          const documents = Array.isArray(response) ? response : (Array.isArray(response.data) ? response.data : []);
+
+          // Mapper les relations du backend aux propriétés du modèle Document
+          return documents.map(doc => this.mapDocumentRelations(doc));
+        }),
         catchError(error => {
           console.error('Erreur lors de la récupération des documents:', error);
           return throwError(() => error);
@@ -52,7 +57,7 @@ export class DocumentService {
             console.log('Réponse identifiée comme un objet document direct');
             // Vérifier que l'objet a les propriétés minimales requises pour un Document
             if ('title' in response && 'owner_id' in response) {
-              return response as unknown as Document;
+              return this.mapDocumentRelations(response as unknown as Document);
             } else {
               console.warn('Objet avec ID mais sans propriétés requises pour un Document');
               // Créer un Document valide à partir des données disponibles
@@ -68,17 +73,17 @@ export class DocumentService {
 
           // Vérifier si la réponse est un tableau
           if (Array.isArray(response)) {
-            return response[0];
+            return this.mapDocumentRelations(response[0]);
           }
 
           // Vérifier si la réponse a une propriété data qui est un tableau
           if (response && response.data && Array.isArray(response.data)) {
-            return response.data[0];
+            return this.mapDocumentRelations(response.data[0]);
           }
 
           // Vérifier si la réponse a une propriété data qui est un objet
           if (response && response.data && typeof response.data === 'object') {
-            return response.data as Document;
+            return this.mapDocumentRelations(response.data as Document);
           }
 
           // Si aucune des conditions ci-dessus n'est remplie, retourner un document par défaut
@@ -322,5 +327,37 @@ export class DocumentService {
           return throwError(() => error);
         })
       );
+  }
+
+  /**
+   * Mappe les relations du backend aux propriétés du modèle Document
+   * @param document Document à mapper
+   * @returns Document avec les relations mappées
+   */
+  private mapDocumentRelations(document: any): Document {
+    if (!document) return document;
+
+    // Créer une copie du document pour éviter de modifier l'original
+    const mappedDocument = { ...document };
+
+    // Mapper la relation users_documents_owner_idTousers à owner
+    if (document.users_documents_owner_idTousers) {
+      mappedDocument.owner = {
+        id: document.users_documents_owner_idTousers.id,
+        username: document.users_documents_owner_idTousers.username,
+        full_name: document.users_documents_owner_idTousers.full_name
+      };
+    }
+
+    // Mapper la relation users_documents_last_modified_byTousers à last_modifier
+    if (document.users_documents_last_modified_byTousers) {
+      mappedDocument.last_modifier = {
+        id: document.users_documents_last_modified_byTousers.id,
+        username: document.users_documents_last_modified_byTousers.username,
+        full_name: document.users_documents_last_modified_byTousers.full_name
+      };
+    }
+
+    return mappedDocument as Document;
   }
 }

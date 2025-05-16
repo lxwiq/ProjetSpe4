@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
+import { TwoFactorAuthService } from '../../../core/services/two-factor-auth.service';
 import { User } from '../../../core/models/user.model';
 import { environment } from '../../../../environments/environment';
 
@@ -34,6 +35,7 @@ export class ProfileComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private userService: UserService,
+    private twoFactorAuthService: TwoFactorAuthService,
     private formBuilder: FormBuilder
   ) {}
 
@@ -46,6 +48,9 @@ export class ProfileComponent implements OnInit {
     // Initialiser le formulaire
     this.initForm();
 
+    // Vérifier le statut 2FA
+    this.check2FAStatus();
+
     // If user is not available, check auth status
     if (!this.user) {
       this.authService.checkAuthStatus().subscribe(isAuthenticated => {
@@ -54,9 +59,33 @@ export class ProfileComponent implements OnInit {
           console.log('ProfileComponent - User after checkAuthStatus:', this.user);
           console.log('ProfileComponent - User has profile_picture after checkAuthStatus:', this.user?.profile_picture ? 'Yes' : 'No');
           this.initForm();
+          this.check2FAStatus();
         }
       });
     }
+  }
+
+  /**
+   * Vérifie le statut 2FA auprès du backend et met à jour l'état local
+   */
+  private check2FAStatus(): void {
+    if (!this.user) return;
+
+    this.twoFactorAuthService.checkStatus().subscribe({
+      next: (response) => {
+        console.log('2FA status response:', response);
+        if (this.user) {
+          // Mettre à jour le statut 2FA dans l'objet utilisateur local
+          this.user.two_factor_enabled = response.data.enabled;
+
+          // Mettre à jour l'utilisateur dans le service d'authentification
+          this.authService.setCurrentUser(this.user);
+        }
+      },
+      error: (error) => {
+        console.error('Error checking 2FA status:', error);
+      }
+    });
   }
 
   /**

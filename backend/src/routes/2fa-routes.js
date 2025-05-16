@@ -9,6 +9,7 @@ const verifyToken = require('../middlewares/jwt');
 router.get('/setup', verifyToken, twoFactorAuthController.setupTwoFactor);
 router.post('/verify-setup', verifyToken, twoFactorAuthController.verifySetup);
 router.post('/disable', verifyToken, twoFactorAuthController.disableTwoFactor);
+router.get('/status', verifyToken, twoFactorAuthController.checkStatus);
 
 // Route pour la vérification 2FA lors de la connexion
 // Cette route ne nécessite pas d'authentification complète

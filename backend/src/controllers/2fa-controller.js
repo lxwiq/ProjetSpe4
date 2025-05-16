@@ -116,6 +116,28 @@ class TwoFactorAuthController {
   }
 
   /**
+   * Vérifie le statut 2FA d'un utilisateur
+   */
+  async checkStatus(req, res) {
+    try {
+      const userId = req.userId;
+
+      // Vérifier si la 2FA est activée
+      const isEnabled = await twoFactorAuthService.isTwoFactorEnabled(userId);
+
+      return res.status(200).json({
+        message: 'Statut 2FA récupéré avec succès',
+        data: {
+          enabled: isEnabled
+        }
+      });
+    } catch (error) {
+      console.error('Erreur lors de la vérification du statut 2FA:', error);
+      return res.status(500).json({ message: 'Erreur lors de la vérification du statut 2FA' });
+    }
+  }
+
+  /**
    * Vérifie un token 2FA lors de la connexion
    */
   async verifyLogin(req, res) {

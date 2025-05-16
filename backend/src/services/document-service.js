@@ -15,6 +15,13 @@ class DocumentService {
             username: true,
             full_name: true
           }
+        },
+        users_documents_last_modified_byTousers: {
+          select: {
+            id: true,
+            username: true,
+            full_name: true
+          }
         }
       }
     });
@@ -29,6 +36,13 @@ class DocumentService {
       },
       include: {
         users_documents_owner_idTousers: {
+          select: {
+            id: true,
+            username: true,
+            full_name: true
+          }
+        },
+        users_documents_last_modified_byTousers: {
           select: {
             id: true,
             username: true,
