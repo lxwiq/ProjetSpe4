@@ -95,7 +95,8 @@ router.post('/refresh', validate(schemas.refreshToken), asyncHandler(async (req,
         full_name: user.full_name,
         profile_picture: user.profile_picture,
         isAdmin: user.is_admin || false,
-        is_active: user.is_active
+        is_active: user.is_active,
+        two_factor_enabled: user.two_factor_enabled || false
       }
     }
   });
