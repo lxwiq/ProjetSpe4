@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { DocumentService } from '../../../core/services/document.service';
@@ -31,11 +31,27 @@ export class DocumentListComponent implements OnInit {
   constructor(
     private documentService: DocumentService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.loadDocuments();
+
+    // Vérifier s'il y a un paramètre de dossier dans l'URL
+    this.route.queryParams.subscribe(params => {
+      if (params['folder']) {
+        const folderId = Number(params['folder']);
+        if (!isNaN(folderId)) {
+          // Attendre que les documents soient chargés avant d'ouvrir le dossier
+          this.documentService.getDocumentById(folderId).subscribe(folder => {
+            if (folder && folder.is_folder) {
+              this.openFolder(folder);
+            }
+          });
+        }
+      }
+    });
   }
 
   /**
