@@ -12,6 +12,7 @@ import {
 } from '../models/notification.model';
 import { WebsocketService } from './websocket.service';
 import { LoggingService } from './logging.service';
+import { EventBusService } from './event-bus.service';
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +38,8 @@ export class NotificationService {
 
   constructor(
     private http: HttpClient,
-    private websocketService: WebsocketService
+    private websocketService: WebsocketService,
+    private eventBus: EventBusService
   ) {
     // Initialiser le son de notification
     this.initNotificationSound();
@@ -80,16 +82,33 @@ export class NotificationService {
    */
   private initNotificationSound(): void {
     try {
-      this.notificationSound = new Audio('/assets/sounds/notification.mp3');
+      // Vérifier si le fichier existe avant de créer l'élément Audio
+      const soundPath = '/assets/sounds/notification.mp3';
+
+      // Créer l'élément audio avec gestion d'erreur
+      this.notificationSound = new Audio(soundPath);
       this.notificationSound.volume = 0.5; // Volume à 50%
+
+      // Ajouter un gestionnaire d'erreur pour le chargement du son
+      this.notificationSound.addEventListener('error', (e) => {
+        this.logger.error('Erreur lors du chargement du son de notification', {
+          service: 'NotificationService',
+          error: e
+        });
+        // Désactiver le son en cas d'erreur
+        this.notificationSound = null;
+      });
+
       this.logger.info('Son de notification initialisé', {
-        service: 'NotificationService'
+        service: 'NotificationService',
+        path: soundPath
       });
     } catch (error) {
       this.logger.error('Erreur lors de l\'initialisation du son de notification', {
         service: 'NotificationService',
         error
       });
+      this.notificationSound = null;
     }
   }
 
@@ -101,18 +120,37 @@ export class NotificationService {
       try {
         // Réinitialiser le son pour pouvoir le jouer plusieurs fois
         this.notificationSound.currentTime = 0;
-        this.notificationSound.play().catch(error => {
-          this.logger.error('Erreur lors de la lecture du son de notification', {
-            service: 'NotificationService',
-            error
+
+        // Essayer de jouer le son avec gestion d'erreur
+        const playPromise = this.notificationSound.play();
+
+        // La méthode play() retourne une promesse
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            this.logger.error('Erreur lors de la lecture du son de notification', {
+              service: 'NotificationService',
+              error
+            });
+
+            // Si l'erreur est liée à l'interaction utilisateur, on peut l'ignorer
+            // Sinon, désactiver le son pour éviter de futures erreurs
+            if (error.name !== 'NotAllowedError') {
+              this.notificationSound = null;
+            }
           });
-        });
+        }
       } catch (error) {
         this.logger.error('Erreur lors de la lecture du son de notification', {
           service: 'NotificationService',
           error
         });
+        // Désactiver le son en cas d'erreur
+        this.notificationSound = null;
       }
+    } else {
+      this.logger.debug('Son de notification non disponible', {
+        service: 'NotificationService'
+      });
     }
   }
 
@@ -145,6 +183,34 @@ export class NotificationService {
         notificationId: processedNotification.id,
         notificationType: processedNotification.type
       });
+
+      // Si c'est une notification d'appel, émettre un événement spécifique
+      if (processedNotification.type === 'incoming_call') {
+        try {
+          const content = typeof processedNotification.content === 'string'
+            ? JSON.parse(processedNotification.content)
+            : processedNotification.content;
+
+          this.logger.info('Notification d\'appel reçue, émission d\'un événement', {
+            service: 'NotificationService',
+            callId: content.callId,
+            documentId: content.documentId
+          });
+
+          // Émettre un événement pour informer les composants d'appel
+          this.eventBus.emit('incoming_call', {
+            callId: content.callId,
+            documentId: content.documentId,
+            callerId: content.callerId,
+            documentTitle: content.documentTitle
+          });
+        } catch (error) {
+          this.logger.error('Erreur lors du traitement de la notification d\'appel', {
+            service: 'NotificationService',
+            error
+          });
+        }
+      }
     }
   }
 
@@ -181,6 +247,36 @@ export class NotificationService {
 
         this.logger.info(`${newNotifications.length} nouvelles notifications reçues et traitées`, {
           service: 'NotificationService'
+        });
+
+        // Traiter les notifications d'appel
+        newNotifications.forEach(notification => {
+          if (notification.type === 'incoming_call') {
+            try {
+              const content = typeof notification.content === 'string'
+                ? JSON.parse(notification.content)
+                : notification.content;
+
+              this.logger.info('Notification d\'appel reçue dans un lot, émission d\'un événement', {
+                service: 'NotificationService',
+                callId: content.callId,
+                documentId: content.documentId
+              });
+
+              // Émettre un événement pour informer les composants d'appel
+              this.eventBus.emit('incoming_call', {
+                callId: content.callId,
+                documentId: content.documentId,
+                callerId: content.callerId,
+                documentTitle: content.documentTitle
+              });
+            } catch (error) {
+              this.logger.error('Erreur lors du traitement de la notification d\'appel dans un lot', {
+                service: 'NotificationService',
+                error
+              });
+            }
+          }
         });
       }
     }

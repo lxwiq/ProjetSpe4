@@ -752,4 +752,28 @@ export class CollaborativeDocumentService {
       isTyping
     });
   }
+
+  /**
+   * Invite un utilisateur à collaborer sur un document
+   * @param documentId ID du document
+   * @param invitedUserId ID de l'utilisateur invité
+   * @returns Observable avec le résultat de l'invitation
+   */
+  inviteUserToDocument(documentId: number, invitedUserId: number): Observable<any> {
+    return new Observable(observer => {
+      this.websocketService.emit('document:invite', {
+        documentId,
+        invitedUserId
+      }, (response: any) => {
+        if (response && response.success) {
+          console.log('Invitation envoyée avec succès:', response.data);
+          observer.next(response.data);
+          observer.complete();
+        } else {
+          console.error('Erreur lors de l\'envoi de l\'invitation:', response ? response.error : 'Réponse invalide');
+          observer.error(new Error(response ? response.error : 'Erreur lors de l\'envoi de l\'invitation'));
+        }
+      });
+    });
+  }
 }

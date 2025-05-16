@@ -1,22 +1,24 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { CollaborativeDocumentService } from '../../../core/services/collaborative-document.service';
 import { DocumentService } from '../../../core/services/document.service';
 import { LoggingService } from '../../../core/services/logging.service';
+import { AlertService } from '../../../core/services/alert.service';
 import { Document } from '../../../core/models/document.model';
 import { CursorManager } from './cursor-manager';
 import { VoiceCallComponent } from '../voice-call/voice-call.component';
 import { DocumentChatComponent } from '../document-chat/document-chat.component';
+import { InviteCollaboratorsModalComponent } from '../invite-collaborators-modal/invite-collaborators-modal.component';
 import Quill from 'quill';
 
 @Component({
   selector: 'app-document-editor',
   templateUrl: './document-editor.component.html',
   styleUrls: ['./document-editor.component.css'],
-  imports: [CommonModule, FormsModule, VoiceCallComponent, DocumentChatComponent],
+  imports: [CommonModule, FormsModule, RouterLink, VoiceCallComponent, DocumentChatComponent, InviteCollaboratorsModalComponent],
   standalone: true
 })
 export class DocumentEditorComponent implements OnInit, OnDestroy {
@@ -33,6 +35,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   saveIndicator: HTMLElement | null = null;
   isSaving = signal<boolean>(false);
   lastSaved = signal<Date | null>(null);
+  showInviteModal = signal<boolean>(false);
 
   // Propriété pour stocker le dernier timestamp de réception de delta
   private lastDeltaReceivedTimestamp = 0;
@@ -49,6 +52,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   public collaborativeService = inject(CollaborativeDocumentService);
   private authService = inject(AuthService);
   private logger = inject(LoggingService);
+  private alertService = inject(AlertService);
 
   ngOnInit(): void {
     // Récupérer l'ID du document depuis l'URL
@@ -473,5 +477,19 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
    */
   activeUserIds(): number[] {
     return this.collaborativeService.activeUsers().map(user => user.id);
+  }
+
+  /**
+   * Ouvre la boîte de dialogue d'invitation de collaborateurs
+   */
+  openInviteModal(): void {
+    this.showInviteModal.set(true);
+  }
+
+  /**
+   * Ferme la boîte de dialogue d'invitation de collaborateurs
+   */
+  closeInviteModal(): void {
+    this.showInviteModal.set(false);
   }
 }

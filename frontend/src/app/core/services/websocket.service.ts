@@ -1,7 +1,7 @@
 import { Injectable, DestroyRef, inject, effect, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, Subject, fromEvent, interval } from 'rxjs';
-import { io, Socket } from 'socket.io-client';
+import { Observable, Subject, interval } from 'rxjs';
+import { Socket } from 'ngx-socket-io';
 
 import { environment } from '../../../environments/environment';
 import { TokenService } from './token.service';
@@ -13,7 +13,6 @@ import { LoggingService } from './logging.service';
   providedIn: 'root'
 })
 export class WebsocketService {
-  private socket: Socket | null = null;
   private connected = signal<boolean>(false);
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -43,6 +42,7 @@ export class WebsocketService {
   private messageReceived = new Subject<any>();
 
   constructor(
+    private socket: Socket,
     private tokenService: TokenService,
     private authService: AuthService,
     private tokenRefreshService: TokenRefreshService,
@@ -89,7 +89,7 @@ export class WebsocketService {
    * @returns true si le socket est connecté
    */
   isConnected(): boolean {
-    return this.connected() && this.socket?.connected === true;
+    return this.connected() && this.socket.ioSocket.connected === true;
   }
 
   /**
@@ -121,21 +121,20 @@ export class WebsocketService {
     });
 
     try {
-      this.socket = io(environment.apiUrl, {
-        auth: { token },
-        withCredentials: true,
-        reconnection: true,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000,
-        timeout: 10000
-      });
+      // Mettre à jour les options d'authentification
+      this.socket.ioSocket.auth = { token };
+
+      // Connecter le socket s'il n'est pas déjà connecté
+      if (!this.socket.ioSocket.connected) {
+        this.socket.connect();
+      }
 
       this.setupSocketEvents();
       this.connected.set(true);
       this.connectionStatus.next(true);
       this.reconnectAttempts = 0;
     } catch (error) {
-      this.logger.error('Erreur lors de la création du socket', {
+      this.logger.error('Erreur lors de la connexion du socket', {
         service: 'WebsocketService',
         error
       });
@@ -268,12 +267,11 @@ export class WebsocketService {
    * Déconnecte le socket du serveur
    */
   disconnect(): void {
-    if (this.socket) {
+    if (this.socket.ioSocket.connected) {
       this.logger.info('Déconnexion du serveur WebSocket', {
         service: 'WebsocketService'
       });
       this.socket.disconnect();
-      this.socket = null;
       this.connected.set(false);
       this.connectionStatus.next(false);
     }
@@ -288,12 +286,8 @@ export class WebsocketService {
    * Configure les événements du socket
    */
   private setupSocketEvents(): void {
-    if (!this.socket) {
-      return;
-    }
-
     // Événements de connexion
-    this.socket.on('connect', () => {
+    this.socket.fromEvent('connect').subscribe(() => {
       this.logger.info('Connecté au serveur WebSocket', {
         service: 'WebsocketService'
       });
@@ -306,7 +300,7 @@ export class WebsocketService {
       this.replayPendingEmits();
     });
 
-    this.socket.on('connect_error', (error) => {
+    this.socket.fromEvent('connect_error').subscribe((error: any) => {
       this.logger.error('Erreur de connexion WebSocket', {
         service: 'WebsocketService',
         error
@@ -340,7 +334,7 @@ export class WebsocketService {
       }
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.fromEvent('disconnect').subscribe((reason: any) => {
       this.logger.info('Déconnecté du serveur WebSocket', {
         service: 'WebsocketService',
         reason
@@ -359,7 +353,7 @@ export class WebsocketService {
     });
 
     // Événements de notification
-    this.socket.on('notification:received', (data) => {
+    this.socket.fromEvent('notification:received').subscribe((data: any) => {
       this.logger.debug('Notification reçue', {
         service: 'WebsocketService',
         notification: data.notification
@@ -367,7 +361,7 @@ export class WebsocketService {
       this.notificationReceived.next(data.notification);
     });
 
-    this.socket.on('notification:pending', (data) => {
+    this.socket.fromEvent('notification:pending').subscribe((data: any) => {
       this.logger.debug('Notifications en attente reçues', {
         service: 'WebsocketService',
         count: data.notifications?.length
@@ -376,7 +370,7 @@ export class WebsocketService {
     });
 
     // Événements de document
-    this.socket.on('document:user-joined', (data) => {
+    this.socket.fromEvent('document:user-joined').subscribe((data: any) => {
       this.logger.debug('Utilisateur a rejoint le document', {
         service: 'WebsocketService',
         documentId: data.documentId,
@@ -385,7 +379,7 @@ export class WebsocketService {
       this.documentUserJoined.next(data);
     });
 
-    this.socket.on('document:user-left', (data) => {
+    this.socket.fromEvent('document:user-left').subscribe((data: any) => {
       this.logger.debug('Utilisateur a quitté le document', {
         service: 'WebsocketService',
         documentId: data.documentId,
@@ -394,7 +388,7 @@ export class WebsocketService {
       this.documentUserLeft.next(data);
     });
 
-    this.socket.on('document:content-changed', (data) => {
+    this.socket.fromEvent('document:content-changed').subscribe((data: any) => {
       // Réduire la verbosité des logs pour améliorer les performances
       if (!environment.production) {
         this.logger.debug('Contenu du document modifié', {
@@ -406,7 +400,7 @@ export class WebsocketService {
       this.documentContentChanged.next(data);
     });
 
-    this.socket.on('document:cursor-moved', (data) => {
+    this.socket.fromEvent('document:cursor-moved').subscribe((data: any) => {
       // Réduire la verbosité des logs pour améliorer les performances
       if (!environment.production) {
         this.logger.debug('Curseur déplacé', {
@@ -418,7 +412,7 @@ export class WebsocketService {
       this.documentCursorMoved.next(data);
     });
 
-    this.socket.on('document:saved', (data) => {
+    this.socket.fromEvent('document:saved').subscribe((data: any) => {
       this.logger.debug('Document sauvegardé', {
         service: 'WebsocketService',
         documentId: data.documentId
@@ -426,7 +420,7 @@ export class WebsocketService {
       this.documentSaved.next(data);
     });
 
-    this.socket.on('document:invitation', (data) => {
+    this.socket.fromEvent('document:invitation').subscribe((data: any) => {
       this.logger.debug('Invitation à un document reçue', {
         service: 'WebsocketService',
         documentId: data.documentId
@@ -435,7 +429,7 @@ export class WebsocketService {
     });
 
     // Événements de chat de document
-    this.socket.on('document:chat:message', (data) => {
+    this.socket.fromEvent('document:chat:message').subscribe((data: any) => {
       this.logger.debug('Message de chat de document reçu', {
         service: 'WebsocketService',
         documentId: data.documentId,
@@ -444,7 +438,7 @@ export class WebsocketService {
       this.documentChatMessage.next(data);
     });
 
-    this.socket.on('document:chat:typing', (data) => {
+    this.socket.fromEvent('document:chat:typing').subscribe((data: any) => {
       this.logger.debug('Utilisateur en train de taper dans le chat du document', {
         service: 'WebsocketService',
         documentId: data.documentId,
@@ -455,7 +449,7 @@ export class WebsocketService {
     });
 
     // Événements d'appel
-    this.socket.on('call:started', (data) => {
+    this.socket.fromEvent('call:started').subscribe((data: any) => {
       this.logger.debug('Appel démarré', {
         service: 'WebsocketService',
         callId: data.callId
@@ -463,7 +457,7 @@ export class WebsocketService {
       this.callStarted.next(data);
     });
 
-    this.socket.on('call:ended', (data) => {
+    this.socket.fromEvent('call:ended').subscribe((data: any) => {
       this.logger.debug('Appel terminé', {
         service: 'WebsocketService',
         callId: data.callId
@@ -471,7 +465,7 @@ export class WebsocketService {
       this.callEnded.next(data);
     });
 
-    this.socket.on('call:user-joined', (data) => {
+    this.socket.fromEvent('call:user-joined').subscribe((data: any) => {
       this.logger.debug('Utilisateur a rejoint l\'appel', {
         service: 'WebsocketService',
         callId: data.callId,
@@ -480,7 +474,7 @@ export class WebsocketService {
       this.callJoined.next(data);
     });
 
-    this.socket.on('call:user-left', (data) => {
+    this.socket.fromEvent('call:user-left').subscribe((data: any) => {
       this.logger.debug('Utilisateur a quitté l\'appel', {
         service: 'WebsocketService',
         callId: data.callId,
@@ -489,7 +483,7 @@ export class WebsocketService {
       this.callLeft.next(data);
     });
 
-    this.socket.on('call:signal', (data) => {
+    this.socket.fromEvent('call:signal').subscribe((data: any) => {
       this.logger.debug('Signal d\'appel reçu', {
         service: 'WebsocketService',
         callId: data.callId,
@@ -498,7 +492,7 @@ export class WebsocketService {
       this.callSignal.next(data);
     });
 
-    this.socket.on('call:voice-activity', (data) => {
+    this.socket.fromEvent('call:voice-activity').subscribe((data: any) => {
       this.logger.debug('Activité vocale détectée', {
         service: 'WebsocketService',
         callId: data.callId,
@@ -508,7 +502,7 @@ export class WebsocketService {
     });
 
     // Événements de messagerie
-    this.socket.on('message:received', (data) => {
+    this.socket.fromEvent('message:received').subscribe((data: any) => {
       this.logger.debug('Message reçu', {
         service: 'WebsocketService',
         conversationId: data.conversationId
@@ -527,7 +521,7 @@ export class WebsocketService {
     // Vérifier si l'événement est lié aux curseurs ou au contenu pour réduire la verbosité des logs
     const isHighFrequencyEvent = event === 'document:cursor-update' || event === 'document:update';
 
-    if (!this.socket || !this.isConnected()) {
+    if (!this.isConnected()) {
       // Réduire la verbosité des logs pour les événements à haute fréquence
       if (!isHighFrequencyEvent) {
         this.logger.warn(`Impossible d'émettre l'événement ${event}, socket non connecté. Mise en file d'attente.`, {
@@ -554,6 +548,7 @@ export class WebsocketService {
         });
       }
 
+      // Utiliser la méthode emit de ngx-socket-io
       this.socket.emit(event, data, (response: any) => {
         // Réduire la verbosité des logs pour les événements à haute fréquence
         if (!isHighFrequencyEvent && !environment.production) {
@@ -613,6 +608,7 @@ export class WebsocketService {
   // Observables pour les événements WebSocket
   onNotificationReceived(): Observable<any> {
     return this.notificationReceived.asObservable();
+    // Alternative avec ngx-socket-io: return this.socket.fromEvent('notification:received');
   }
 
   onPendingNotifications(): Observable<any[]> {
