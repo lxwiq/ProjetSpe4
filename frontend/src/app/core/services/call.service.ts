@@ -197,8 +197,28 @@ export class CallService {
     // Cette méthode devrait être implémentée pour récupérer l'ID du document actif
     // depuis le service de document ou le routeur
     const path = window.location.pathname;
-    const match = path.match(/\/documents\/(\d+)/);
-    return match ? parseInt(match[1]) : null;
+
+    // Essayer d'abord le format standard /documents/{id}
+    let match = path.match(/\/documents\/(\d+)/);
+    if (match) {
+      return parseInt(match[1]);
+    }
+
+    // Essayer ensuite le format d'URL d'appel /documents/{id}/call/{callId}
+    match = path.match(/\/documents\/(\d+)\/call\/\d+/);
+    if (match) {
+      return parseInt(match[1]);
+    }
+
+    // Si nous sommes ici, essayer de récupérer l'ID du document depuis l'URL de l'appel
+    // Format: /documents/{documentId}/call/{callId}
+    const callMatch = path.match(/\/documents\/(\d+)\/call\//);
+    if (callMatch) {
+      return parseInt(callMatch[1]);
+    }
+
+    console.log('[APPEL VOCAL] Impossible de déterminer l\'ID du document depuis l\'URL:', path);
+    return null;
   }
 
   /**
@@ -304,11 +324,44 @@ export class CallService {
       console.log(`[APPEL VOCAL] Tentative de rejoindre l'appel ${callId}`);
 
       // Vérifier si nous avons déjà un appel actif dans l'interface
-      const activeCall = this.activeCall();
+      let activeCall = this.activeCall();
+
+      // Si aucun appel actif n'est trouvé, essayons de récupérer les informations de l'appel depuis le serveur
       if (!activeCall) {
-        console.log('[APPEL VOCAL] Erreur: Aucun appel actif à rejoindre');
-        observer.error(new Error('Aucun appel actif à rejoindre'));
-        return;
+        console.log('[APPEL VOCAL] Aucun appel actif trouvé localement, tentative de récupération depuis le serveur');
+
+        // Créer un appel temporaire pour permettre la connexion
+        // Nous récupérerons les détails complets depuis la réponse du serveur
+        let currentDocumentId = this.getCurrentDocumentId();
+
+        // Si nous ne pouvons pas déterminer l'ID du document depuis l'URL, essayons d'utiliser l'ID de l'appel
+        // pour récupérer les informations de l'appel depuis le serveur
+        if (!currentDocumentId) {
+          console.log('[APPEL VOCAL] Avertissement: Impossible de déterminer l\'ID du document depuis l\'URL');
+          console.log('[APPEL VOCAL] Tentative de récupération des informations de l\'appel depuis le serveur');
+
+          // Utiliser un ID temporaire qui sera mis à jour avec les données du serveur
+          currentDocumentId = 0;
+        }
+
+        // Créer un objet Call temporaire avec les informations minimales nécessaires
+        const tempCall: Call = {
+          id: callId,
+          document_id: currentDocumentId,
+          initiated_by: 0, // Sera mis à jour avec les données du serveur
+          started_at: new Date().toISOString(),
+          call_type: 'audio',
+          status: 'active'
+        };
+
+        // Mettre à jour l'état avec cet appel temporaire
+        this.activeCallData.set(tempCall);
+        activeCall = tempCall;
+
+        console.log('[APPEL VOCAL] Appel temporaire créé pour permettre la connexion', {
+          callId,
+          documentId: currentDocumentId
+        });
       }
 
       // Demander l'accès au microphone
@@ -324,22 +377,40 @@ export class CallService {
               participants: response.data.participants
             });
 
-            // Mettre à jour l'état
-            const call = this.activeCall();
-            if (!call) {
-              console.log('[APPEL VOCAL] Erreur: Appel non disponible après avoir rejoint');
-              this.cleanupAudioResources();
-              observer.error(new Error('Appel non disponible'));
-              return;
+            // Mettre à jour l'état avec les données complètes de l'appel
+            if (response.data && response.data.callDetails) {
+              // Si le serveur renvoie les détails complets de l'appel, les utiliser
+              const callDetails = response.data.callDetails;
+
+              // Récupérer l'ID du document depuis les détails de l'appel
+              const documentId = callDetails.document_id || response.data.documentId || (activeCall ? activeCall.document_id : 0);
+
+              const updatedCall: Call = {
+                id: callId,
+                document_id: documentId,
+                initiated_by: callDetails.initiated_by || (activeCall ? activeCall.initiated_by : 0),
+                started_at: callDetails.started_at || (activeCall ? activeCall.started_at : new Date().toISOString()),
+                call_type: callDetails.call_type || 'audio',
+                status: callDetails.status || 'active'
+              };
+              this.activeCallData.set(updatedCall);
+              activeCall = updatedCall;
+
+              console.log('[APPEL VOCAL] Détails de l\'appel mis à jour avec les données du serveur', {
+                callId,
+                documentId: updatedCall.document_id,
+                initiatedBy: updatedCall.initiated_by,
+                documentTitle: callDetails.document?.title || 'Document sans titre'
+              });
             }
 
             // Mettre à jour l'état de l'appel
             this.callId.set(callId.toString());
-            this.documentId.set(activeCall.document_id);
+            this.documentId.set(activeCall ? activeCall.document_id : 0);
 
             console.log('[APPEL VOCAL] Utilisateur a rejoint l\'appel', {
               callId,
-              documentId: activeCall.document_id,
+              documentId: activeCall ? activeCall.document_id : 0,
               userId: this.authService.currentUser()?.id
             });
 
@@ -347,14 +418,35 @@ export class CallService {
             const participants = response.data?.participants;
             const currentUserId = this.authService.currentUser()?.id;
 
+            // Vider la liste des participants actuels pour la réinitialiser avec les données du serveur
+            this.participantsList.set([]);
+
             if (participants && Array.isArray(participants)) {
               console.log('[APPEL VOCAL] Connexion avec les participants existants', {
                 participants,
                 count: participants.length
               });
-              participants.forEach(userId => {
-                if (userId !== currentUserId) {
-                  this.createPeerConnection(userId, false);
+
+              // Ajouter tous les participants existants à la liste
+              participants.forEach(participant => {
+                // Si c'est un objet participant complet
+                if (typeof participant === 'object' && participant.userId) {
+                  this.addParticipant(participant.userId, callId);
+
+                  // Établir une connexion WebRTC si ce n'est pas l'utilisateur actuel
+                  if (participant.userId !== currentUserId) {
+                    this.createPeerConnection(participant.userId, false);
+                  }
+                }
+                // Si c'est juste un ID d'utilisateur
+                else if (typeof participant === 'number' || (typeof participant === 'string' && !isNaN(parseInt(participant)))) {
+                  const userId = typeof participant === 'number' ? participant : parseInt(participant);
+                  this.addParticipant(userId, callId);
+
+                  // Établir une connexion WebRTC si ce n'est pas l'utilisateur actuel
+                  if (userId !== currentUserId) {
+                    this.createPeerConnection(userId, false);
+                  }
                 }
               });
             } else {
@@ -365,13 +457,32 @@ export class CallService {
 
             // Ajouter l'utilisateur actuel comme participant s'il n'est pas déjà présent
             if (currentUserId) {
-              this.addParticipant(currentUserId, call.id);
+              this.addParticipant(currentUserId, callId);
             }
+
+            // Journaliser les participants actuels pour débogage
+            console.log('[APPEL VOCAL] Liste des participants après avoir rejoint l\'appel', {
+              participants: this.participantsList().map(p => ({ userId: p.user_id, isActive: p.is_active }))
+            });
 
             // Configurer la détection d'activité vocale
             this.setupVoiceActivityDetection();
 
-            observer.next(call);
+            // S'assurer que activeCall n'est pas null avant de le renvoyer
+            if (activeCall) {
+              observer.next(activeCall);
+            } else {
+              // Créer un objet Call minimal si activeCall est null
+              const fallbackCall: Call = {
+                id: callId,
+                document_id: this.getCurrentDocumentId() || 0,
+                initiated_by: 0,
+                started_at: new Date().toISOString(),
+                call_type: 'audio',
+                status: 'active'
+              };
+              observer.next(fallbackCall);
+            }
             observer.complete();
           } else {
             const errorMessage = response?.error || 'Erreur inconnue';
@@ -529,35 +640,60 @@ export class CallService {
     // Récupérer les connexions existantes
     const connections = this.peerConnectionsMap();
 
+    // Vérifier si une connexion existe déjà pour cet utilisateur
     if (connections.has(userId)) {
       console.log(`[APPEL VOCAL] Connexion existante avec l'utilisateur ${userId}, réutilisation`);
       return connections.get(userId)!;
     }
 
-    console.log(`[APPEL VOCAL] Création d'une nouvelle connexion avec l'utilisateur ${userId}`);
+    console.log(`[APPEL VOCAL] Création d'une nouvelle connexion avec l'utilisateur ${userId}`, {
+      isInitiator,
+      currentUserId: this.authService.currentUser()?.id
+    });
 
+    // Créer une nouvelle connexion avec la configuration STUN/TURN
     const peerConnection = new RTCPeerConnection(this.rtcConfig);
 
     // Ajouter les pistes audio locales
     const stream = this.localStream();
     if (stream) {
       stream.getAudioTracks().forEach(track => {
+        console.log(`[APPEL VOCAL] Ajout de la piste audio locale à la connexion avec l'utilisateur ${userId}`, {
+          trackId: track.id,
+          trackLabel: track.label,
+          trackEnabled: track.enabled
+        });
         peerConnection.addTrack(track, stream);
       });
+    } else {
+      console.warn(`[APPEL VOCAL] Pas de flux local disponible pour l'utilisateur ${userId}`);
     }
 
     // Gérer les pistes distantes
     peerConnection.ontrack = (event) => {
-      console.log(`[APPEL VOCAL] Piste reçue de l'utilisateur ${userId}`, event);
+      console.log(`[APPEL VOCAL] Piste reçue de l'utilisateur ${userId}`, {
+        trackId: event.track.id,
+        trackKind: event.track.kind,
+        trackLabel: event.track.label,
+        hasStreams: event.streams.length > 0
+      });
 
       // Mettre à jour le participant avec le flux audio
-      this.updateParticipantStream(userId, event.streams[0]);
+      if (event.streams && event.streams.length > 0) {
+        this.updateParticipantStream(userId, event.streams[0]);
+      } else {
+        console.warn(`[APPEL VOCAL] Piste reçue sans flux pour l'utilisateur ${userId}`);
+      }
     };
 
     // Gérer les candidats ICE
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log(`[APPEL VOCAL] Candidat ICE généré pour l'utilisateur ${userId}`, event.candidate);
+        console.log(`[APPEL VOCAL] Candidat ICE généré pour l'utilisateur ${userId}`, {
+          candidateType: event.candidate.type,
+          candidateProtocol: event.candidate.protocol,
+          candidateAddress: event.candidate.address
+        });
 
         // Envoyer le candidat à l'autre utilisateur
         this.sendSignalingData({
@@ -568,6 +704,22 @@ export class CallService {
       }
     };
 
+    // Gérer les changements d'état de connexion ICE
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log(`[APPEL VOCAL] État de connexion ICE changé pour l'utilisateur ${userId}:`, peerConnection.iceConnectionState);
+
+      // Mettre à jour l'état global de connexion
+      if (peerConnection.iceConnectionState === 'connected' || peerConnection.iceConnectionState === 'completed') {
+        this.connectionState.set('connected');
+      } else if (peerConnection.iceConnectionState === 'checking') {
+        this.connectionState.set('connecting');
+      } else if (peerConnection.iceConnectionState === 'disconnected' ||
+                 peerConnection.iceConnectionState === 'failed' ||
+                 peerConnection.iceConnectionState === 'closed') {
+        // Ne pas changer l'état global ici, car d'autres connexions peuvent être actives
+      }
+    };
+
     // Gérer les changements d'état de connexion
     peerConnection.onconnectionstatechange = () => {
       console.log(`[APPEL VOCAL] État de connexion changé pour l'utilisateur ${userId}:`, peerConnection.connectionState);
@@ -575,7 +727,21 @@ export class CallService {
       if (peerConnection.connectionState === 'disconnected' ||
           peerConnection.connectionState === 'failed' ||
           peerConnection.connectionState === 'closed') {
+        console.log(`[APPEL VOCAL] Connexion perdue avec l'utilisateur ${userId}, nettoyage`);
         this.closePeerConnection(userId);
+      }
+    };
+
+    // Gérer les changements d'état de signalisation
+    peerConnection.onsignalingstatechange = () => {
+      console.log(`[APPEL VOCAL] État de signalisation changé pour l'utilisateur ${userId}:`, peerConnection.signalingState);
+    };
+
+    // Gérer les négociations nécessaires
+    peerConnection.onnegotiationneeded = () => {
+      console.log(`[APPEL VOCAL] Négociation nécessaire pour l'utilisateur ${userId}`);
+      if (isInitiator) {
+        this.createAndSendOffer(userId, peerConnection);
       }
     };
 
@@ -624,7 +790,29 @@ export class CallService {
       return;
     }
 
-    console.log(`[APPEL VOCAL] Signal reçu de l'utilisateur ${sourceUserId}`, { type });
+    console.log(`[APPEL VOCAL] Signal reçu de l'utilisateur ${sourceUserId}`, {
+      type,
+      callId: data.callId,
+      hasOffer: !!data.offer,
+      hasAnswer: !!data.answer,
+      hasCandidate: !!data.candidate
+    });
+
+    // Vérifier si nous sommes dans un appel actif
+    const activeCall = this.activeCall();
+    if (!activeCall) {
+      console.warn(`[APPEL VOCAL] Signal reçu mais aucun appel actif`);
+      return;
+    }
+
+    // Vérifier si le signal concerne l'appel actif
+    if (data.callId && data.callId.toString() !== this.callId()) {
+      console.warn(`[APPEL VOCAL] Signal reçu pour un appel différent`, {
+        receivedCallId: data.callId,
+        activeCallId: this.callId()
+      });
+      return;
+    }
 
     // Récupérer les connexions peer
     const connections = this.peerConnectionsMap();
@@ -632,16 +820,35 @@ export class CallService {
 
     // Créer une connexion si elle n'existe pas encore
     if (!peerConnection) {
+      console.log(`[APPEL VOCAL] Création d'une nouvelle connexion pour le signal reçu de l'utilisateur ${sourceUserId}`);
       peerConnection = this.createPeerConnection(sourceUserId, false);
+
+      // Ajouter l'utilisateur comme participant s'il n'est pas déjà présent
+      this.addParticipant(sourceUserId, activeCall.id);
     }
 
     try {
       switch (type) {
         case 'offer':
-          console.log(`[APPEL VOCAL] Offre reçue de l'utilisateur ${sourceUserId}`, data.offer);
+          console.log(`[APPEL VOCAL] Offre reçue de l'utilisateur ${sourceUserId}`, {
+            sdpType: data.offer.type,
+            hasSdp: !!data.offer.sdp
+          });
+
+          // Vérifier l'état de signalisation avant d'appliquer l'offre
+          if (peerConnection.signalingState !== 'stable') {
+            console.log(`[APPEL VOCAL] État de signalisation non stable (${peerConnection.signalingState}), réinitialisation`);
+            await peerConnection.setLocalDescription({type: 'rollback'});
+          }
+
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
           const answer = await peerConnection.createAnswer();
           await peerConnection.setLocalDescription(answer);
+
+          console.log(`[APPEL VOCAL] Réponse créée pour l'utilisateur ${sourceUserId}`, {
+            sdpType: answer.type,
+            hasSdp: !!answer.sdp
+          });
 
           this.sendSignalingData({
             type: 'answer',
@@ -651,13 +858,34 @@ export class CallService {
           break;
 
         case 'answer':
-          console.log(`[APPEL VOCAL] Réponse reçue de l'utilisateur ${sourceUserId}`, data.answer);
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+          console.log(`[APPEL VOCAL] Réponse reçue de l'utilisateur ${sourceUserId}`, {
+            sdpType: data.answer.type,
+            hasSdp: !!data.answer.sdp
+          });
+
+          // Vérifier que nous avons une offre en attente
+          if (peerConnection.signalingState === 'have-local-offer') {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            console.log(`[APPEL VOCAL] Réponse appliquée, état de signalisation: ${peerConnection.signalingState}`);
+          } else {
+            console.warn(`[APPEL VOCAL] Réponse reçue mais aucune offre en attente, état: ${peerConnection.signalingState}`);
+          }
           break;
 
         case 'ice-candidate':
-          console.log(`[APPEL VOCAL] Candidat ICE reçu de l'utilisateur ${sourceUserId}`, data.candidate);
-          await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+          console.log(`[APPEL VOCAL] Candidat ICE reçu de l'utilisateur ${sourceUserId}`, {
+            candidateType: data.candidate.type,
+            candidateProtocol: data.candidate.protocol,
+            candidateAddress: data.candidate.address
+          });
+
+          // Vérifier que la description distante est définie avant d'ajouter des candidats ICE
+          if (peerConnection.remoteDescription) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            console.log(`[APPEL VOCAL] Candidat ICE ajouté avec succès`);
+          } else {
+            console.warn(`[APPEL VOCAL] Impossible d'ajouter le candidat ICE: pas de description distante`);
+          }
           break;
 
         default:
@@ -820,6 +1048,9 @@ export class CallService {
       this.participantsList.update(participants => [...participants, newParticipant]);
       this.callJoined.next(newParticipant);
       console.log(`[APPEL VOCAL] Participant ${userId} ajouté à l'appel ${callId}`);
+
+      // Notifier les autres composants que la liste des participants a changé
+      this.notifyParticipantsChanged();
     } else if (!currentParticipants[existingParticipantIndex].is_active) {
       // Participant existant mais inactif - le réactiver
       this.participantsList.update(participants => {
@@ -838,9 +1069,26 @@ export class CallService {
         });
       });
       console.log(`[APPEL VOCAL] Participant ${userId} réactivé dans l'appel ${callId}`);
+
+      // Notifier les autres composants que la liste des participants a changé
+      this.notifyParticipantsChanged();
     } else {
       console.log(`[APPEL VOCAL] Participant ${userId} déjà actif dans l'appel ${callId}`);
     }
+
+    // Journaliser la liste complète des participants pour débogage
+    console.log('[APPEL VOCAL] Liste des participants après ajout/mise à jour', {
+      participants: this.participantsList().map(p => ({ userId: p.user_id, isActive: p.is_active }))
+    });
+  }
+
+  /**
+   * Notifie les autres composants que la liste des participants a changé
+   * en forçant une mise à jour du signal
+   */
+  private notifyParticipantsChanged(): void {
+    // Forçer une mise à jour du signal en créant une nouvelle référence
+    this.participantsList.update(participants => [...participants]);
   }
 
   private removeParticipant(userId: number): void {
@@ -848,6 +1096,8 @@ export class CallService {
     const participant = currentParticipants.find(p => p.user_id === userId);
 
     if (participant) {
+      console.log(`[APPEL VOCAL] Suppression du participant ${userId}`);
+
       // Mettre à jour l'état du participant
       const updatedParticipant = {
         ...participant,
@@ -864,6 +1114,16 @@ export class CallService {
 
       // Nettoyer la connexion
       this.closePeerConnection(userId);
+
+      // Notifier les autres composants que la liste des participants a changé
+      this.notifyParticipantsChanged();
+
+      // Journaliser la liste complète des participants pour débogage
+      console.log('[APPEL VOCAL] Liste des participants après suppression', {
+        participants: this.participantsList().map(p => ({ userId: p.user_id, isActive: p.is_active }))
+      });
+    } else {
+      console.log(`[APPEL VOCAL] Tentative de suppression d'un participant inexistant: ${userId}`);
     }
   }
 
