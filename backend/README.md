@@ -1,6 +1,8 @@
 # Backend de l'Application de Collaboration Documentaire
 
-Ce backend fournit une API RESTful et des fonctionnalités WebSocket pour une application de collaboration documentaire en temps réel.
+**Groupe 9 : Axel / Safae et Loïc**
+
+Ce backend fournit une API RESTful et des fonctionnalités WebSocket pour une application de collaboration documentaire en temps réel avec support pour WebRTC, messagerie instantanée et notifications.
 
 ## Technologies utilisées
 
@@ -110,9 +112,13 @@ backend/
 ### Collaboration en temps réel
 
 - Édition collaborative en temps réel via WebSockets
-- Sauvegarde automatique des modifications
+- Sauvegarde automatique des modifications en temps réel
 - Système d'invitation à collaborer sur un document
-- Gestion des appels audio entre collaborateurs
+- Affichage du dernier utilisateur ayant modifié un document
+- Gestion des appels audio WebRTC entre collaborateurs
+- Système de messagerie intégré à l'éditeur
+- Messagerie générale avec historique des messages
+- Notifications en temps réel pour les messages privés
 
 ### Sécurité
 

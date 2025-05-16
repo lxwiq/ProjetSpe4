@@ -1,5 +1,7 @@
 # Flux de données complexes
 
+**Groupe 9 : Axel / Safae et Loïc**
+
 Ce document détaille les flux de données pour les fonctionnalités complexes du backend.
 
 ## Édition collaborative en temps réel
@@ -83,16 +85,18 @@ L'édition collaborative en temps réel est l'une des fonctionnalités les plus 
    - Lorsqu'un utilisateur se déconnecte, le serveur le retire de la liste des utilisateurs actifs
    - Si c'était le dernier utilisateur, le document est sauvegardé automatiquement
 
-### Gestion des conflits
+### Gestion des conflits et synchronisation
 
 - Chaque modification est horodatée et associée à un utilisateur
 - Les modifications sont appliquées dans l'ordre de réception
 - Pour les documents textuels, les modifications sont envoyées sous forme de deltas (opérations de transformation)
 - En cas de conflit, la dernière modification reçue est prioritaire
+- Des mécanismes de synchronisation évités la duplication de texte lors de l'édition collaborative
+- L'affichage du dernier utilisateur ayant modifié un document ('dernière modification par: [username]') est mis à jour en temps réel
 
-## Appels audio entre collaborateurs
+## Appels audio WebRTC entre collaborateurs
 
-Les appels audio permettent aux utilisateurs de communiquer en temps réel pendant qu'ils collaborent sur un document.
+Les appels audio permettent aux utilisateurs de communiquer en temps réel pendant qu'ils collaborent sur un document. L'implémentation suit les patterns WebRTC d'angular.fr/realtime/webrtc.
 
 ### Composants impliqués
 
@@ -180,9 +184,17 @@ Les appels audio permettent aux utilisateurs de communiquer en temps réel penda
    - Le serveur met à jour l'état de l'appel et notifie tous les participants
    - Les connexions WebRTC sont fermées
 
+## Système de messagerie
+
+L'application dispose de deux systèmes de messagerie distincts :
+
+1. **Messagerie de document** : Intégrée à l'éditeur pour la communication pendant l'édition, sans historique des messages.
+
+2. **Messagerie générale** : Accessible depuis la barre de navigation, avec historique complet des conversations.
+
 ## Système de notifications
 
-Le système de notifications permet d'informer les utilisateurs des événements importants comme les invitations à collaborer, les nouveaux messages, etc.
+Le système de notifications permet d'informer les utilisateurs des événements importants comme les invitations à collaborer, les nouveaux messages privés, etc.
 
 ### Composants impliqués
 

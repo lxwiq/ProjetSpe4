@@ -1,12 +1,16 @@
 # Tests API avec Postman
 
+**Groupe 9 : Axel / Safae et Loïc**
+
 Ce dossier contient des collections Postman pour tester les API de l'application.
 
 ## Collections disponibles
 
 1. **Admin_API_Collection.json** - Tests des fonctionnalités d'administration et de base
 2. **Collaborative_Features_Collection.json** - Tests des fonctionnalités collaboratives
-3. **Calls_API_Collection.json** - Tests des fonctionnalités d'appels audio
+3. **Calls_API_Collection.json** - Tests des fonctionnalités d'appels audio WebRTC
+4. **Messaging_API_Collection.json** - Tests des fonctionnalités de messagerie
+5. **Notifications_API_Collection.json** - Tests des notifications en temps réel
 
 ## Prérequis
 
@@ -63,10 +67,21 @@ Les tests automatisés vérifieront que les réponses sont correctes et stockero
 - **Inviter un utilisateur** : `POST /collaborative-documents/:documentId/invite`
 - **Récupérer les appels actifs** : `GET /collaborative-documents/:documentId/calls`
 
-### Appels audio
+### Appels audio WebRTC
 - **Récupérer les appels actifs** : `GET /calls/document/:documentId/active`
 - **Récupérer les détails d'un appel** : `GET /calls/:callId`
 - **Terminer un appel** : `PUT /calls/:callId/end`
+
+### Messagerie
+- **Récupérer les messages d'un document** : `GET /documents/:documentId/messages`
+- **Récupérer les conversations** : `GET /messages/conversations`
+- **Récupérer les messages d'une conversation** : `GET /messages/conversations/:conversationId`
+- **Marquer les messages comme lus** : `PUT /messages/conversations/:conversationId/read`
+
+### Notifications
+- **Récupérer les notifications** : `GET /notifications`
+- **Marquer une notification comme lue** : `PUT /notifications/:notificationId/read`
+- **Supprimer une notification** : `DELETE /notifications/:notificationId`
 
 ### Tests de sécurité
 - **Accès refusé - Utilisateur non admin** : Tente d'accéder à une route admin avec un token d'utilisateur standard

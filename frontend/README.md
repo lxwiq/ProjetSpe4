@@ -1,6 +1,8 @@
 # Frontend Angular - Application de Collaboration Documentaire
 
-Ce frontend Angular fournit une interface utilisateur moderne et réactive pour l'application de collaboration documentaire, permettant l'édition en temps réel, les appels audio, et la gestion des documents.
+**Groupe 9 : Axel / Safae et Loïc**
+
+Ce frontend Angular fournit une interface utilisateur moderne et réactive pour l'application de collaboration documentaire, permettant l'édition en temps réel, les appels audio via WebRTC, la messagerie instantanée, et la gestion des documents.
 
 ## Table des matières
 
@@ -95,18 +97,28 @@ frontend/
 ### Édition collaborative en temps réel
 
 - Édition simultanée par plusieurs utilisateurs
-- Visualisation des curseurs et sélections des autres utilisateurs
-- Synchronisation instantanée des modifications
-- Chat intégré dans l'éditeur
-- Sauvegarde automatique et manuelle
+- Visualisation des utilisateurs actifs sur un document
+- Synchronisation instantanée des modifications sans duplication de texte
+- Sauvegarde automatique et en temps réel des documents
+- Affichage du dernier utilisateur ayant modifié un document ('dernière modification par: [username]')
+- Navigation améliorée avec bouton retour fonctionnel en mode édition
 
-### Appels audio
+### Appels audio WebRTC
 
 - Appels audio entre collaborateurs d'un document
 - Signalisation via WebSockets
 - Communication peer-to-peer via WebRTC
 - Détection d'activité vocale
 - Contrôles audio (muet/actif)
+- Implémentation selon les patterns WebRTC d'angular.fr/realtime/webrtc
+
+### Messagerie et notifications
+
+- Deux systèmes de messagerie distincts :
+  - Messagerie de document intégrée à l'éditeur (sans historique)
+  - Messagerie générale accessible depuis la barre de navigation (avec historique)
+- Notifications en temps réel pour les messages privés
+- Système de notification pour les invitations à collaborer
 
 ### Interface utilisateur
 

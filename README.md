@@ -1,6 +1,8 @@
 # Application de Collaboration Documentaire
 
-Une application web complète permettant l'édition collaborative de documents en temps réel avec des fonctionnalités avancées comme les appels audio, la messagerie et les notifications.
+Une application web complète permettant l'édition collaborative de documents en temps réel avec des fonctionnalités avancées comme les appels audio WebRTC, la messagerie instantanée et les notifications en temps réel.
+
+**Groupe 9 : Axel / Safae et Loïc**
 
 ## Table des matières
 
@@ -17,7 +19,7 @@ Une application web complète permettant l'édition collaborative de documents e
 
 ## Vue d'ensemble
 
-Cette application permet aux utilisateurs de créer, éditer et partager des documents en temps réel. Elle offre une interface utilisateur moderne et réactive, avec des fonctionnalités avancées comme l'édition collaborative, les appels audio, et un système complet de gestion des utilisateurs et des permissions.
+Cette application permet aux utilisateurs de créer, éditer et partager des documents en temps réel. Elle offre une interface utilisateur moderne et réactive, avec des fonctionnalités avancées comme l'édition collaborative en temps réel, les appels audio via WebRTC, la messagerie instantanée, les notifications en temps réel, et un système complet de gestion des utilisateurs et des permissions.
 
 ## Choix technologiques
 
@@ -178,15 +180,23 @@ backend/
 ### Collaboration en temps réel
 
 - Édition collaborative avec synchronisation instantanée
-- Visualisation des curseurs et sélections des autres utilisateurs
-- Chat intégré dans l'éditeur
+- Visualisation des utilisateurs actifs sur un document
+- Sauvegarde automatique et en temps réel des documents
 - Système d'invitation à collaborer
-- Appels audio entre collaborateurs
+- Affichage du dernier utilisateur ayant modifié un document ('dernière modification par: [username]')
+
+### Communication et collaboration
+
+- Appels audio entre collaborateurs via WebRTC
+- Messagerie instantanée avec historique des messages
+- Chat intégré dans l'éditeur de documents
+- Notifications en temps réel pour les messages privés
+- Système de notification pour les invitations à collaborer
 
 ### Interface utilisateur
 
 - Design responsive avec Tailwind CSS
-- Navigation intuitive
+- Navigation intuitive avec bouton retour fonctionnel en mode édition
 - Tableau de bord personnalisé
 - Notifications en temps réel
 - Mode administrateur pour la gestion des utilisateurs

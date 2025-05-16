@@ -1,0 +1,36 @@
+# Sons de notification
+
+**Groupe 9 : Axel / Safae et Loïc**
+
+Ce répertoire contient les fichiers audio utilisés pour les notifications dans l'application.
+
+## Fichiers requis
+
+- `notification.mp3`: Un son court et subtil pour les nouvelles notifications
+- `message.mp3`: Un son pour les nouveaux messages
+- `call.mp3`: Un son pour les appels entrants
+
+## Comment ajouter des fichiers audio
+
+1. Téléchargez un son de notification approprié (court, subtil et professionnel)
+2. Renommez-le selon son utilisation (ex: `notification.mp3`, `message.mp3`, `call.mp3`)
+3. Placez-le dans ce répertoire
+
+## Sources recommandées pour des sons de notification gratuits
+
+- [Mixkit](https://mixkit.co/free-sound-effects/notification/)
+- [Freesound](https://freesound.org/search/?q=notification)
+- [Zapsplat](https://www.zapsplat.com/sound-effect-categories/notifications-alerts/)
+
+Choisissez un son qui est :
+- Bref (moins de 2 secondes)
+- Pas trop intrusif
+- Professionnel
+- Suffisamment clair pour être remarqué
+
+## Utilisation dans l'application
+
+Les sons sont utilisés pour :
+- Notifications générales (nouveaux partages, invitations)
+- Nouveaux messages privés
+- Appels audio WebRTC entrants

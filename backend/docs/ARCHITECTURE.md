@@ -1,5 +1,7 @@
 # Architecture du Backend
 
+**Groupe 9 : Axel / Safae et Loïc**
+
 Ce document décrit l'architecture technique du backend de l'application de collaboration documentaire.
 
 ## Vue d'ensemble
@@ -115,7 +117,7 @@ L'édition collaborative utilise Socket.IO pour la communication en temps réel 
 3. En cas de conflit, la dernière modification reçue est prioritaire
 4. Les versions des documents sont stockées pour permettre la restauration
 
-## Appels audio
+## Appels audio via WebRTC
 
 L'architecture des appels audio est basée sur WebRTC avec une signalisation via Socket.IO.
 
@@ -125,6 +127,18 @@ L'architecture des appels audio est basée sur WebRTC avec une signalisation via
 4. Les clients échangent des offres et réponses SDP via le serveur
 5. Une fois connectés, les flux audio circulent directement entre les clients (P2P)
 6. Le serveur maintient l'état de l'appel et gère les déconnexions
+
+Le système d'appel est implémenté selon les patterns de WebRTC pour permettre une communication audio en temps réel entre les utilisateurs dans le même salon.
+
+## Système de messagerie
+
+L'application dispose de deux systèmes de messagerie distincts :
+
+1. **Messagerie de document** : Intégrée à l'éditeur de documents pour permettre aux collaborateurs de communiquer pendant l'édition.
+
+2. **Messagerie générale** : Accessible depuis la barre de navigation, permettant aux utilisateurs d'envoyer des messages privés avec historique des conversations.
+
+Les notifications sont déclenchées lorsqu'un utilisateur reçoit un message privé, améliorant ainsi l'expérience utilisateur.
 
 ## Extensibilité
 

@@ -1,5 +1,7 @@
 # Configuration Docker pour l'Application Collaborative Documents
 
+**Groupe 9 : Axel / Safae et Loïc**
+
 Cette configuration Docker permet de déployer facilement l'application Collaborative Documents avec ses trois composants principaux : frontend, backend et base de données PostgreSQL.
 
 ## Prérequis
@@ -12,8 +14,8 @@ Cette configuration Docker permet de déployer facilement l'application Collabor
 La configuration Docker comprend trois services :
 
 1. **db** : Base de données PostgreSQL
-2. **backend** : API Node.js/Express
-3. **frontend** : Application Angular
+2. **backend** : API Node.js/Express avec support WebSocket pour la collaboration en temps réel
+3. **frontend** : Application Angular avec support WebRTC pour les appels audio
 
 ## Démarrage rapide
 
@@ -105,6 +107,8 @@ Vous pouvez personnaliser les variables d'environnement dans le fichier `docker-
 - **Problème de connexion à la base de données** : Vérifiez que le service PostgreSQL est en cours d'exécution et que les variables d'environnement sont correctement configurées.
 - **Erreurs de migration Prisma** : Vérifiez les logs du backend pour voir les erreurs spécifiques.
 - **Problèmes de réseau entre les conteneurs** : Assurez-vous que tous les services sont sur le même réseau Docker (`app-network`).
+- **Problèmes avec WebRTC** : Pour tester les appels audio depuis des appareils mobiles, assurez-vous que Docker est configuré pour se lier à 0.0.0.0 au lieu de localhost.
+- **Problèmes CORS** : Si vous rencontrez des erreurs CORS, vérifiez la configuration CORS dans le backend pour qu'elle accepte les requêtes de localhost.
 
 ## Sécurité
 
