@@ -26,47 +26,7 @@
   width: 100%;
 }
 
-/* Styles pour les curseurs des autres utilisateurs */
-.ql-cursor {
-  position: absolute;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.ql-cursor-flag {
-  position: absolute;
-  top: -18px;
-  left: 0;
-  font-size: 12px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  color: white;
-  white-space: nowrap;
-  z-index: 11;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: opacity 0.3s;
-}
-
-.ql-cursor-caret {
-  position: absolute;
-  width: 2px;
-  margin-left: -1px;
-  height: 16px;
-  z-index: 10;
-}
-
-.ql-cursor-selection {
-  position: absolute;
-  opacity: 0.3;
-  z-index: 9;
-}
-
-/* Animation pour le clignotement du curseur */
-@keyframes cursor-blink {
-  0% { opacity: 1; }
-  50% { opacity: 0; }
-  100% { opacity: 1; }
-}
+/* Les styles pour les curseurs sont maintenant dans styles.css */
 
 /* Styles pour les modifications récentes */
 .ql-recent-change {
