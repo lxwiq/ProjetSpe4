@@ -28,7 +28,6 @@ export class WebsocketService {
   private documentUserJoined = new Subject<any>();
   private documentUserLeft = new Subject<any>();
   private documentContentChanged = new Subject<any>();
-  private documentCursorMoved = new Subject<any>();
   private documentSaved = new Subject<any>();
   private documentInvitation = new Subject<any>();
   private documentChatMessage = new Subject<any>();
@@ -400,17 +399,7 @@ export class WebsocketService {
       this.documentContentChanged.next(data);
     });
 
-    this.socket.fromEvent('document:cursor-moved').subscribe((data: any) => {
-      // Réduire la verbosité des logs pour améliorer les performances
-      if (!environment.production) {
-        this.logger.debug('Curseur déplacé', {
-          service: 'WebsocketService',
-          userId: data.userId
-        });
-      }
-      // Émettre l'événement immédiatement pour une meilleure réactivité
-      this.documentCursorMoved.next(data);
-    });
+
 
     this.socket.fromEvent('document:saved').subscribe((data: any) => {
       this.logger.debug('Document sauvegardé', {
@@ -627,9 +616,7 @@ export class WebsocketService {
     return this.documentContentChanged.asObservable();
   }
 
-  onDocumentCursorMoved(): Observable<any> {
-    return this.documentCursorMoved.asObservable();
-  }
+
 
   onDocumentSaved(): Observable<any> {
     return this.documentSaved.asObservable();
