@@ -7,12 +7,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../../environments/environment';
 import {
   Notification,
+  NotificationType,
   NotificationsResponse,
   MarkAsReadResponse
 } from '../models/notification.model';
 import { WebsocketService } from './websocket.service';
 import { LoggingService } from './logging.service';
 import { EventBusService } from './event-bus.service';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -39,7 +41,8 @@ export class NotificationService {
   constructor(
     private http: HttpClient,
     private websocketService: WebsocketService,
-    private eventBus: EventBusService
+    private eventBus: EventBusService,
+    private authService: AuthService
   ) {
     // Initialiser le son de notification
     this.initNotificationSound();
@@ -417,6 +420,47 @@ export class NotificationService {
   }
 
   /**
+   * Crée une notification locale (sans appel API)
+   * @param notification Données de la notification à créer
+   */
+  createNotification(notificationData: { type: string, content: any, sender_id?: number }): void {
+    // Créer un objet notification avec les données fournies
+    const notification: Notification = {
+      id: Date.now(), // ID temporaire basé sur le timestamp
+      user_id: this.getCurrentUserId(),
+      type: notificationData.type as NotificationType,
+      content: notificationData.content,
+      sender_id: notificationData.sender_id,
+      created_at: new Date().toISOString(),
+      is_read: false
+    };
+
+    // Si un sender_id est fourni, essayer de récupérer les informations de l'expéditeur
+    if (notificationData.sender_id) {
+      // Ici, on pourrait appeler un service pour récupérer les informations de l'expéditeur
+      // Mais pour simplifier, on laisse le champ sender vide pour l'instant
+    }
+
+    // Ajouter la notification à la liste
+    this.addNotification(notification);
+
+    this.logger.info('Notification locale créée', {
+      service: 'NotificationService',
+      notificationType: notification.type
+    });
+  }
+
+  /**
+   * Récupère l'ID de l'utilisateur courant
+   * @returns ID de l'utilisateur
+   */
+  private getCurrentUserId(): number {
+    // Utiliser le service d'authentification pour récupérer l'ID de l'utilisateur courant
+    const user = this.authService.currentUser();
+    return user ? user.id : 0;
+  }
+
+  /**
    * Met à jour le compteur de notifications non lues
    */
   private updateUnreadCount(): void {
@@ -459,11 +503,11 @@ export class NotificationService {
         // Vérifier que l'ID de la conversation est valide
         const conversationId = messageContent.conversationId;
         if (conversationId && !isNaN(conversationId) && conversationId > 0) {
-          url = `/messages/conversations/${conversationId}`;
+          url = `/messaging/conversations/${conversationId}`;
           console.log(`NotificationService: URL de message valide générée: ${url}`);
         } else {
           console.error(`NotificationService: ID de conversation invalide dans la notification: ${conversationId}`);
-          url = '/messages/conversations'; // Rediriger vers la liste des conversations en cas d'ID invalide
+          url = '/messaging'; // Rediriger vers la liste des conversations en cas d'ID invalide
         }
         break;
       case 'document_invite':
@@ -505,11 +549,11 @@ export class NotificationService {
         // Vérifier que l'ID de la conversation est valide
         const convId = convInviteContent.conversationId;
         if (convId && !isNaN(convId) && convId > 0) {
-          url = `/messages/conversations/${convId}`;
+          url = `/messaging/conversations/${convId}`;
           console.log(`NotificationService: URL d'invitation à une conversation valide générée: ${url}`);
         } else {
           console.error(`NotificationService: ID de conversation invalide dans la notification: ${convId}`);
-          url = '/messages/conversations'; // Rediriger vers la liste des conversations en cas d'ID invalide
+          url = '/messaging'; // Rediriger vers la liste des conversations en cas d'ID invalide
         }
         break;
       case 'incoming_call':
