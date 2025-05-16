@@ -7,7 +7,8 @@ import { CallService } from '../../../core/services/call.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { LoggingService } from '../../../core/services/logging.service';
-import { Call, CallParticipant, VoiceActivityData } from '../../../core/models/call.model';
+import { EventBusService } from '../../../core/services/event-bus.service';
+import { Call, CallParticipant, VoiceActivityData, IncomingCallData } from '../../../core/models/call.model';
 import { User } from '../../../core/models/user.model';
 
 @Component({
@@ -62,7 +63,8 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
     private callService: CallService,
     private authService: AuthService,
     private userService: UserService,
-    private logger: LoggingService
+    private logger: LoggingService,
+    private eventBus: EventBusService
   ) {}
 
   // Injection pour les effets
@@ -80,13 +82,16 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
         // Vérifier si un appel est disponible pour ce document
         // Assurons-nous que les deux IDs sont du même type (number) pour la comparaison
         const isAvailable = !!call && Number(call?.document_id) === Number(this.documentId);
+
+        // Mettre à jour l'état de disponibilité de l'appel
         this.isCallAvailable.set(isAvailable);
 
         console.log('[APPEL VOCAL] État de l\'appel mis à jour', {
           callId: call?.id,
           documentId: call?.document_id,
           currentDocumentId: this.documentId,
-          isCallAvailable: isAvailable
+          isCallAvailable: isAvailable,
+          isInCall: this.callService.isInCall()
         });
       });
 
@@ -179,6 +184,48 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
         this.loadAvailableAudioDevices();
       };
     }
+
+    // Écouter les événements d'appel entrant
+    this.eventBus.on<IncomingCallData>('incoming_call')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((callData) => {
+        this.logger.info('Notification d\'appel reçue via EventBus', {
+          component: 'VoiceCallComponent',
+          callId: callData.callId,
+          documentId: callData.documentId,
+          currentDocumentId: this.documentId
+        });
+
+        // Vérifier si l'appel concerne ce document
+        if (Number(callData.documentId) === Number(this.documentId)) {
+          this.logger.info('Appel disponible pour ce document', {
+            component: 'VoiceCallComponent',
+            callId: callData.callId,
+            documentId: callData.documentId
+          });
+
+          // Créer un objet Call pour mettre à jour l'état
+          const call: Call = {
+            id: parseInt(callData.callId.toString()),
+            document_id: parseInt(callData.documentId.toString()),
+            initiated_by: callData.callerId,
+            started_at: new Date().toISOString(),
+            call_type: 'audio',
+            status: 'active'
+          };
+
+          // Mettre à jour l'état de l'appel
+          this.call.set(call);
+          this.isCallAvailable.set(true);
+
+          this.logger.info('L\'interface d\'appel a été mise à jour pour afficher l\'appel disponible', {
+            component: 'VoiceCallComponent',
+            callId: call.id,
+            documentId: call.document_id,
+            isCallAvailable: this.isCallAvailable()
+          });
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -218,19 +265,34 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
     const activeCall = this.callService.activeCall();
 
     if (activeCall) {
+      const isForCurrentDocument = Number(activeCall.document_id) === Number(this.documentId);
+      const isUserInCall = this.callService.isInCall();
+
       console.log('[APPEL VOCAL] Appel actif détecté lors de l\'initialisation', {
         callId: activeCall.id,
         documentId: activeCall.document_id,
         currentDocumentId: this.documentId,
-        isMatch: Number(activeCall.document_id) === Number(this.documentId)
+        isMatch: isForCurrentDocument,
+        isUserInCall: isUserInCall
       });
 
       // Mettre à jour l'état si l'appel concerne ce document
-      if (Number(activeCall.document_id) === Number(this.documentId)) {
+      if (isForCurrentDocument) {
         this.isCallAvailable.set(true);
+
+        // Mettre à jour l'état de l'appel
+        this.call.set(activeCall);
+
+        console.log('[APPEL VOCAL] Appel disponible pour ce document', {
+          callId: activeCall.id,
+          documentId: activeCall.document_id,
+          isUserInCall: isUserInCall,
+          buttonShouldShow: isUserInCall ? 'Aucun (déjà dans l\'appel)' : 'Rejoindre l\'appel'
+        });
       }
     } else {
       console.log('[APPEL VOCAL] Aucun appel actif détecté lors de l\'initialisation');
+      this.isCallAvailable.set(false);
     }
   }
 
@@ -296,23 +358,36 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
    * Rejoint un appel existant
    */
   joinCall(): void {
+    const currentCall = this.call();
+    const isCurrentlyInCall = this.isInCall();
+    const isCallAvailable = this.isCallAvailable();
+
     console.log('[APPEL VOCAL] Tentative de rejoindre l\'appel - État actuel', {
-      isInCall: this.isInCall(),
-      hasCall: !!this.call(),
-      callId: this.call()?.id,
-      isCallAvailable: this.isCallAvailable()
+      isInCall: isCurrentlyInCall,
+      hasCall: !!currentCall,
+      callId: currentCall?.id,
+      isCallAvailable: isCallAvailable
     });
 
-    if (this.isInCall() || !this.call()) {
-      console.log('[APPEL VOCAL] Impossible de rejoindre l\'appel - Conditions non remplies', {
-        isInCall: this.isInCall(),
-        hasCall: !!this.call()
-      });
+    // Vérifier si l'utilisateur est déjà dans un appel ou s'il n'y a pas d'appel disponible
+    if (isCurrentlyInCall) {
+      console.log('[APPEL VOCAL] Déjà dans un appel, impossible d\'en rejoindre un autre');
       return;
     }
 
-    const callId = this.call()!.id;
-    console.log('[APPEL VOCAL] Tentative de rejoindre l\'appel', { callId });
+    if (!currentCall || !isCallAvailable) {
+      console.log('[APPEL VOCAL] Aucun appel disponible à rejoindre');
+      return;
+    }
+
+    const callId = currentCall.id;
+    console.log('[APPEL VOCAL] Tentative de rejoindre l\'appel', {
+      callId,
+      documentId: currentCall.document_id
+    });
+
+    // Mettre à jour l'état de connexion
+    this.connectionStatus.set('connecting');
 
     this.callService.joinCall(callId).subscribe({
       next: (call) => {
@@ -321,12 +396,21 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
           documentId: call.document_id,
           participants: this.callService.participants().length
         });
+
+        // Mettre à jour l'état de connexion
+        this.connectionStatus.set('connected');
       },
       error: (error) => {
         console.log('[APPEL VOCAL] Erreur lors de la connexion à l\'appel', {
           error: error.message,
           callId
         });
+
+        // Réinitialiser l'état de connexion
+        this.connectionStatus.set('disconnected');
+
+        // Afficher un message d'erreur à l'utilisateur
+        alert('Erreur lors de la connexion à l\'appel: ' + (error.message || 'Erreur inconnue'));
       }
     });
   }
@@ -679,15 +763,27 @@ export class VoiceCallComponent implements OnInit, OnDestroy {
    * Gère le clic sur le bouton d'appel (démarrer ou rejoindre)
    */
   handleCallButtonClick(): void {
+    const isAvailable = this.isCallAvailable();
+    const callData = this.call();
+
     console.log('[APPEL VOCAL] Clic sur le bouton d\'appel', {
-      isCallAvailable: this.isCallAvailable(),
-      callId: this.call()?.id,
-      documentId: this.documentId
+      isCallAvailable: isAvailable,
+      callId: callData?.id,
+      documentId: this.documentId,
+      isInCall: this.isInCall(),
+      buttonText: isAvailable ? 'Rejoindre l\'appel' : 'Démarrer un appel vocal'
     });
 
-    if (this.isCallAvailable()) {
+    if (isAvailable) {
+      console.log('[APPEL VOCAL] Tentative de rejoindre l\'appel existant', {
+        callId: callData?.id,
+        documentId: callData?.document_id
+      });
       this.joinCall();
     } else {
+      console.log('[APPEL VOCAL] Tentative de démarrer un nouvel appel', {
+        documentId: this.documentId
+      });
       this.startCall();
     }
   }

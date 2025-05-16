@@ -27,7 +27,7 @@ export class EventBusService {
    * @param type Type d'événement à écouter
    * @returns Observable émettant les données de l'événement
    */
-  on<T>(type: string): Observable<T> {
+  on<T = any>(type: string): Observable<T> {
     return this.eventSubject.asObservable().pipe(
       filter(event => event.type === type),
       map(event => event.payload as T)

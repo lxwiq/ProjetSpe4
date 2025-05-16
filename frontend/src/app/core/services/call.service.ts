@@ -1,36 +1,56 @@
-import { Injectable, DestroyRef, inject, signal } from '@angular/core';
+import { Injectable, DestroyRef, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subject, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
 import { WebsocketService } from './websocket.service';
 import { AuthService } from './auth.service';
+import { EventBusService } from './event-bus.service';
 import {
   Call,
   CallParticipant,
   SignalingData,
-  VoiceActivityData
+  VoiceActivityData,
+  IncomingCallData
 } from '../models/call.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CallService {
-  // Signaux pour l'état des appels
-  activeCall = signal<Call | null>(null);
-  participants = signal<CallParticipant[]>([]);
-  isInCall = signal<boolean>(false);
-  isMuted = signal<boolean>(false);
+  // Signaux privés pour l'état des appels
+  private callId = signal<string | null>(null);
+  private documentId = signal<number | null>(null);
+  private localStream = signal<MediaStream | null>(null);
+  private peerConnectionsMap = signal<Map<number, RTCPeerConnection>>(new Map());
+  private participantsList = signal<CallParticipant[]>([]);
+  private connectionState = signal<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  private activeCallData = signal<Call | null>(null);
+
+  // Signaux publics (en lecture seule)
+  public isMuted = signal<boolean>(false);
+  public isInCall = computed(() => {
+    // L'utilisateur est dans l'appel si callId n'est pas null ET si l'utilisateur actuel est un participant actif
+    const callId = this.callId();
+    if (!callId) return false;
+
+    const currentUserId = this.authService.currentUser()?.id;
+    if (!currentUserId) return false;
+
+    // Vérifier si l'utilisateur est un participant actif
+    const participants = this.participantsList();
+    return participants.some(p => p.user_id === currentUserId && p.is_active);
+  });
+  public participants = this.participantsList.asReadonly();
+  public activeCall = this.activeCallData.asReadonly();
 
   // Configuration WebRTC
-  private peerConnections: Map<number, RTCPeerConnection> = new Map();
-  private localStream: MediaStream | null = null;
   private audioContext: AudioContext | null = null;
   private audioAnalysers: Map<number, AnalyserNode> = new Map();
   private voiceActivityDetectionInterval: any = null;
   private destroyRef = inject(DestroyRef);
 
-  // Sujets pour les événements d'appel
+  // Sujets pour les événements d'appel (pour compatibilité avec le code existant)
   private callJoined = new Subject<CallParticipant>();
   private callLeft = new Subject<CallParticipant>();
   private voiceActivity = new Subject<VoiceActivityData>();
@@ -45,7 +65,8 @@ export class CallService {
 
   constructor(
     private websocketService: WebsocketService,
-    private authService: AuthService
+    private authService: AuthService,
+    private eventBus: EventBusService
   ) {
     this.setupWebSocketListeners();
   }
@@ -89,7 +110,12 @@ export class CallService {
           };
 
           // Mettre à jour l'état de l'appel actif
-          this.activeCall.set(call);
+          this.activeCallData.set(call as Call);
+
+          // Ne pas définir callId et documentId ici pour ne pas marquer l'utilisateur comme étant dans l'appel
+          // L'utilisateur doit explicitement rejoindre l'appel
+          // this.callId.set(data.callId);
+          // this.documentId.set(parseInt(data.documentId));
 
           // Ajouter l'initiateur comme participant
           this.addParticipant(data.initiatedBy, parseInt(data.callId));
@@ -99,6 +125,15 @@ export class CallService {
             documentId: call.document_id,
             participants: this.participants().map(p => p.user_id)
           });
+
+          // Émettre un événement pour informer les composants d'appel
+          const incomingCallData: IncomingCallData = {
+            callId: call.id,
+            documentId: call.document_id,
+            callerId: call.initiated_by,
+            documentTitle: 'Document actif' // Nous n'avons pas le titre ici, mais ce n'est pas grave
+          };
+          this.eventBus.emit('incoming_call', incomingCallData);
         } else {
           console.log('[APPEL VOCAL] Appel ignoré (document différent)', {
             callDocumentId: data.documentId,
@@ -183,7 +218,7 @@ export class CallService {
 
       // Demander l'accès au microphone
       this.requestAudioAccess().then(stream => {
-        this.localStream = stream;
+        this.localStream.set(stream);
         console.log('[APPEL VOCAL] Accès au microphone accordé');
 
         // Émettre l'événement pour démarrer l'appel
@@ -213,8 +248,15 @@ export class CallService {
               status: 'active'
             };
 
-            this.activeCall.set(call);
-            this.isInCall.set(true);
+            this.callId.set(response.data.callId.toString());
+            this.documentId.set(documentId);
+            this.activeCallData.set(call as Call);
+
+            console.log('[APPEL VOCAL] Utilisateur a démarré l\'appel', {
+              callId: response.data.callId,
+              documentId,
+              userId: this.authService.currentUser()?.id
+            });
 
             // Ajouter l'utilisateur actuel comme participant
             const currentUser = this.authService.currentUser();
@@ -261,8 +303,9 @@ export class CallService {
 
       console.log(`[APPEL VOCAL] Tentative de rejoindre l'appel ${callId}`);
 
-      // Vérifier si nous avons déjà un appel actif
-      if (!this.activeCall()) {
+      // Vérifier si nous avons déjà un appel actif dans l'interface
+      const activeCall = this.activeCall();
+      if (!activeCall) {
         console.log('[APPEL VOCAL] Erreur: Aucun appel actif à rejoindre');
         observer.error(new Error('Aucun appel actif à rejoindre'));
         return;
@@ -270,7 +313,7 @@ export class CallService {
 
       // Demander l'accès au microphone
       this.requestAudioAccess().then(stream => {
-        this.localStream = stream;
+        this.localStream.set(stream);
         console.log('[APPEL VOCAL] Accès au microphone accordé pour rejoindre l\'appel');
 
         // Émettre l'événement pour rejoindre l'appel
@@ -290,7 +333,15 @@ export class CallService {
               return;
             }
 
-            this.isInCall.set(true);
+            // Mettre à jour l'état de l'appel
+            this.callId.set(callId.toString());
+            this.documentId.set(activeCall.document_id);
+
+            console.log('[APPEL VOCAL] Utilisateur a rejoint l\'appel', {
+              callId,
+              documentId: activeCall.document_id,
+              userId: this.authService.currentUser()?.id
+            });
 
             // Établir des connexions avec les participants existants
             const participants = response.data?.participants;
@@ -371,8 +422,9 @@ export class CallService {
   toggleMute(mute?: boolean): void {
     const shouldMute = mute !== undefined ? mute : !this.isMuted();
 
-    if (this.localStream) {
-      this.localStream.getAudioTracks().forEach(track => {
+    const stream = this.localStream();
+    if (stream) {
+      stream.getAudioTracks().forEach(track => {
         track.enabled = !shouldMute;
       });
 
@@ -404,8 +456,9 @@ export class CallService {
       const wasMuted = this.isMuted();
 
       // Arrêter les pistes actuelles
-      if (this.localStream) {
-        this.localStream.getTracks().forEach(track => track.stop());
+      const stream = this.localStream();
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
       }
 
       // Demander l'accès au nouveau périphérique
@@ -415,7 +468,7 @@ export class CallService {
       };
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.localStream = newStream;
+      this.localStream.set(newStream);
 
       // Appliquer l'état du microphone
       if (wasMuted) {
@@ -423,7 +476,8 @@ export class CallService {
       }
 
       // Mettre à jour les connexions existantes
-      this.peerConnections.forEach((peerConnection, userId) => {
+      const connections = this.peerConnectionsMap();
+      connections.forEach((peerConnection, userId) => {
         // Supprimer les anciennes pistes
         const senders = peerConnection.getSenders();
         senders.forEach(sender => {
@@ -471,70 +525,73 @@ export class CallService {
     }
   }
 
-  private createPeerConnection(userId: number, isInitiator: boolean): void {
-    if (this.peerConnections.has(userId)) {
-      console.log(`CallService: Connexion existante avec l'utilisateur ${userId}, réutilisation`);
-      return;
+  private createPeerConnection(userId: number, isInitiator: boolean): RTCPeerConnection {
+    // Récupérer les connexions existantes
+    const connections = this.peerConnectionsMap();
+
+    if (connections.has(userId)) {
+      console.log(`[APPEL VOCAL] Connexion existante avec l'utilisateur ${userId}, réutilisation`);
+      return connections.get(userId)!;
     }
 
-    console.log(`CallService: Création d'une nouvelle connexion avec l'utilisateur ${userId}`);
+    console.log(`[APPEL VOCAL] Création d'une nouvelle connexion avec l'utilisateur ${userId}`);
 
     const peerConnection = new RTCPeerConnection(this.rtcConfig);
-    this.peerConnections.set(userId, peerConnection);
 
     // Ajouter les pistes audio locales
-    if (this.localStream) {
-      this.localStream.getAudioTracks().forEach(track => {
-        peerConnection.addTrack(track, this.localStream!);
+    const stream = this.localStream();
+    if (stream) {
+      stream.getAudioTracks().forEach(track => {
+        peerConnection.addTrack(track, stream);
       });
     }
 
     // Gérer les pistes distantes
     peerConnection.ontrack = (event) => {
-      console.log(`CallService: Piste reçue de l'utilisateur ${userId}`, event);
+      console.log(`[APPEL VOCAL] Piste reçue de l'utilisateur ${userId}`, event);
 
       // Mettre à jour le participant avec le flux audio
-      const currentParticipants = this.participants();
-      const updatedParticipants = currentParticipants.map(p => {
-        if (p.user_id === userId) {
-          return { ...p, stream: event.streams[0] };
-        }
-        return p;
-      });
-
-      this.participants.set(updatedParticipants);
+      this.updateParticipantStream(userId, event.streams[0]);
     };
 
     // Gérer les candidats ICE
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log(`CallService: Candidat ICE généré pour l'utilisateur ${userId}`, event.candidate);
+        console.log(`[APPEL VOCAL] Candidat ICE généré pour l'utilisateur ${userId}`, event.candidate);
 
         // Envoyer le candidat à l'autre utilisateur
         this.sendSignalingData({
-          callId: this.activeCall()!.id,
-          userId: userId,
-          signal: event.candidate,
-          type: 'candidate'
+          type: 'ice-candidate',
+          candidate: event.candidate,
+          targetUserId: userId
         });
       }
     };
 
     // Gérer les changements d'état de connexion
     peerConnection.onconnectionstatechange = () => {
-      console.log(`CallService: État de connexion changé pour l'utilisateur ${userId}:`, peerConnection.connectionState);
+      console.log(`[APPEL VOCAL] État de connexion changé pour l'utilisateur ${userId}:`, peerConnection.connectionState);
 
       if (peerConnection.connectionState === 'disconnected' ||
           peerConnection.connectionState === 'failed' ||
           peerConnection.connectionState === 'closed') {
-        this.cleanupPeerConnection(userId);
+        this.closePeerConnection(userId);
       }
     };
+
+    // Stocker la connexion
+    this.peerConnectionsMap.update(connections => {
+      const newConnections = new Map(connections);
+      newConnections.set(userId, peerConnection);
+      return newConnections;
+    });
 
     // Si nous sommes l'initiateur, créer et envoyer une offre
     if (isInitiator) {
       this.createAndSendOffer(userId, peerConnection);
     }
+
+    return peerConnection;
   }
 
   private async createAndSendOffer(userId: number, peerConnection: RTCPeerConnection): Promise<void> {
@@ -546,88 +603,103 @@ export class CallService {
 
       await peerConnection.setLocalDescription(offer);
 
-      console.log(`CallService: Offre créée pour l'utilisateur ${userId}`, offer);
+      console.log(`[APPEL VOCAL] Offre créée pour l'utilisateur ${userId}`, offer);
 
       // Envoyer l'offre à l'autre utilisateur
       this.sendSignalingData({
-        callId: this.activeCall()!.id,
-        userId: userId,
-        signal: offer,
-        type: 'offer'
+        type: 'offer',
+        offer,
+        targetUserId: userId
       });
     } catch (error) {
-      console.error(`CallService: Erreur lors de la création de l'offre pour l'utilisateur ${userId}`, error);
+      console.error(`[APPEL VOCAL] Erreur lors de la création de l'offre pour l'utilisateur ${userId}`, error);
     }
   }
 
-  private async handleSignalingData(data: SignalingData): Promise<void> {
-    const { userId, signal, type } = data;
+  private async handleSignalingData(data: any): Promise<void> {
+    const { sourceUserId, type } = data;
 
     // Ignorer les signaux de nous-mêmes
-    if (userId === this.authService.currentUser()?.id) {
+    if (sourceUserId === this.authService.currentUser()?.id) {
       return;
     }
 
-    // Créer une connexion si elle n'existe pas
-    if (!this.peerConnections.has(userId)) {
-      this.createPeerConnection(userId, false);
+    console.log(`[APPEL VOCAL] Signal reçu de l'utilisateur ${sourceUserId}`, { type });
+
+    // Récupérer les connexions peer
+    const connections = this.peerConnectionsMap();
+    let peerConnection = connections.get(sourceUserId);
+
+    // Créer une connexion si elle n'existe pas encore
+    if (!peerConnection) {
+      peerConnection = this.createPeerConnection(sourceUserId, false);
     }
 
-    const peerConnection = this.peerConnections.get(userId)!;
-
     try {
-      if (type === 'offer') {
-        console.log(`CallService: Offre reçue de l'utilisateur ${userId}`, signal);
+      switch (type) {
+        case 'offer':
+          console.log(`[APPEL VOCAL] Offre reçue de l'utilisateur ${sourceUserId}`, data.offer);
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
 
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(signal as RTCSessionDescriptionInit));
+          this.sendSignalingData({
+            type: 'answer',
+            answer,
+            targetUserId: sourceUserId
+          });
+          break;
 
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
+        case 'answer':
+          console.log(`[APPEL VOCAL] Réponse reçue de l'utilisateur ${sourceUserId}`, data.answer);
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+          break;
 
-        console.log(`CallService: Réponse créée pour l'utilisateur ${userId}`, answer);
+        case 'ice-candidate':
+          console.log(`[APPEL VOCAL] Candidat ICE reçu de l'utilisateur ${sourceUserId}`, data.candidate);
+          await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+          break;
 
-        // Envoyer la réponse à l'autre utilisateur
-        this.sendSignalingData({
-          callId: this.activeCall()!.id,
-          userId: userId,
-          signal: answer,
-          type: 'answer'
-        });
-      } else if (type === 'answer') {
-        console.log(`CallService: Réponse reçue de l'utilisateur ${userId}`, signal);
-
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(signal as RTCSessionDescriptionInit));
-      } else if (type === 'candidate') {
-        console.log(`CallService: Candidat ICE reçu de l'utilisateur ${userId}`, signal);
-
-        try {
-          await peerConnection.addIceCandidate(new RTCIceCandidate(signal as RTCIceCandidateInit));
-        } catch (error) {
-          console.error(`CallService: Erreur lors de l'ajout du candidat ICE de l'utilisateur ${userId}`, error);
-        }
+        default:
+          console.warn(`[APPEL VOCAL] Type de signal inconnu: ${type}`);
       }
     } catch (error) {
-      console.error(`CallService: Erreur lors du traitement du signal de l'utilisateur ${userId}`, error);
+      console.error(`[APPEL VOCAL] Erreur lors du traitement du signal de l'utilisateur ${sourceUserId}`, error);
     }
   }
 
-  private sendSignalingData(data: SignalingData): void {
-    this.websocketService.emit('call:signal', data);
+  private sendSignalingData(data: any): void {
+    const callId = this.callId();
+    if (!callId) {
+      console.error('[APPEL VOCAL] Impossible d\'envoyer un signal: aucun appel actif');
+      return;
+    }
+
+    this.websocketService.emit('call:signal', {
+      ...data,
+      callId
+    }, (response: any) => {
+      if (!response || !response.success) {
+        console.error('[APPEL VOCAL] Erreur lors de l\'envoi du signal:', response?.error || 'Erreur inconnue');
+      }
+    });
   }
 
   private setupVoiceActivityDetection(): void {
-    if (!this.localStream || !window.AudioContext) {
-      console.warn('CallService: AudioContext non supporté ou flux local non disponible');
+    const stream = this.localStream();
+    if (!stream || !window.AudioContext) {
+      console.warn('[APPEL VOCAL] AudioContext non supporté ou flux local non disponible');
       return;
     }
 
     try {
       this.audioContext = new AudioContext();
       const analyser = this.audioContext.createAnalyser();
-      const microphone = this.audioContext.createMediaStreamSource(this.localStream);
+      const microphone = this.audioContext.createMediaStreamSource(stream);
 
       microphone.connect(analyser);
       analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.4;
 
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
@@ -638,11 +710,17 @@ export class CallService {
         this.audioAnalysers.set(currentUserId, analyser);
       }
 
+      let isSpeaking = false;
+      let voiceActivityTimeout: any = null;
+
       // Détecter l'activité vocale à intervalles réguliers
       this.voiceActivityDetectionInterval = setInterval(() => {
         if (this.isMuted()) {
           // Si le microphone est désactivé, ne pas détecter d'activité
-          this.emitVoiceActivity(false);
+          if (isSpeaking) {
+            isSpeaking = false;
+            this.emitVoiceActivity(false);
+          }
           return;
         }
 
@@ -655,57 +733,75 @@ export class CallService {
         }
 
         const average = sum / bufferLength;
-        const isSpeaking = average > 20; // Seuil de détection
+        const threshold = 20; // Seuil de détection (ajuster selon les besoins)
+        const newIsSpeaking = average > threshold;
 
-        this.emitVoiceActivity(isSpeaking);
-      }, 200); // Vérifier toutes les 200ms
+        // Si l'état a changé, envoyer une mise à jour avec un délai
+        if (newIsSpeaking !== isSpeaking) {
+          // Ajouter un délai pour éviter les changements trop rapides
+          if (voiceActivityTimeout) {
+            clearTimeout(voiceActivityTimeout);
+          }
+
+          voiceActivityTimeout = setTimeout(() => {
+            if (newIsSpeaking !== isSpeaking) {
+              isSpeaking = newIsSpeaking;
+              this.emitVoiceActivity(isSpeaking);
+            }
+          }, 300);
+        }
+      }, 100); // Vérifier toutes les 100ms
+
+      // Nettoyer lors de la destruction
+      this.destroyRef.onDestroy(() => {
+        if (this.voiceActivityDetectionInterval) {
+          clearInterval(this.voiceActivityDetectionInterval);
+        }
+        if (voiceActivityTimeout) {
+          clearTimeout(voiceActivityTimeout);
+        }
+      });
     } catch (error) {
-      console.error('CallService: Erreur lors de la configuration de la détection d\'activité vocale', error);
+      console.error('[APPEL VOCAL] Erreur lors de la configuration de la détection d\'activité vocale', error);
     }
   }
 
   private emitVoiceActivity(isSpeaking: boolean): void {
     const currentUserId = this.authService.currentUser()?.id;
-    const callId = this.activeCall()?.id;
+    const callId = this.callId();
 
     if (currentUserId && callId) {
       // Mettre à jour l'état du participant local
-      const currentParticipants = this.participants();
-      const updatedParticipants = currentParticipants.map(p => {
-        if (p.user_id === currentUserId) {
-          if (p.is_speaking !== isSpeaking) {
-            // Émettre l'événement uniquement si l'état a changé
-            this.voiceActivity.next({
-              callId,
-              userId: currentUserId,
-              isSpeaking
-            });
+      this.updateParticipantSpeakingState(currentUserId, isSpeaking);
 
-            // Envoyer l'état aux autres participants
-            this.websocketService.emit('call:voice-activity', {
-              callId,
-              isSpeaking
-            });
-          }
-
-          return { ...p, is_speaking: isSpeaking };
-        }
-        return p;
+      // Émettre l'événement pour la compatibilité avec le code existant
+      this.voiceActivity.next({
+        callId: parseInt(callId),
+        userId: currentUserId,
+        isSpeaking
       });
 
-      this.participants.set(updatedParticipants);
+      // Envoyer l'état aux autres participants
+      this.websocketService.emit('call:voice-activity', {
+        callId,
+        isSpeaking
+      }, (response: any) => {
+        if (!response || !response.success) {
+          console.warn('[APPEL VOCAL] Erreur lors de l\'envoi de l\'activité vocale:', response?.error || 'Erreur inconnue');
+        }
+      });
     }
   }
 
   private addParticipant(userId: number, callId: number): void {
     if (!userId || isNaN(userId) || !callId || isNaN(callId)) {
-      console.error('CallService: ID utilisateur ou ID appel invalide', { userId, callId });
+      console.error('[APPEL VOCAL] ID utilisateur ou ID appel invalide', { userId, callId });
       return;
     }
 
-    console.log(`CallService: Ajout du participant ${userId} à l'appel ${callId}`);
+    console.log(`[APPEL VOCAL] Ajout du participant ${userId} à l'appel ${callId}`);
 
-    const currentParticipants = this.participants();
+    const currentParticipants = this.participantsList();
 
     // Vérifier si le participant existe déjà
     const existingParticipantIndex = currentParticipants.findIndex(p => p.user_id === userId);
@@ -721,29 +817,34 @@ export class CallService {
         is_muted: false
       };
 
-      this.participants.set([...currentParticipants, newParticipant]);
+      this.participantsList.update(participants => [...participants, newParticipant]);
       this.callJoined.next(newParticipant);
-      console.log(`CallService: Participant ${userId} ajouté à l'appel ${callId}`);
+      console.log(`[APPEL VOCAL] Participant ${userId} ajouté à l'appel ${callId}`);
     } else if (!currentParticipants[existingParticipantIndex].is_active) {
       // Participant existant mais inactif - le réactiver
-      const updatedParticipants = [...currentParticipants];
-      updatedParticipants[existingParticipantIndex] = {
-        ...updatedParticipants[existingParticipantIndex],
-        is_active: true,
-        joined_at: new Date().toISOString(),
-        left_at: undefined
-      };
-
-      this.participants.set(updatedParticipants);
-      this.callJoined.next(updatedParticipants[existingParticipantIndex]);
-      console.log(`CallService: Participant ${userId} réactivé dans l'appel ${callId}`);
+      this.participantsList.update(participants => {
+        return participants.map(p => {
+          if (p.user_id === userId) {
+            const updatedParticipant = {
+              ...p,
+              is_active: true,
+              joined_at: new Date().toISOString(),
+              left_at: undefined
+            };
+            this.callJoined.next(updatedParticipant);
+            return updatedParticipant;
+          }
+          return p;
+        });
+      });
+      console.log(`[APPEL VOCAL] Participant ${userId} réactivé dans l'appel ${callId}`);
     } else {
-      console.log(`CallService: Participant ${userId} déjà actif dans l'appel ${callId}`);
+      console.log(`[APPEL VOCAL] Participant ${userId} déjà actif dans l'appel ${callId}`);
     }
   }
 
   private removeParticipant(userId: number): void {
-    const currentParticipants = this.participants();
+    const currentParticipants = this.participantsList();
     const participant = currentParticipants.find(p => p.user_id === userId);
 
     if (participant) {
@@ -755,25 +856,65 @@ export class CallService {
       };
 
       // Mettre à jour la liste des participants
-      const updatedParticipants = currentParticipants.map(p =>
-        p.user_id === userId ? updatedParticipant : p
+      this.participantsList.update(participants =>
+        participants.map(p => p.user_id === userId ? updatedParticipant : p)
       );
 
-      this.participants.set(updatedParticipants);
       this.callLeft.next(updatedParticipant);
 
       // Nettoyer la connexion
-      this.cleanupPeerConnection(userId);
+      this.closePeerConnection(userId);
     }
   }
 
-  private cleanupPeerConnection(userId: number): void {
-    const peerConnection = this.peerConnections.get(userId);
+  /**
+   * Ajoute ou met à jour le flux audio d'un participant
+   * @param userId ID de l'utilisateur
+   * @param stream Flux audio
+   */
+  private updateParticipantStream(userId: number, stream: MediaStream): void {
+    this.participantsList.update(participants =>
+      participants.map(p =>
+        p.user_id === userId
+          ? { ...p, stream }
+          : p
+      )
+    );
+  }
+
+  /**
+   * Met à jour l'état de parole d'un participant
+   * @param userId ID de l'utilisateur
+   * @param isSpeaking true si l'utilisateur parle
+   */
+  private updateParticipantSpeakingState(userId: number, isSpeaking: boolean): void {
+    this.participantsList.update(participants =>
+      participants.map(p =>
+        p.user_id === userId
+          ? { ...p, is_speaking: isSpeaking }
+          : p
+      )
+    );
+  }
+
+  /**
+   * Ferme une connexion peer
+   * @param userId ID de l'utilisateur
+   */
+  private closePeerConnection(userId: number): void {
+    const connections = this.peerConnectionsMap();
+    const peerConnection = connections.get(userId);
 
     if (peerConnection) {
       peerConnection.close();
-      this.peerConnections.delete(userId);
-      console.log(`CallService: Connexion avec l'utilisateur ${userId} fermée`);
+
+      this.peerConnectionsMap.update(connections => {
+        const newConnections = new Map(connections);
+        newConnections.delete(userId);
+        return newConnections;
+      });
+
+      console.log(`[APPEL VOCAL] Connexion avec l'utilisateur ${userId} fermée`);
     }
   }
 
@@ -781,12 +922,19 @@ export class CallService {
     // Nettoyer toutes les ressources
     this.cleanupAudioResources();
 
-    // Réinitialiser l'état
-    this.activeCall.set(null);
-    this.isInCall.set(false);
-    this.participants.set([]);
+    // Fermer toutes les connexions peer
+    const connections = this.peerConnectionsMap();
+    connections.forEach((connection, userId) => {
+      this.closePeerConnection(userId);
+    });
 
-    console.log('CallService: Appel terminé, ressources nettoyées');
+    // Réinitialiser l'état
+    this.callId.set(null);
+    this.documentId.set(null);
+    this.participantsList.set([]);
+    this.connectionState.set('disconnected');
+
+    console.log('[APPEL VOCAL] Appel terminé, ressources nettoyées');
   }
 
   private cleanupAudioResources(): void {
@@ -806,16 +954,13 @@ export class CallService {
     this.audioAnalysers.clear();
 
     // Arrêter les pistes audio locales
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(track => track.stop());
-      this.localStream = null;
+    const stream = this.localStream();
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      this.localStream.set(null);
     }
 
-    // Fermer toutes les connexions pair-à-pair
-    this.peerConnections.forEach((connection, userId) => {
-      this.cleanupPeerConnection(userId);
-    });
-
-    this.peerConnections.clear();
+    // Réinitialiser l'état du micro
+    this.isMuted.set(false);
   }
 }

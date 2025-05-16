@@ -9,7 +9,7 @@ export interface Call {
   ended_at?: string;
   call_type: CallType;
   status: CallStatus;
-  
+
   // Relations
   initiator?: CallUser;
   participants?: CallParticipant[];
@@ -84,4 +84,14 @@ export interface VoiceActivityData {
   callId: number;
   userId: number;
   isSpeaking: boolean;
+}
+
+/**
+ * Interface pour les données d'appel entrant
+ */
+export interface IncomingCallData {
+  callId: number;
+  documentId: number;
+  callerId: number;
+  documentTitle?: string;
 }
