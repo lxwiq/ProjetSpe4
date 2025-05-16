@@ -29,9 +29,15 @@
     </div>
 
     <div class="flex space-x-2">
-      <a [routerLink]="['/documents', document.id]" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition-colors">
-        Éditer
-      </a>
+      @if (document.is_folder) {
+        <a (click)="openDocument()" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition-colors cursor-pointer">
+          Ouvrir
+        </a>
+      } @else {
+        <a [routerLink]="['/documents', document.id]" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition-colors">
+          Éditer
+        </a>
+      }
     </div>
   </div>
 </div>
