@@ -29,7 +29,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
               <div class="hidden md:flex space-x-8">
                 <a routerLink="/dashboard" class="text-gray-300 hover:text-white font-medium transition-colors">Tableau de bord</a>
                 <a routerLink="/documents" class="text-gray-300 hover:text-white font-medium transition-colors">Mes documents</a>
-                <a routerLink="/messages" class="text-gray-300 hover:text-white font-medium transition-colors">Messages</a>
+                <a routerLink="/messaging" class="text-gray-300 hover:text-white font-medium transition-colors">Messages</a>
 
                 <!-- Lien d'administration visible uniquement pour les admins -->
                 @if (isAdmin()) {
@@ -372,7 +372,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       if (notification.type === 'document_invite' || notification.type === 'document_update') {
         return '/documents';
       } else if (notification.type === 'new_message' || notification.type === 'conversation_invite') {
-        return '/messages/conversations';
+        return '/messaging';
       } else {
         return '/dashboard';
       }
