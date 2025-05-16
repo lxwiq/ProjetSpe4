@@ -53,7 +53,7 @@ class MessagingService {
     });
 
     // Ajouter les participants
-    const participantPromises = participantIds.map(userId => 
+    const participantPromises = participantIds.map(userId =>
       prisma.conversation_participants.create({
         data: {
           conversation_id: conversation.id,
@@ -233,7 +233,7 @@ class MessagingService {
     });
 
     if (!participant) {
-      throw new Error('Vous n\'êtes pas un participant actif de cette conversation');
+      throw new Error("Vous n'êtes pas un participant actif de cette conversation");
     }
 
     // Créer le message
@@ -350,7 +350,7 @@ class MessagingService {
     if (this.activeConversations.has(conversationId)) {
       let users = this.activeConversations.get(conversationId);
       users = users.filter(id => id !== userId);
-      
+
       if (users.length === 0) {
         this.activeConversations.delete(conversationId);
       } else {

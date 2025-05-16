@@ -645,23 +645,33 @@ class SocketManager {
 
         const participantIds = currentParticipants.map(p => p.user_id);
 
-        // Répondre avec les données de l'appel
-        console.log(`Call ${callId} created successfully for document ${documentId} by user ${socket.userId}`);
-        console.log(`Sending response to user ${socket.userId}:`, {
-          success: true,
-          data: {
-            callId: callId,
-            documentId: parseInt(documentId),
-            participants: participantIds
+        // Récupérer les informations des participants
+        const participantsInfo = await prisma.users.findMany({
+          where: {
+            id: { in: participantIds }
+          },
+          select: {
+            id: true,
+            username: true,
+            full_name: true,
+            profile_picture: true
           }
         });
+
+        // Répondre avec les données de l'appel
+        console.log(`Call ${callId} created successfully for document ${documentId} by user ${socket.userId}`);
 
         if (callback) callback({
           success: true,
           data: {
             callId: callId,
             documentId: parseInt(documentId),
-            participants: participantIds
+            participants: participantsInfo.map(p => ({
+              userId: p.id,
+              username: p.username,
+              fullName: p.full_name,
+              profilePicture: p.profile_picture
+            }))
           }
         });
       } catch (error) {
@@ -745,10 +755,39 @@ class SocketManager {
         // Rejoindre la salle de l'appel
         socket.join(`call:${callId}`);
 
+        // Récupérer les informations de l'utilisateur
+        const userInfo = await prisma.users.findUnique({
+          where: { id: socket.userId },
+          select: {
+            id: true,
+            username: true,
+            full_name: true,
+            profile_picture: true
+          }
+        });
+
         // Informer les autres participants qu'un nouvel utilisateur a rejoint
         socket.to(`call:${callId}`).emit('call:user-joined', {
           callId,
-          userId: socket.userId
+          userId: socket.userId,
+          username: userInfo.username,
+          fullName: userInfo.full_name,
+          profilePicture: userInfo.profile_picture,
+          participants: this.activeCalls.get(parseInt(callId)).participants.map(p => p.userId)
+        });
+
+        // Récupérer les informations des participants
+        const participantIds = this.activeCalls.get(parseInt(callId)).participants.map(p => p.userId);
+        const participantsInfo = await prisma.users.findMany({
+          where: {
+            id: { in: participantIds }
+          },
+          select: {
+            id: true,
+            username: true,
+            full_name: true,
+            profile_picture: true
+          }
         });
 
         // Répondre avec les données de l'appel
@@ -756,7 +795,13 @@ class SocketManager {
           success: true,
           data: {
             callId,
-            participants: this.activeCalls.get(parseInt(callId)).participants.map(p => p.userId)
+            documentId: call.document_id,
+            participants: participantsInfo.map(p => ({
+              userId: p.id,
+              username: p.username,
+              fullName: p.full_name,
+              profilePicture: p.profile_picture
+            }))
           }
         });
       } catch (error) {
@@ -801,7 +846,8 @@ class SocketManager {
             // Informer les autres participants que l'utilisateur a quitté
             socket.to(`call:${callId}`).emit('call:user-left', {
               callId,
-              userId: socket.userId
+              userId: socket.userId,
+              participants: activeCall.participants.map(p => p.userId)
             });
           }
         }
@@ -818,47 +864,90 @@ class SocketManager {
     });
 
     // Signalisation WebRTC
-    socket.on('call:signal', (data) => {
-      const { callId, userId, signal } = data;
+    socket.on('call:signal', (data, callback) => {
+      try {
+        const { callId, targetUserId, type } = data;
 
-      // Transmettre le signal à l'utilisateur cible
-      if (this.userSockets.has(userId)) {
-        const targetSocketId = this.userSockets.get(userId);
-        this.io.to(targetSocketId).emit('call:signal', {
+        console.log(`[APPEL VOCAL] Signal WebRTC reçu de l'utilisateur ${socket.userId} pour l'utilisateur ${targetUserId} dans l'appel ${callId}`, { type });
+
+        // Vérifier si l'appel existe
+        if (!this.activeCalls.has(parseInt(callId))) {
+          console.error(`[APPEL VOCAL] Appel ${callId} non trouvé pour la signalisation WebRTC`);
+          if (callback) callback({ success: false, error: 'Appel non trouvé' });
+          return;
+        }
+
+        // Vérifier si l'utilisateur cible est un participant à l'appel
+        const activeCall = this.activeCalls.get(parseInt(callId));
+        const targetParticipant = activeCall.participants.find(p => p.userId === targetUserId);
+
+        if (!targetParticipant) {
+          console.error(`[APPEL VOCAL] Utilisateur cible ${targetUserId} n'est pas un participant à l'appel ${callId}`);
+          if (callback) callback({ success: false, error: "Utilisateur cible non trouvé dans l'appel" });
+          return;
+        }
+
+        // Vérifier si l'utilisateur cible est connecté
+        if (!this.userSockets.has(targetUserId)) {
+          console.error(`[APPEL VOCAL] Utilisateur cible ${targetUserId} n'est pas connecté`);
+          if (callback) callback({ success: false, error: 'Utilisateur cible non connecté' });
+          return;
+        }
+
+        // Préparer les données à transmettre en fonction du type de signal
+        const signalData = {
           callId,
-          userId: socket.userId,
-          signal
-        });
+          sourceUserId: socket.userId,
+          type
+        };
+
+        // Ajouter les données spécifiques au type de signal
+        switch (type) {
+          case 'offer':
+            signalData.offer = data.offer;
+            break;
+          case 'answer':
+            signalData.answer = data.answer;
+            break;
+          case 'ice-candidate':
+            signalData.candidate = data.candidate;
+            break;
+          default:
+            console.warn(`[APPEL VOCAL] Type de signal inconnu: ${type}`);
+            if (callback) callback({ success: false, error: 'Type de signal inconnu' });
+            return;
+        }
+
+        // Transmettre le signal à l'utilisateur cible
+        const targetSocketId = this.userSockets.get(targetUserId);
+        this.io.to(targetSocketId).emit('call:signal', signalData);
+
+        if (callback) callback({ success: true });
+      } catch (error) {
+        console.error('Error handling WebRTC signal:', error);
+        if (callback) callback({ success: false, error: error.message });
       }
     });
 
     // Activité vocale
-    socket.on('call:voice-activity', async (data) => {
+    socket.on('call:voice-activity', (data, callback) => {
       try {
         const { callId, isSpeaking } = data;
 
-        // Nous ne loggons pas chaque activité vocale pour éviter de surcharger les logs
-        // Mais nous vérifions quand même si l'appel existe
-        const call = await prisma.calls.findUnique({
-          where: { id: parseInt(callId) }
-        });
-
-        if (!call) {
-          console.error(`[APPEL VOCAL] Appel ${callId} non trouvé pour l'activité vocale`);
+        // Vérifier si l'appel existe dans la liste des appels actifs (plus rapide qu'une requête DB)
+        if (!this.activeCalls.has(parseInt(callId))) {
+          // Ne pas logger chaque erreur pour éviter de surcharger les logs
+          if (callback) callback({ success: false, error: 'Appel non trouvé' });
           return;
         }
 
-        // Vérifier si l'utilisateur est un participant à l'appel
-        const isParticipant = await prisma.call_participants.findFirst({
-          where: {
-            call_id: parseInt(callId),
-            user_id: socket.userId,
-            is_active: true
-          }
-        });
+        // Vérifier si l'utilisateur est un participant à l'appel (plus rapide qu'une requête DB)
+        const activeCall = this.activeCalls.get(parseInt(callId));
+        const isParticipant = activeCall.participants.some(p => p.userId === socket.userId);
 
         if (!isParticipant) {
-          console.error(`[APPEL VOCAL] Utilisateur ${socket.userId} n'est pas un participant actif dans l'appel ${callId}`);
+          // Ne pas logger chaque erreur pour éviter de surcharger les logs
+          if (callback) callback({ success: false, error: 'Utilisateur non participant à l\'appel' });
           return;
         }
 
@@ -868,8 +957,11 @@ class SocketManager {
           userId: socket.userId,
           isSpeaking
         });
+
+        if (callback) callback({ success: true });
       } catch (error) {
         console.error('Error handling voice activity:', error);
+        if (callback) callback({ success: false, error: error.message });
       }
     });
   }
@@ -1131,7 +1223,7 @@ class SocketManager {
         );
 
         if (!isParticipant) {
-          throw new Error('Vous n\'\u00eates pas un participant de cette conversation');
+          throw new Error("Vous n'êtes pas un participant de cette conversation");
         }
 
         // Rejoindre la salle de la conversation
