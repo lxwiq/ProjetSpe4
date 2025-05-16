@@ -1,0 +1,10 @@
+/* Styles pour la conversation */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.max-w-3\/4 {
+  max-width: 75%;
+}
