@@ -15,6 +15,24 @@ export class UserService {
   constructor(private http: HttpClient) {}
 
   /**
+   * Récupère tous les utilisateurs
+   * @returns Observable avec la liste des utilisateurs
+   */
+  getAllUsers(): Observable<User[]> {
+    return this.http.get<any>(`${this.API_URL}/users`, { withCredentials: true })
+      .pipe(
+        map(response => {
+          // Gérer à la fois les réponses directes et les réponses avec data
+          return Array.isArray(response) ? response : (response.data || []);
+        }),
+        catchError(error => {
+          console.error('Erreur lors de la récupération des utilisateurs:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
    * Récupère tous les utilisateurs actifs
    * @returns Observable avec la liste des utilisateurs
    */
