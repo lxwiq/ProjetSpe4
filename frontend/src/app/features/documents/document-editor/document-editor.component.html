@@ -64,8 +64,15 @@
   <div class="flex-1 flex overflow-hidden w-full">
     <!-- Éditeur -->
     <div class="flex-1 overflow-auto w-full">
-      <!-- Élément d'éditeur Quill (toujours présent dans le DOM mais caché si nécessaire) -->
-      <div #editor class="h-full w-full" [style.display]="isLoading() || error() ? 'none' : 'block'"></div>
+      <!-- Élément d'éditeur Quill avec ngx-quill -->
+      <quill-editor
+        *ngIf="!isLoading() && !error()"
+        [(ngModel)]="editorContent"
+        [modules]="quillModules"
+        [styles]="{ height: '100%', width: '100%' }"
+        (onContentChanged)="onContentChanged($event)"
+        (onEditorCreated)="onEditorCreated($event)"
+      ></quill-editor>
 
       @if (isLoading()) {
         <div class="flex justify-center items-center h-full w-full">
