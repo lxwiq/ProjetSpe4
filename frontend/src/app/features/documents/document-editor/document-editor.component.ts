@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -22,7 +22,7 @@ import { InviteCollaboratorsModalComponent } from '../invite-collaborators-modal
   selector: 'app-document-editor',
   templateUrl: './document-editor.component.html',
   styleUrls: ['./document-editor.component.css'],
-  imports: [CommonModule, FormsModule, RouterLink, QuillModule, VoiceCallComponent, DocumentChatComponent, InviteCollaboratorsModalComponent],
+  imports: [CommonModule, FormsModule, QuillModule, VoiceCallComponent, DocumentChatComponent, InviteCollaboratorsModalComponent],
   standalone: true
 })
 export class DocumentEditorComponent implements OnInit, OnDestroy {
@@ -82,6 +82,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
 
   // Services injectés
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private documentService = inject(DocumentService);
   public collaborativeService = inject(CollaborativeDocumentService);
   private authService = inject(AuthService);
@@ -1091,7 +1092,18 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     return new Date(date).toLocaleString();
   }
 
+  /**
+   * Retourne à la liste des documents
+   */
+  goBack(): void {
+    // Quitter le document collaboratif avant de naviguer
+    if (this.documentId) {
+      this.collaborativeService.leaveDocument(this.documentId);
+    }
 
+    // Naviguer vers la liste des documents
+    this.router.navigate(['/documents']);
+  }
 
   /**
    * Sauvegarde le document
