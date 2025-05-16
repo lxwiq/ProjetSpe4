@@ -1,41 +1,44 @@
 // tests/services/messaging-service.test.js
 const messagingService = require('../../src/services/messaging-service');
-const prisma = require('../../src/lib/prisma');
 
 // Mock de Prisma
-jest.mock('../../src/lib/prisma', () => ({
-  conversations: {
-    create: jest.fn(),
-    findUnique: jest.fn(),
-    findMany: jest.fn(),
-    update: jest.fn()
-  },
-  conversation_participants: {
-    create: jest.fn(),
-    findFirst: jest.fn(),
-    updateMany: jest.fn(),
-    update: jest.fn()
-  },
-  messages: {
-    create: jest.fn(),
-    findMany: jest.fn(),
-    updateMany: jest.fn()
-  },
-  users: {
-    findMany: jest.fn(),
-    findUnique: jest.fn()
-  }
-}));
+jest.mock('../../src/lib/prisma', () => {
+  return {
+    conversations: {
+      create: jest.fn().mockResolvedValue({}),
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({})
+    },
+    conversation_participants: {
+      create: jest.fn().mockResolvedValue({}),
+      findFirst: jest.fn().mockResolvedValue(null),
+      updateMany: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      createMany: jest.fn().mockResolvedValue({})
+    },
+    messages: {
+      create: jest.fn().mockResolvedValue({}),
+      findMany: jest.fn().mockResolvedValue([]),
+      updateMany: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0)
+    },
+    users: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findUnique: jest.fn().mockResolvedValue(null)
+    }
+  };
+});
 
 describe('MessagingService', () => {
   beforeEach(() => {
     // Réinitialiser les mocks avant chaque test
     jest.clearAllMocks();
-    
+
     // Réinitialiser les conversations actives
     messagingService.activeConversations = new Map();
   });
-  
+
   describe('createConversation', () => {
     it('devrait créer une nouvelle conversation de groupe', async () => {
       // Arrange
@@ -43,14 +46,14 @@ describe('MessagingService', () => {
       const participantIds = [1, 2, 3];
       const name = 'Groupe de test';
       const isGroup = true;
-      
+
       // Mock des utilisateurs
       prisma.users.findMany.mockResolvedValue([
         { id: 1 },
         { id: 2 },
         { id: 3 }
       ]);
-      
+
       // Mock de la création de conversation
       prisma.conversations.create.mockResolvedValue({
         id: 1,
@@ -60,9 +63,9 @@ describe('MessagingService', () => {
         created_at: new Date(),
         updated_at: new Date()
       });
-      
+
       // Mock de l'ajout des participants
-      prisma.conversation_participants.create.mockImplementation(({ data }) => 
+      prisma.conversation_participants.create.mockImplementation(({ data }) =>
         Promise.resolve({
           id: Math.floor(Math.random() * 1000),
           conversation_id: data.conversation_id,
@@ -71,7 +74,7 @@ describe('MessagingService', () => {
           is_active: true
         })
       );
-      
+
       // Mock de la récupération de la conversation
       prisma.conversations.findUnique.mockResolvedValue({
         id: 1,
@@ -108,10 +111,10 @@ describe('MessagingService', () => {
         ],
         messages: []
       });
-      
+
       // Act
       const result = await messagingService.createConversation(creatorId, participantIds, name, isGroup);
-      
+
       // Assert
       expect(prisma.users.findMany).toHaveBeenCalledWith({
         where: {
@@ -124,7 +127,7 @@ describe('MessagingService', () => {
           id: true
         }
       });
-      
+
       expect(prisma.conversations.create).toHaveBeenCalledWith({
         data: {
           name,
@@ -133,14 +136,14 @@ describe('MessagingService', () => {
           updated_at: expect.any(Date)
         }
       });
-      
+
       expect(prisma.conversation_participants.create).toHaveBeenCalledTimes(3);
-      
+
       expect(prisma.conversations.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
         include: expect.any(Object)
       });
-      
+
       expect(result).toEqual(expect.objectContaining({
         id: 1,
         name,
@@ -162,18 +165,18 @@ describe('MessagingService', () => {
         ])
       }));
     });
-    
+
     it('devrait trouver une conversation existante pour une conversation directe', async () => {
       // Arrange
       const user1Id = 1;
       const user2Id = 2;
-      
+
       // Mock des utilisateurs
       prisma.users.findMany.mockResolvedValue([
         { id: 1 },
         { id: 2 }
       ]);
-      
+
       // Mock de la recherche de conversation directe
       prisma.conversations.findMany.mockResolvedValue([
         {
@@ -203,16 +206,16 @@ describe('MessagingService', () => {
           ]
         }
       ]);
-      
+
       // Act
       const result = await messagingService.createConversation(user1Id, [user1Id, user2Id], null, false);
-      
+
       // Assert
       expect(prisma.users.findMany).toHaveBeenCalled();
       expect(prisma.conversations.findMany).toHaveBeenCalled();
       expect(prisma.conversations.create).not.toHaveBeenCalled();
       expect(prisma.conversation_participants.create).not.toHaveBeenCalled();
-      
+
       expect(result).toEqual(expect.objectContaining({
         id: 1,
         is_group: false,
@@ -229,14 +232,14 @@ describe('MessagingService', () => {
       }));
     });
   });
-  
+
   describe('sendMessage', () => {
     it('devrait envoyer un message dans une conversation', async () => {
       // Arrange
       const conversationId = 1;
       const senderId = 1;
       const content = 'Test message';
-      
+
       // Mock du participant
       prisma.conversation_participants.findFirst.mockResolvedValue({
         id: 1,
@@ -244,7 +247,7 @@ describe('MessagingService', () => {
         user_id: senderId,
         is_active: true
       });
-      
+
       // Mock de la création du message
       prisma.messages.create.mockResolvedValue({
         id: 1,
@@ -261,10 +264,10 @@ describe('MessagingService', () => {
           profile_picture: null
         }
       });
-      
+
       // Act
       const result = await messagingService.sendMessage(conversationId, senderId, content);
-      
+
       // Assert
       expect(prisma.conversation_participants.findFirst).toHaveBeenCalledWith({
         where: {
@@ -273,7 +276,7 @@ describe('MessagingService', () => {
           is_active: true
         }
       });
-      
+
       expect(prisma.messages.create).toHaveBeenCalledWith({
         data: {
           conversation_id: conversationId,
@@ -291,12 +294,12 @@ describe('MessagingService', () => {
           }
         }
       });
-      
+
       expect(prisma.conversations.update).toHaveBeenCalledWith({
         where: { id: conversationId },
         data: { updated_at: expect.any(Date) }
       });
-      
+
       expect(result).toEqual(expect.objectContaining({
         id: 1,
         conversation_id: conversationId,
@@ -308,26 +311,26 @@ describe('MessagingService', () => {
         })
       }));
     });
-    
+
     it('devrait rejeter si l\'utilisateur n\'est pas un participant actif', async () => {
       // Arrange
       const conversationId = 1;
       const senderId = 1;
       const content = 'Test message';
-      
+
       // Mock du participant (non trouvé)
       prisma.conversation_participants.findFirst.mockResolvedValue(null);
-      
+
       // Act & Assert
       await expect(messagingService.sendMessage(conversationId, senderId, content))
         .rejects
         .toThrow('Vous n\'êtes pas un participant actif de cette conversation');
-      
+
       expect(prisma.messages.create).not.toHaveBeenCalled();
       expect(prisma.conversations.update).not.toHaveBeenCalled();
     });
   });
-  
+
   describe('getConversationMessages', () => {
     it('devrait récupérer les messages d\'une conversation', async () => {
       // Arrange
@@ -335,7 +338,7 @@ describe('MessagingService', () => {
       const userId = 1;
       const limit = 50;
       const offset = 0;
-      
+
       // Mock du participant
       prisma.conversation_participants.findFirst.mockResolvedValue({
         id: 1,
@@ -343,7 +346,7 @@ describe('MessagingService', () => {
         user_id: userId,
         is_active: true
       });
-      
+
       // Mock des messages
       prisma.messages.findMany.mockResolvedValue([
         {
@@ -377,10 +380,10 @@ describe('MessagingService', () => {
           }
         }
       ]);
-      
+
       // Act
       const result = await messagingService.getConversationMessages(conversationId, userId, limit, offset);
-      
+
       // Assert
       expect(prisma.conversation_participants.findFirst).toHaveBeenCalledWith({
         where: {
@@ -389,7 +392,7 @@ describe('MessagingService', () => {
           is_active: true
         }
       });
-      
+
       expect(prisma.messages.findMany).toHaveBeenCalledWith({
         where: {
           conversation_id: conversationId,
@@ -411,7 +414,7 @@ describe('MessagingService', () => {
         take: limit,
         skip: offset
       });
-      
+
       expect(prisma.messages.updateMany).toHaveBeenCalledWith({
         where: {
           conversation_id: conversationId,
@@ -422,36 +425,36 @@ describe('MessagingService', () => {
           read_at: expect.any(Date)
         }
       });
-      
+
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe(2);
       expect(result[1].id).toBe(1);
     });
   });
-  
+
   describe('activeConversations', () => {
     it('devrait ajouter et retirer des utilisateurs des conversations actives', () => {
       // Arrange
       const conversationId = 1;
       const userId1 = 1;
       const userId2 = 2;
-      
+
       // Act - Ajouter des utilisateurs
       messagingService.addUserToActiveConversation(conversationId, userId1);
       messagingService.addUserToActiveConversation(conversationId, userId2);
-      
+
       // Assert
       expect(messagingService.getActiveConversationUsers(conversationId)).toEqual([userId1, userId2]);
-      
+
       // Act - Retirer un utilisateur
       messagingService.removeUserFromActiveConversation(conversationId, userId1);
-      
+
       // Assert
       expect(messagingService.getActiveConversationUsers(conversationId)).toEqual([userId2]);
-      
+
       // Act - Retirer le dernier utilisateur
       messagingService.removeUserFromActiveConversation(conversationId, userId2);
-      
+
       // Assert
       expect(messagingService.getActiveConversationUsers(conversationId)).toEqual([]);
       expect(messagingService.activeConversations.has(conversationId)).toBe(false);
