@@ -654,6 +654,15 @@ export class WebsocketService {
     return this.messageReceived.asObservable();
   }
 
+  /**
+   * Permet d'écouter un événement spécifique du socket
+   * @param eventName Nom de l'événement à écouter
+   * @returns Observable qui émet les données de l'événement
+   */
+  fromEvent(eventName: string): Observable<any> {
+    return this.socket.fromEvent(eventName);
+  }
+
   onDocumentChatMessage(): Observable<any> {
     return this.documentChatMessage.asObservable();
   }
